@@ -1,0 +1,13 @@
+# Ignore everything you ignored in Git
+node_modules/
+.evn 
+
+# Ignore local dev/test files
+.gitignore
+.dockerignore
+request.request
+*.md
+.vscode
+
+# Ignore Frontend source if the server is seperate
+views/
