@@ -577,14 +577,14 @@
 
         document.addEventListener('DOMContentLoaded', () => {
     // Check if the login page left a "note"
-    if (sessionStorage.getItem('showLoginAlert') === 'true') {
+    if (localStorage.getItem('showLoginAlert') === 'true') {
         const alertBar = document.getElementById('redirect-alert');
         
         // Show the bar
         alertBar.classList.add('show');
         
         // Remove the note so it doesn't show again on every refresh
-        sessionStorage.removeItem('showLoginAlert');
+        localStorage.removeItem('showLoginAlert');
         
         // Slide it back up after 4 seconds
         setTimeout(() => {

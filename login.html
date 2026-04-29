@@ -10,7 +10,7 @@
         const isLoggedIn = localStorage.getItem('isLoggedIn');
         if (isLoggedIn === 'true') {
             // Leave a "note" for the home page
-            sessionStorage.setItem('showLoginAlert', 'true');
+            localStorage.setItem('showLoginAlert', 'true');
             // Redirect immediately
             window.location.href = 'index.html'; 
         }

@@ -326,6 +326,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadData();
             renderAll();
+            populateLineupDropdown();
+            updateAllTeamDropdowns();
         });
 
         // Tab Switcher
@@ -344,7 +346,7 @@
         team.prevRank = index; // store last position
     });
 
-    firebase.database('eepl_db', JSON.stringify(db));
+    localStorage.setItem('eepl_db', JSON.stringify(db));
     renderAll();
 }
 
@@ -485,6 +487,7 @@ function addTeam() {
     document.getElementById('unifiedLogoInput').value = '';
     document.getElementById('previewPlaceholder').innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #444;"></i>`;
     saveData();
+    
 }
 
         function deleteTeam(id) {
@@ -697,7 +700,7 @@ function saveAndRefresh() {
     });
 
     // 2. Save to LocalStorage
-    firebase.database('eepl_db', JSON.stringify(db));
+    localStorage.setItem('eepl_db', JSON.stringify(db));
     renderTeams();
     renderStats();
     // 3. Update the UI
@@ -989,7 +992,7 @@ function saveMOTW() {
         reason: document.getElementById('editMotwReason').value
     };
 
-    firebase.database('leagueMOTW', JSON.stringify(motwData));
+    localStorage.setItem('leagueMOTW', JSON.stringify(motwData));
 
     alert("Match of the Week Updated!");
     displayMOTW();
@@ -1040,7 +1043,7 @@ function uploadLineup() {
             db.teams[teamIndex].lineupImage = base64Image;
             
             // Save updated DB back to localStorage
-            firebase.database('eepl_db', JSON.stringify(db));
+            localStorage.setItem('eepl_db', JSON.stringify(db));
             alert("Tactical Lineup Saved Successfully!");
             
             // Clear input
@@ -1061,7 +1064,7 @@ function saveTeamLineup(teamId, base64Image) {
     // Save the image string into the team object
     db.teams[teamIndex].lineupImage = base64Image; 
     try {
-    firebase.database('eepl_db', JSON.stringify(db));
+    localStorage.setItem('eepl_db', JSON.stringify(db));
     alert("Lineup Image Uploaded!");
 } catch (e) {
     console.error(e); alert("SAVE FAILED: The image is too large for the memory,");
@@ -1097,7 +1100,7 @@ function saveTeamDetails() {
         db.teams[index].founded = founded;
         db.teams[index].country = country;
 
-        firebase.database('eepl_db', JSON.stringify(db));
+        localStorage.setItem('eepl_db', JSON.stringify(db));
         alert("Team details updated!");
     }
 }
