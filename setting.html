@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dayyviid Entities | Settings</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #050505;
+            color: #fff;
+            margin: 0;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, rgba(0, 229, 255, 0.05), #050505);
+            border-right: 1px solid #222;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidebar h2 {
+            font-size: 0.8rem;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            padding-left: 15px;
+        }
+
+        .side-link {
+            padding: 12px 15px;
+            text-decoration: none;
+            color: #aaa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+        }
+
+        .side-link:hover, .side-link.active {
+            background: rgba(0, 229, 255, 0.1);
+            color: #00e5ff;
+            transform: translateX(5px);
+        }
+
+        .side-link.danger:hover, .side-link.danger.active {
+            background: rgba(255, 77, 77, 0.1);
+            color: #ff4d4d;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 60px;
+            max-width: 900px;
+        }
+
+        /* Tab Sections Logic */
+        .settings-section {
+            display: none;
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .settings-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-header {
+            margin-bottom: 40px;
+            border-bottom: 1px solid #222;
+            padding-bottom: 20px;
+        }
+
+        .section-header h1 {
+            font-size: 2.2rem;
+            margin: 0;
+            color: #00e5ff;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Profile Upload Area */
+        .pfp-edit-section {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            background: #111;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid #222;
+        }
+
+        .current-pfp {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #00e5ff;
+            object-fit: cover;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+        }
+
+        .btn-upload {
+            background: #00e5ff;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: inline-block;
+            transition: 0.3s;
+        }
+
+        .btn-upload:hover {
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.4);
+        }
+
+        /* Form Styling */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group input, .input-group select {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            color: #fff;
+            border-radius: 8px;
+            outline: none;
+            transition: 0.3s;
+            font-family: inherit;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: #00e5ff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.1);
+        }
+
+        /* Toggles for Notifications */
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #111;
+            padding: 15px 20px;
+            border-radius: 8px;
+            border: 1px solid #222;
+            margin-bottom: 15px;
+        }
+
+        .toggle-info h4 { margin: 0 0 5px 0; color: #fff; }
+        .toggle-info p { margin: 0; font-size: 0.8rem; color: #888; }
+
+        /* Custom Checkbox Toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #333;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #00e5ff; }
+        input:checked + .slider:before { transform: translateX(26px); }
+
+        /* Buttons */
+        .save-btn {
+            grid-column: span 2;
+            background: transparent;
+            border: 1px solid #00e5ff;
+            color: #00e5ff;
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            margin-top: 20px;
+        }
+
+        .save-btn:hover {
+            background: #00e5ff;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+        }
+
+        .danger-btn {
+            background: transparent;
+            border: 1px solid #ff4d4d;
+            color: #ff4d4d;
+            padding: 15px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .danger-btn:hover {
+            background: #ff4d4d;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 77, 77, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid #222; padding: 20px; }
+            .main-content { padding: 30px 20px; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .save-btn { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+    <div class="sidebar">
+        <a href="index.html" style="color: #fff; text-decoration: none; margin-bottom: 30px; display: inline-block;">
+            <i class="fas fa-arrow-left"></i> BACK TO NEXUS
+        </a>
+        <h2>Settings Panel</h2>
+        <div class="side-link active" data-target="section-account"><i class="fas fa-user-gear"></i> Account Profile</div>
+        <div class="side-link" data-target="section-security"><i class="fas fa-shield-halved"></i> Security</div>
+        <div class="side-link" data-target="section-notifications"><i class="fas fa-bell"></i> Notifications</div>
+        <div class="side-link danger" data-target="section-delete" style="color: #ff4d4d;"><i class="fas fa-trash"></i> Delete Entity</div>
+    </div>
+
+    <div class="main-content">
+
+        <div id="section-account" class="settings-section active">
+            <div class="section-header">
+                <h1>Account Settings</h1>
+                <p style="color: #666;">Manage your public identity within the Dayyviid Entities network.</p>
+            </div>
+
+            <div class="pfp-edit-section">
+                <img src="" id="settingsPfpDisplay" class="current-pfp" alt="Profile">
+                <div>
+                    <h3 style="margin: 0 0 10px 0;">Entity Avatar</h3>
+                    <label for="pfpInput" class="btn-upload"><i class="fas fa-upload"></i> Upload New Avatar</label>
+                    <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="previewImage(this)">
+                    <p style="font-size: 0.7rem; color: #555; margin-top: 10px;">Recommended: 400x400px, PNG or JPG.</p>
+                </div>
+            </div>
+
+            <form onsubmit="saveSettings(event)" class="settings-grid">
+                <div class="input-group">
+                    <label>Display Name</label>
+                    <input type="text" id="settingsName" placeholder="Loading...">
+                </div>
+                <div class="input-group">
+                    <label>Email Address</label>
+                    <input type="email" id="settingsEmail" placeholder="entity@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Bio (Optional)</label>
+                    <input type="text" id="settingsBio" placeholder="Tell the world your entity's purpose...">
+                </div>
+                <div class="input-group">
+                    <label>Region</label>
+                    <input type="text" id="settingsRegion" placeholder="Nigeria (NG)">
+                </div>
+                
+                <button type="submit" class="save-btn"><i class="fas fa-sync-alt"></i> Synchronize Changes</button>
+            </form>
+        </div>
+
+        <div id="section-security" class="settings-section">
+            <div class="section-header">
+                <h1>Security</h1>
+                <p style="color: #666;">Protect your node and update credential protocols.</p>
+            </div>
+
+            <form class="settings-grid" onsubmit="event.preventDefault(); alert('Password Protocol Updated.');">
+                <div class="input-group" style="grid-column: span 2;">
+                    <label>Current Password</label>
+                    <input type="password" placeholder="Enter current password">
+                </div>
+                <div class="input-group">
+                    <label>New Password</label>
+                    <input type="password" placeholder="New strong password">
+                </div>
+                <div class="input-group">
+                    <label>Confirm Password</label>
+                    <input type="password" placeholder="Confirm new password">
+                </div>
+                
+                <div class="input-group" style="grid-column: span 2; margin-top: 10px;">
+                    <div class="toggle-row">
+                        <div class="toggle-info">
+                            <h4>Two-Factor Authentication (2FA)</h4>
+                            <p>Require an extra security code when logging in.</p>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-btn"><i class="fas fa-lock"></i> Update Security</button>
+            </form>
+        </div>
+
+        <div id="section-notifications" class="settings-section">
+            <div class="section-header">
+                <h1>Notifications</h1>
+                <p style="color: #666;">Control how the Nexus communicates with your Entity.</p>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Match Reminders</h4>
+                    <p>Get notified 1 hour before an EEPL fixture begins.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>System Logs & Updates</h4>
+                    <p>Receive email reports about platform upgrades.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Direct Messages</h4>
+                    <p>Allow other Entities to send you direct communications.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <div id="section-delete" class="settings-section">
+            <div class="section-header">
+                <h1 style="color: #ff4d4d;">Danger Zone</h1>
+                <p style="color: #666;">Permanent account actions. Proceed with caution.</p>
+            </div>
+
+            <div style="background: rgba(255, 77, 77, 0.05); border: 1px solid #ff4d4d; padding: 25px; border-radius: 10px;">
+                <h3 style="color: #ff4d4d; margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Erase Entity Data</h3>
+                <p style="color: #aaa; line-height: 1.6; font-size: 0.9rem;">
+                    Once you delete your entity, there is no going back. All match history, trophies, and synchronization data will be permanently wiped from the Nexus database. Please be certain.
+                </p>
+                
+                <div class="input-group" style="margin-top: 20px;">
+                    <label style="color: #ff4d4d;">Type "ERASE" to confirm</label>
+                    <input type="text" id="deleteConfirm" placeholder="ERASE" style="border-color: #ff4d4d;">
+                </div>
+
+                <button class="danger-btn" onclick="deleteEntity()"><i class="fas fa-skull"></i> Terminate Entity</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA INITIALIZATION ---
+            const userName = localStorage.getItem('userName') || 'Entity';
+            const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+            const userBio = localStorage.getItem('userBio') || ''; 
+            const userRegion = localStorage.getItem('userRegion') || '';
+
+            document.getElementById('settingsName').value = userName;
+            document.getElementById('settingsPfpDisplay').src = savedPfp;
+            document.getElementById('settingsBio').value = userBio; 
+            document.getElementById('settingsRegion').value = userRegion;
+
+            // --- TAB SWITCHING LOGIC ---
+            const tabs = document.querySelectorAll('.side-link');
+            const sections = document.querySelectorAll('.settings-section');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    // Get target section id from data-target attribute
+                    const targetId = tab.getAttribute('data-target');
+                    if (!targetId) return; // If it's a normal link like "Back to Nexus", ignore
+
+                    // Remove 'active' class from all tabs and sections
+                    tabs.forEach(t => t.classList.remove('active'));
+                    sections.forEach(s => s.classList.remove('active'));
+
+                    // Add 'active' class to clicked tab and corresponding section
+                    tab.classList.add('active');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+        });
+
+        // --- PROFILE PICTURE PREVIEW ---
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('settingsPfpDisplay').src = e.target.result;
+                    // Auto-save the PFP immediately
+                    localStorage.setItem('userPfp', e.target.result);
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // --- SAVE ACCOUNT SETTINGS ---
+        function saveSettings(e) {
+            e.preventDefault();
+            const newName = document.getElementById('settingsName').value;
+            const newBio = document.getElementById('settingsBio').value;
+            const newRegion = document.getElementById('settingsRegion').value;
+            
+            // Save to Local Storage
+            localStorage.setItem('userName', newName);
+            localStorage.setItem('userBio', newBio);
+            localStorage.setItem('userRegion', newRegion);
+            
+            // Visual feedback
+            const btn = e.target.querySelector('.save-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i> SYNC COMPLETE';
+            btn.style.background = '#00e5ff';
+            btn.style.color = '#000';
+
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.style.background = 'transparent';
+                btn.style.color = '#00e5ff';
+            }, 2000);
+        }
+
+        // --- DELETE ENTITY SIMULATION ---
+        function deleteEntity() {
+            const confirmInput = document.getElementById('deleteConfirm').value;
+            if(confirmInput === 'ERASE') {
+                alert('Entity successfully removed from the Nexus.');
+                localStorage.clear(); // Clears all saved data
+                window.location.href = 'index.html'; // Redirects out
+            } else {
+                alert('Action aborted. You must type exactly "ERASE" to confirm.');
+            }
+        }
+    </script>
+</body>
+</html>

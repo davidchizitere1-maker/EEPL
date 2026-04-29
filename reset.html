@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dayyviid Entities | Recovery Request</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Reusing your Core Styles for consistency */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000f8;
+            color: #ffffff;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+       /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(0, 229, 255, 0.2);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 60px;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+            box-sizing: border-box;
+        }
+
+        .logo-container { display: flex; flex-direction: column; text-decoration: none; }
+        .logo-main { display: flex; align-items: center; gap: 12px; color: #fff; }
+        .logo-image { height: 40px; width: auto; }
+        .logo-text { font-weight: bold; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
+        .logo-motto { font-size: 0.65rem; color: #00e5ff; text-transform: uppercase; letter-spacing: 3px; margin-left: 52px; }
+
+        .nav-links {
+            font-family: 'Times New Roman', Times, serif;
+            list-style: none;
+            display: flex;
+            gap: 40px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #000000;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            color: #fff;
+            cursor: pointer;
+        }
+        header {
+            flex: content;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('image.png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .auth-card { width: 100%; max-width: 450px; padding: 40px; text-align: center; }
+
+        h2 { font-size: 2.5rem; margin-bottom: 10px; font-weight: 300; color: #00e5ff; }
+        .instruction-text { margin-bottom: 30px; font-size: 0.95rem; color: #bbb; line-height: 1.5; }
+
+        .input-box { position: relative; margin-bottom: 20px; }
+        .input-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #00e5ff; }
+        .input-box input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: 30px;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-box input:focus { border-color: #00e5ff; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 30px;
+            border: none;
+            background: #00e5ff;
+            color: #000;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-btn:hover {
+            background: #fff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+        }
+
+        .error-msg { color: #ff4d4d; font-size: 0.85rem; margin-top: 15px; display: none; }
+        /* Footer */
+        .social-bar {
+            margin-bottom: 20px;
+        }
+
+        .social-bar a {
+            color: #888;
+            font-size: 1.2rem;
+            margin: 0 10px;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .social-bar a:hover {
+            color: #00e5ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+            background: #050505;
+        }
+
+        .footer-link {
+            color: #555;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .footer-link:hover {
+            color: #c5c2c2;
+        }
+
+        .legal-links a {
+            color: #555;
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: small
+        }
+
+        .legal-links:hover {
+            color: #00e5ff; 
+        }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav { padding: 15px 25px; }
+            .nav-links {
+                position: fixed;
+                top: 60px;
+                right: -100%;
+                background: #111;
+                flex-direction: column;
+                width: 250px;
+                height: 100vh;
+                padding: 40px;
+                transition: 0.4s;
+                border-left: 1px solid #333;
+                z-index: 999;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { color: #fff; }
+            .nav-links a:hover { color: #00e5ff; }
+            .hamburger { display: block; }
+        }
+
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+    <nav>
+        <a href="index.html" class="logo-container">
+            <div class="logo-main">
+                <img src="logo.png" class="logo-image" alt="Logo">
+                <span class="logo-text">DAYYVID ENTITIES</span>
+            </div>
+            <div class="logo-motto">One World . Infinite Entities</div>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#creations">Creations</a></li>
+            <li><a href="index.html#connect">Connect</a></li>
+        </ul>
+<div class="hamburger" onclick="toggleMenu()">&#9776;</div>
+    </nav>
+
+    <header>
+        <div class="auth-card">
+            <div class="auth-form">
+                <h2>Identity Check</h2>
+                <p class="instruction-text">To initiate the recovery protocol, please enter your registered email address below.</p>
+                
+                <div class="input-box">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input id="recover-email" type="email" placeholder="Enter Email">
+                </div>
+
+                <button class="action-btn" onclick="initiateRecovery()">Verify Entity</button>
+                
+                <div id="error-box" class="error-msg"></div>
+
+                <p style="margin-top:25px; font-size: 0.9rem;">
+                    <a href="login.html" style="color:#e9e7e7; text-decoration:none; transition: 0.3s;" onmouseover="this.style.color='#00e5ff'" onmouseout="this.style.color='#888'">Return to Login</a>
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <footer>
+        <main class="social-bar">
+            <div>
+                <a href="mailto:davidchizitere1@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/2349014699873" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://t.me/+5oz7mf9i-EcwNDM0" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.linkedin.com/in/david-ineh-5187a4312" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/dayy.viid" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div> 
+            <div class="footer-link">
+             &copy; 2026 dayyviid Entities. All Rights Reserved. <br>
+                <div class="legal-links">
+                    <a href="privacy.html">Privacy Policy</a> |
+                    <a href="terms.html">Terms & Conditions</a>
+                </div>
+            </div>
+        </main>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        async function initiateRecovery() {
+            const email = document.getElementById('recover-email').value;
+            const errorBox = document.getElementById('error-box');
+
+            errorBox.style.display = 'none';
+
+            if (!email) {
+                errorBox.innerText = "Email is required to proceed.";
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/users/forgot-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Logic: Serve the token (simulating an email)
+                    alert("PROTOCOL INITIATED\nYour Recovery Token is: " + result.token);
+                    
+                    // Redirecting to Step 2 (Reset Page)
+                    window.location.href = 'passwordreset.html';
+                } else {
+                    errorBox.innerText = "Identity not found in Entity Records.";
+                    errorBox.style.display = 'block';
+                }
+            } catch (err) {
+                errorBox.innerText = "System Offline. Connection failed.";
+                errorBox.style.display = 'block';
+            }
+        }
+         function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>
+

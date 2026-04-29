@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEPL | Donation Center</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --accent: #00e5ff;
+            --gold: #f1c40f;
+            --bg: #0a0a0a;
+            --card-bg: #161616;
+            --text: #ffffff;
+            --text-muted: #888;
+            --glass: rgba(255, 255, 255, 0.03);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at top right, #111, transparent);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .donation-container {
+            width: 100%;
+            max-width: 550px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .donation-card {
+            background: var(--card-bg);
+            border: 1px solid #222;
+            border-top: 4px solid var(--gold);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        /* Payment Method Toggle */
+        .method-selector {
+            display: flex;
+            background: #000;
+            padding: 6px;
+            border-radius: 12px;
+            margin-bottom: 35px;
+            border: 1px solid #333;
+        }
+
+        .method-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.9rem;
+            border-radius: 8px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .method-btn.active {
+            background: var(--gold);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(241, 196, 15, 0.2);
+        }
+
+        /* Content Sections */
+        .payment-content {
+            display: none;
+            min-height: 250px;
+        }
+
+        .payment-content.active {
+            display: block;
+            animation: slideUp 0.4s ease forwards;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translateY(15px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+
+        /* Bank Detail Styling */
+        .bank-info-box {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #111;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+
+        .label { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+        .value { color: #fff; font-family: 'Courier New', Courier, monospace; font-weight: bold; }
+
+        .copy-icon {
+            color: var(--gold);
+            cursor: pointer;
+            margin-left: 10px;
+            transition: transform 0.2s;
+        }
+
+        .copy-icon:hover { transform: scale(1.2); }
+
+        /* Form Inputs */
+        .form-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        input[type="number"], input[type="file"] {
+            width: 100%;
+            padding: 14px;
+            background: #080808;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus { border-color: var(--gold); }
+
+        /* Submit Buttons */
+        .action-btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-paypal { background: #0070ba; color: #fff; }
+        .btn-paypal:hover { background: #005ea6; transform: translateY(-2px); }
+
+        .btn-bank { background: var(--gold); color: #000; }
+        .btn-bank:hover { background: #d4ac0d; transform: translateY(-2px); }
+
+        .footer-note {
+            margin-top: 30px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .back-btn {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s;
+        }
+
+        .back-btn:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:54dc01c6598669128f4e56",
+    measurementId: "G-1L400FK43N"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
+
+<div class="donation-container">
+    <div class="donation-card">
+        <div class="header">
+            <i class="fa-solid fa-crown" style="color: var(--gold); font-size: 2.5rem; margin-bottom: 15px;"></i>
+            <h1>Donation Center</h1>
+            <p>Your support directly funds seasonal prize pools and server maintenance. Choose your preferred method below.</p>
+        </div>
+
+        <div class="method-selector">
+            <button class="method-btn active" onclick="switchMethod('paypal', this)">
+                <i class="fa-brands fa-paypal"></i> PayPal / Card
+            </button>
+            <button class="method-btn" onclick="switchMethod('bank', this)">
+                <i class="fa-solid fa-building-columns"></i> Bank Transfer
+            </button>
+        </div>
+
+        <div id="paypal-area" class="payment-content active">
+            <div class="form-group">
+                <label>Amount to Support (USD)</label>
+                <input type="number" id="pp-amount" placeholder="Enter amount e.g. 10.00">
+            </div>
+            <p style="font-size: 0.8rem; color: #555; margin-bottom: 20px; text-align: left;">
+                <i class="fa-solid fa-circle-info"></i> You will be redirected to PayPal's encrypted secure gateway to complete your transaction.
+            </p>
+            <button class="action-btn btn-paypal" onclick="initiatePayPal()">
+                Proceed to PayPal
+            </button>
+        </div>
+
+        <div id="bank-area" class="payment-content">
+            <div class="bank-info-box">
+                <div class="info-row">
+                    <span class="label">Bank Name</span>
+                    <span class="value">United Bank of Africa</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Account Number</span>
+                    <span>
+                        <span class="value" id="acc-num">2303990200</span>
+                        <i class="fa-regular fa-copy copy-icon" onclick="copyValue('2303990200')" title="Copy Account"></i>
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Account Name</span>
+                    <span class="value">David Chizitere Ike-Ineh</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Payment Ref</span>
+                    <span class="value">EEPL-PATRON</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Upload Proof of Payment (Image/PDF)</label>
+                <input type="file" id="bank-receipt">
+            </div>
+            
+            <button class="action-btn btn-bank" onclick="submitBankTransfer()">
+                <a href="https://wa.me/2347079692230" style="color: inherit; text-decoration: none;">Submit Verification</a>
+            </button>
+        </div>
+
+        <div class="footer-note">
+            <i class="fa-solid fa-shield-check"></i> Transactions are processed through professional administrative channels.
+        </div>
+
+        <a href="EEPL.html" class="back-btn"><i class="fa-solid fa-arrow-left"></i> Return to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    
+    // Tab Switching Logic
+    function switchMethod(method, element) {
+        // Update Buttons
+        document.querySelectorAll('.method-btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+
+        // Update Content
+        document.querySelectorAll('.payment-content').forEach(content => content.classList.remove('active'));
+        if(method === 'paypal') {
+            document.getElementById('paypal-area').classList.add('active');
+        } else {
+            document.getElementById('bank-area').classList.add('active');
+        }
+    }
+
+    // Copy to Clipboard
+    function copyValue(val) {
+        navigator.clipboard.writeText(val);
+        alert("Account Number copied to clipboard!");
+    }
+
+    // Action Handlers
+    function initiatePayPal() {
+    const amt = document.getElementById('pp-amount').value;
+    if(!amt || amt <= 0) {
+        alert("Please enter a valid donation amount.");
+        return;
+    }
+
+    // Save the attempt to Firebase
+    db.ref('donations/attempts').push({
+        amount: amt,
+        method: 'PayPal',
+        timestamp: new Date().toISOString(),
+        user: localStorage.getItem('currentUser') || 'Anonymous'
+    });
+
+    alert("Redirecting to PayPal for $" + amt);
+    // window.location.href = "https://paypal.me/YOUR_USER_ID/" + amt;
+}
+function submitBankTransfer() {
+    const file = document.getElementById('bank-receipt').files[0];
+    if(!file) {
+        alert("Please upload your transaction receipt.");
+        return;
+    }
+    // Redirect to WhatsApp
+    window.location.href = "https://wa.me/2347079692230?text=I've uploaded a donation receipt for EEPL.";
+}
+</script>
+
+</body>
+</html>

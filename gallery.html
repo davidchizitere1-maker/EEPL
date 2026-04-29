@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dayyviid Entities | Gallery</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Shared Modern Gaming Aesthetic */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+             background: linear-gradient(rgba(0, 0, 0, 0.219), rgba(0, 0, 0, 0.219)), url('image.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation Bar Styling */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: #00e5ff79;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 60px;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+            box-sizing: border-box;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center; 
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .logo-image { height: 45px; width: auto; }
+
+        .logo-text {
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            font-family: 'Times New Roman', Times, serif;
+            list-style: none;
+            display: flex;
+            gap: 40px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #000000;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover { color: #fff; }
+
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            color: #ffffff;
+            cursor: pointer;
+        }
+
+        /* Gallery Layout */
+        .container {
+            padding: 140px 20px 60px 20px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .gallery-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .gallery-header h1 {
+            font-size: 2.5rem;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .gallery-header p {
+            color: #aaa;
+            max-width: 600px;
+            margin: 0 auto;
+            font-style: italic;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #222;
+            background: #0a0a0a;
+            transition: 0.3s;
+        }
+
+        .card:hover {
+            border-color: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+        }
+
+        .card img {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            transition: transform 0.8s ease;
+            opacity: 0.8;
+        }
+
+        .card:hover img {
+            transform: scale(1.05);
+            opacity: 1;
+        }
+
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(transparent, rgba(0,0,0,0.95));
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .overlay h3 {
+            margin: 0;
+            color: #00e5ff;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .overlay p {
+            margin: 5px 0 0 0;
+            font-size: 0.75rem;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        /* Coming Soon Badge */
+        .badge {
+            position: absolute;
+            text-decoration: none;
+            top: 15px;
+            right: 15px;
+            background: #cfd6d6;
+            color: #000;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-radius: 2px;
+            z-index: 2;
+        }
+
+        .badge:hover {
+            background: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        }
+
+        .social-bar {
+            margin-bottom: 0 20px;
+        }
+
+        .social-bar a {
+            color: #888;
+            font-size: 1.2rem;
+            margin: 0 5px;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .social-bar a:hover {
+            color: #00e5ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+            background: #050505;
+        }
+
+        .footer-link {
+            color: #555;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .footer-link:hover {
+            color: #c5c2c2;
+        }
+
+        .legal-links a {
+            color: #555;
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: small
+        }
+
+        .legal-links:hover {
+            color: #00e5ff; 
+        }
+        .user-profile-item {
+    display: flex;
+    align-items: center;
+}
+
+        /* PFP Circular Image */
+.nav-pfp {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #ffffffb6;
+    transition: 0.3s;
+    vertical-align: middle;
+}
+
+.nav-pfp:hover {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+
+.pfp-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+/* Enhanced Dropdown Card */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: rgba(5, 5, 5, 0.95);
+    min-width: 200px; /* Wider for more details */
+    backdrop-filter: blur(15px);
+    border: 1px solid #00e5ff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 229, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1001;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #575b5c;
+}
+
+.user-info-header img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+}
+
+.user-details .name {
+    display: block;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.user-details .rank {
+    font-size: 0.7rem;
+    color: #c8e0ec;
+    text-transform: uppercase;
+}
+
+/* Profile Menu Links */
+.profile-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.profile-menu-links a {
+    padding: 10px;
+    color: #fff;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-menu-links a i {
+    color: #ffffff;
+    width: 20px;
+}
+
+.profile-menu-links a:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #00e5ff !important;
+}
+
+.profile-menu-links a i:hover {
+    color: #00e5ff;
+}
+
+.logout-link {
+    color: #fffefe !important;
+    margin-top: 10px;
+}
+
+/* Toggle Class */
+.show { display: block !important; }
+
+        hr { border: 0; border-top: 1px solid #222; margin: 40px 0; }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav { padding: 15px 25px; }
+            .nav-links {
+                position: fixed;
+                top: 60px;
+                right: -100%;
+                background: #111;
+                flex-direction: column;
+                width: 250px;
+                height: 100vh;
+                padding: 40px;
+                transition: 0.4s;
+                border-left: 1px solid #333;
+                z-index: 999;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { color: #fff; }
+            .nav-links a:hover { color: #00e5ff; }
+            .logo-img { height: 150px; }
+            .hamburger { display: block; }
+        }
+
+    </style>
+</head>
+<body>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+
+    <nav>
+        <a href="index.html" class="logo">
+            <img src="logo.png" class="logo-image" alt="dE Logo">
+            <span class="logo-text">DAYYVID ENTITIES</span>
+        </a>
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#creations">Creations</a></li>
+            <li><a href="index.html#connect">Connect</a></li>
+            <li><a href="index.html#login">Login</a></li>
+        </ul>
+        <div class="hamburger" onclick="toggleMenu()">&#9776;</div>
+    </nav>
+
+    <div class="container">
+        <div class="gallery-header">
+            <h1>Gaming Gallery</h1>
+            <p>This captures the energy of the global gaming community. We assert that while we share One World, We are the architects of Infinite Entities. Explore the evolution of our Entity.</p>
+        </div>
+        
+        <div class="gallery">
+            <div class="card">
+                <div class="badge">Coming Soon</div>
+                <img src="zero.png" alt="Zero Extraction">
+                <div class="overlay">
+                    <h3>Zero: Extraction</h3>
+                    <p>Flagship combat simulation. Tactical high-octane fighting.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="badge">Coming Soon</div>
+                <img src="https://images.unsplash.com/photo-1605902711622-cfb43c4437b5" alt="Gaming Setup">
+                <div class="overlay">
+                    <h3>Command Center</h3>
+                    <p>Where code meets the metal. Our primary dev environment.</p>
+                </div>
+            </div>
+<div class="card">
+    <div class="badge">Featured</div>
+    <img src="https://img.freepik.com/premium-photo/basketball-player-spotlight-empty-court-with-dramatic-lighting-effects-concept-sports-photography-basketball-player-dramatic-lighting-effects-empty-court-spotlight_864588-134247.jpg" alt="Player Spotlight">
+    <div class="overlay">
+        <h3>Player Spotlight</h3>
+        <p>Highlighting entities with skill, vision, and consistency at the highest level.</p>
+    </div>
+</div>
+            <div class="card">
+                <div class="badge">Coming Soon</div>
+                <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e" alt="Controller">
+                <div class="overlay">
+                    <h3>Console Gaming</h3>
+                    <p>Optimizing for millisecond-perfect response times.</p>
+                </div>
+            </div>
+            <div class="card">
+                <a href="home.html" class="badge">Register Now</a>
+                <img src="elite.png" alt="EEPL">
+                <div class="overlay">
+                    <h3>Elite Pro League</h3>
+                    <p>Experience the EEPL, a league that truly defines the New Era of football.</p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="badge">Coming Soon</div>
+                <img src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7" alt="Retro Gaming">
+                <div class="overlay">
+                    <h3>Retro Games</h3>
+                    <p>Studying the mechanics of the past to build the future.</p>
+                </div>
+            </div>
+
+            <div class="card">
+    <div class="badge">Coming Soon</div>
+    <img src="https://img.freepik.com/premium-photo/living-room-with-view-night-sky-where-stars-shine-brightly-against-blackness_124507-119310.jpg" alt="Career Mode">
+    <div class="overlay">
+        <h3>Career Mode</h3>
+        <p>Build your journey, develop your squad, and rise through the ranks.</p>
+    </div>
+</div>
+            <div class="card">
+                <div class="badge">Coming Soon</div> 
+                <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420" alt="Esports">
+                <div class="overlay">
+                    <h3>The Arcade</h3>
+                    <p>Competitive environmental design for global networking.</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="badge">Coming Soon</div>
+                <img src="https://images.unsplash.com/photo-1598550476439-6847785fcea6" alt="VR Gaming">
+                <div class="overlay">
+                    <h3>Virtual Core</h3>
+                    <p>Exploring 360-degree immersion and spatial physics.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <main class="social-bar">
+            <div>
+                <a href="mailto:davidchizitere1@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/2349014699873" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://t.me/+5oz7mf9i-EcwNDM0" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.linkedin.com/in/david-ineh-5187a4312" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/dayy.viid" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div> 
+            <div class="footer-link">
+             &copy; 2026 Dayyviid Entities. All Rights Reserved. <br>
+                <div class="legal-links">
+                    <a href="privacy.html">Privacy Policy</a> |
+                    <a href="terms.html">Terms & Conditions</a>
+                </div>
+            </div>
+        </main>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+    
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userName = localStorage.getItem('userName') || 'User'; // Fallback to 'User'
+       const userEmail = localStorage.getItem('userEmail') || 'user@dayyviid.com';
+    // Load custom PFP or use default
+    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+
+    const navLinks = document.getElementById('navLinks');
+
+    if (isLoggedIn === 'true') {
+        // 1. Find the "Login" link and hide it
+        const allLinks = navLinks.querySelectorAll('li');
+        allLinks.forEach(li => {
+            if (li.textContent.toLowerCase().includes('login')) {
+                li.style.display = 'none';
+            }
+        });
+
+        // 2. Add the Profile Picture and Dropdown
+                navLinks.innerHTML += `
+            <li class="user-profile-item">
+                <div class="pfp-container" onclick="toggleUserMenu(event)">
+                    <img src="${savedPfp}" id="navPfpDisplay" class="nav-pfp">
+                    <div id="user-dropdown" class="dropdown-content">
+                        <div class="user-info-header">
+                            <img src="${savedPfp}" id="dropdownPfpDisplay">
+                            <div class="user-details">
+                                <span class="name">${userName}</span>
+                                <span class="rank">Authorized Entity</span>
+                            </div>
+                        </div>
+                        <div class="profile-menu-links">
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
+                            <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
+                            <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+                            <hr style="border: 0.5px solid #222; margin: 10px 0;">
+                            <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                        </div>
+                        <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
+                    </div>
+                </div>
+            </li>
+        `;
+    }
+});
+
+    const actionBtn = document.querySelector('.btn'); // THe "ENTER YOUR ENTITY" button
+
+    if (isLoggedIn === 'true' && actionBtn) {
+        // If logged in, change the button to lead to the profile or Creations
+        actionBtn.innerText = "ACCESS YOUR DOSSIER";
+        actionBtn.setAttribute('href', 'profile.html');
+    }
+
+function updatePfp(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            localStorage.setItem('userPfp', imageData); // Save to storage
+            document.getElementById('navPfpDisplay').src = imageData; // Update Nav
+            document.getElementById('dropdownPfpDisplay').src = imageData; // Update Card
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function triggerPfpUpload() {
+    document.getElementById('pfpInput').click();
+}
+
+
+
+// Update toggle function to prevent event bubbling
+function toggleUserMenu(event) {
+    event.stopPropagation(); // Prevents window.onclick from closing it immediately
+    document.getElementById('user-dropdown').classList.toggle('show');
+}
+
+function logout() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    window.location.reload(); 
+}
+
+
+    function toggleUserMenu() {
+        document.getElementById('user-dropdown').classList.toggle('show');
+    }
+
+    function logout() {
+        localStorage.clear(); // Clears login status and name
+        window.location.reload(); // Refresh to show original nav links
+    }
+
+    // Close dropdown if clicking elsewhere
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-pfp')) {
+            const dropdown = document.getElementById("user-dropdown");
+            if (dropdown && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        }
+    }
+
+    </script>
+</body>
+</html>
+
+

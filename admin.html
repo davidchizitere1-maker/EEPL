@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEPL | Admin Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Body */
+        :root {--accent: #ff0055; --bg: #0f0f0f; --card-bg: #1a1a1a; --text-main: #fff; --text-muted: #888; --border-color: #333;}  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; } body { background-color: var(--bg); color: var(--text-main); display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar { width: 250px; background-color: var(--card-bg); border-right: 1px solid var(--border-color); padding: 20px; } .sidebar-header { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; } .sidebar-header h2 { color: var(--accent); } .nav-links { list-style: none; } .nav-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.3s; } .nav-item:hover, .nav-item.active { background-color: rgba(255,0,85,0.1); color: var(--accent); font-weight: bold; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 30px 40px; overflow-y: auto; }.pane { display: none; animation: fadeIn 0.3s ease; } .pane.active { display: block; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Forms & Cards */
+        .card { background-color: var(--card-bg); padding: 20px; border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 20px; }.form-group { margin-bottom: 15px; }label { display: block; margin-bottom: 5px; color: var(--text-muted); font-size: 0.9rem; } input, select { width: 100%; padding: 10px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 4px; outline: none; } input:focus, select:focus { border-color: var(--accent); }button { background-color: var(--accent); color: #fff; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }button:hover { opacity: 0.8; }button.secondary { background-color: #333; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); }th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }.flex-row { display: flex; gap: 15px; align-items: flex-end; }.flex-row > div { flex: 1; }
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fa-solid fa-lock"></i> EEPL Admin</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Control Panel</p>
+        </div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="switchPane('pane-teams', this)"><i class="fa-solid fa-shield-halved"></i> Manage Teams</li>
+            <li class="nav-item" onclick="switchPane('pane-fixtures', this)"><i class="fa-solid fa-calendar-plus"></i> Fixtures & Results</li>
+            <li class="nav-item" onclick="switchPane('pane-stats', this)"><i class="fa-solid fa-chart-line"></i> Player Stats</li>
+            <li class="nav-item" onclick="switchPane('pane-news', this)"><i class="fa-solid fa-newspaper"></i> News Manager</li>
+            <li class="nav-item" onclick="switchPane('pane-lineup', this)"><i class="fa-solid fa-upload"></i> Upload Lineup</li>
+            <li class="nav-item" onclick="switchPane('pane-system', this)"><i class="fa-solid fa-gear"></i> System</li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        
+        <section id="pane-teams" class="pane active">
+            <h2>Manage Teams</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Add new players/teams to the league table.</p>
+            
+            <div class="card">
+    <h3>Add New Team</h3>
+    <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+        <div class="flex-row">
+            <div style="flex: 2;">
+                <label>Player Name</label>
+                <input type="text" id="teamNameInput" placeholder="e.g. Manchester City">
+            </div>
+        </div>          
+        <div>
+            <label for="unifiedLogoInput" style="font-size: 0.9rem; color: var(--accent); font-weight: bold;">
+        Team Logo (Paste Image Link)
+    </label>
+    
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <input type="text" id="unifiedLogoInput" placeholder="e.g., 'https://.../logo.png'" 
+               style="flex: 1; padding: 12px; background: #000; border: 1px solid #444; color: #fff; border-radius: 6px; outline: none;">
+        
+        <button onclick="processLogoInput()" 
+                style="background: var(--accent); color: #000; border: none; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">
+            Fetch
+        </button>
+    </div>
+
+    <div id="unifiedPreviewArea" style="margin-top: 15px; display: flex; align-items: center; gap: 15px;">
+        <div style="width: 60px; height: 60px; border-radius: 8px; background: #000; border: 1px dashed #555; display: flex; justify-content: center; align-items: center; overflow: hidden;">
+            <img id="unifiedLogoPreview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none; background: #fff;">
+            <i id="previewPlaceholder" class="fa-solid fa-shield-halved" style="color: #444; font-size: 1.5rem;"></i>
+        </div>
+        <span id="previewStatus" style="font-size: 0.85rem; color: var(--text-muted);">Awaiting input...</span>
+    </div>
+       <input type="hidden" id="previewPlaceholder" value="">
+<div><p style="color: #333;">.</p></div>
+        <button onclick="addTeam()" style="width: 100%;">Add Team to League</button>
+    </div>
+</div>
+            <div class="card">
+                <h3>Current Teams (Standings Preview)</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>Pts</th><th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teamsTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="pane-fixtures" class="pane">
+    <h2>Fixtures & Results</h2>
+    
+    <!-- CREATE FIXTURE -->
+    <div class="card">
+        <h3>Create Fixture (Manual)</h3>
+        <div class="flex-row" style="margin-top: 15px;">
+            <div>
+                <label>Home Team</label>
+                <select id="homeTeamSelect"></select>
+            </div>
+            <div style="flex: 0.2; text-align: center; color: var(--text-muted); font-weight: bold;">VS</div>
+            <div>
+                <label>Away Team</label>
+                <select id="awayTeamSelect"></select>
+            </div>
+            <div>
+                <label>Matchday</label>
+                <input type="number" id="matchdayInput" value="1" min="1">
+            </div>
+            <button onclick="addFixture()">Create</button>
+        </div>
+
+        <button class="secondary" style="margin-top: 15px; width: 100%;" onclick="generateRandomFixtures()">
+            <i class="fa-solid fa-dice"></i> Generate Random Matchday Pairs
+        </button> <br><br>
+
+    <!-- PENDING MATCHES -->
+    <div class="card">
+        <h3>Pending Matches</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Matchday</th>
+                    <th>Match</th>
+                    <th>Score</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="pendingFixturesBody"></tbody>
+        </table>
+    </div>
+
+    <!-- COMPLETED MATCHES -->
+    <div class="card">
+        <h3>Completed Matches</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Matchday</th>
+                    <th>Match</th>
+                    <th>Result</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="completedFixturesBody"></tbody>
+        </table>
+    </div>
+</section>
+
+
+       <section id="pane-stats" class="pane">
+    <h2>Player Statistics</h2>
+    
+    <div class="card">
+    <h3>Add/Update Player Stat</h3>
+    <div class="flex-row" style="margin-top: 15px;">
+        <div>
+            <label>Player Username</label>
+            <input type="text" id="statPlayerName" list="playerList" placeholder="Select player...">
+            <datalist id="playerList"></datalist>
+        </div>
+        
+        <div>
+            <label>Stat Type</label>
+            <select id="statType">
+                <option value="goals">Goals</option>
+                <option value="assists">Saves</option>
+            </select>
+        </div>
+        <div>
+            <label>Value (Total)</label>
+            <input type="number" id="statValue" value="0" min="0">
+        </div>
+        <button onclick="updateStat()">Save Stat</button>
+        <button onclick="deleteStat()" style="background: #555;">Delete by Name</button>
+    </div>
+</div>
+
+    <div class="card">
+        <h3>Current Stats Database</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Goals</th>
+                    <th>Saves</th>
+                    <th>Action</th> </tr>
+            </thead>
+            <tbody id="statsTableBody">
+                </tbody>
+        </table>
+    </div>
+    <div class="card">
+    <h3>Admin: Set Match of the Week</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+        <input type="text" id="editMotwHome" placeholder="Home Team Name">
+        <input type="text" id="editMotwAway" placeholder="Away Team Name">
+        <input type="text" id="editMotwTime" placeholder="Time (e.g. 21:00)">
+        <input type="text" id="editMotwDay" placeholder="Day (e.g. Saturday)">
+        <textarea id="editMotwReason" placeholder="Anticipation Note (Why is this MOTW?)" style="grid-column: span 2; background:#000; border:1px solid #333; color:#fff; padding:10px; border-radius:8px;"></textarea>
+        <button onclick="saveMOTW()" class="btn-bank" style="grid-column: span 2;">Update Featured Match</button>
+    </div>
+</div>
+</section>
+
+<section id="pane-news" class="pane">
+    <h2>News & Ticker Management</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;">Create and edit the headlines that appear on the user dashboard.</p>
+    
+    <div class="card">
+        <h3 id="newsFormTitle">Add New Headline</h3>
+        <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+            <div class="flex-row">
+                <div style="flex: 1;">
+                    <label>Category (Tag)</label>
+                    <select id="newsTag">
+                        <option value="BREAKING">BREAKING</option>
+                        <option value="RESULT">LATEST RESULT</option>
+                        <option value="SCOUT">SCOUT REPORT</option>
+                        <option value="MARKET">TRANSFER NEWS</option>
+                        <option value="ADMIN">ADMIN</option>
+                    </select>
+                </div>
+                <div style="flex: 3;">
+                    <label>Headline Text</label>
+                    <input type="text" id="newsTextInput" placeholder="e.g. Season registration is now officially closed.">
+                </div>
+            </div>
+            <input type="hidden" id="editNewsId" value="">
+            <div class="flex-row">
+                <button onclick="saveNewsItem()" id="newsSubmitBtn" style="width: 100%;">Post to Ticker</button>
+                <button onclick="cancelNewsEdit()" id="newsCancelBtn" class="secondary" style="display: none;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Active Headlines</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tag</th>
+                    <th>Headline</th>
+                    <th style="width: 150px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="newsTableBody">
+                </tbody>
+        </table>
+    </div>
+</section>
+
+<section id="pane-lineup" class="pane">
+<h3>Upload Tactical Lineup</h3><div class="form-group"></div><label>Select Team:</label><select id="lineupTeamSelect"><option value="">--Choose Team</option></select>
+<div class="form-group"><label> Lineup Image</label></div><input type="file" id="lineupInput" accept="image/*"></div><br><br><button onclick="uploadLineup()" class="save-btn">Save Lineup Image</button>
+<br><br><div class="admin-widget">
+    <h3>Update Team Details</h3>
+    <div class="form-group">
+        <label>Select Team:</label>
+        <select id="detailsTeamSelect" onchange="loadCurrentDetails()">
+            <option value="">-- Choose Team --</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Stadium Name:</label>
+        <input type="text" id="inStadium" placeholder="e.g. Old Trafford">
+    </div>
+    <div class="form-group">
+        <label>Founded Year:</label>
+        <input type="number" id="inFounded" placeholder="e.g. 1878">
+    </div>
+    <div class="form-group">
+        <label>Country:</label>
+        <input type="text" id="inCountry" placeholder="e.g. England">
+    </div>
+    <button onclick="saveTeamDetails()" class="save-btn">Save Team Details</button>
+</div>
+
+</section>
+
+<section id="pane-system" class="pane">
+    <h2>System Reset</h2>
+    <p style="color: var(--text-muted); margin-bottom: 20px;"></p>
+    <button onclick="clearAllData()" style="background:#ff1a1a; width:100%;">
+    🗑️ Reset Entire League
+</button></section></main>
+
+    <script>
+        // Data Architecture
+        let db = JSON.parse(localStorage.getItem('eepl_db')) || {
+            teams: [],
+            fixtures: [],
+            stats: [],
+            news: [] 
+        };
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderAll();
+        });
+
+        // Tab Switcher
+        function switchPane(paneId, clickedTab) {
+            document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+            document.getElementById(paneId).classList.add('active');
+            clickedTab.classList.add('active');
+        }
+
+        function saveData() {
+    // 🔥 Save previous positions BEFORE sorting updates
+    const sorted = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+    sorted.forEach((team, index) => {
+        team.prevRank = index; // store last position
+    });
+
+    firebase.database('eepl_db', JSON.stringify(db));
+    renderAll();
+}
+
+        function clearAllData() {
+    if (!confirm("⚠️ This will permanently delete EVERYTHING in the league. Continue?")) return;
+
+    // 1. Clear storage
+    localStorage.removeItem('eepl_db');
+    localStorage.removeItem('leagueMOTW');
+
+    // 2. Reset database COMPLETELY
+    db = {
+        teams: [],
+        fixtures: [],
+        stats: [],
+        news: []
+    };
+
+    // 3. Reset UI manually (important)
+    document.getElementById('teamsTableBody').innerHTML = "";
+    document.getElementById('pendingFixturesBody').innerHTML = "";
+    document.getElementById('statsTableBody').innerHTML = "";
+    document.getElementById('newsTableBody').innerHTML = "";
+
+    // Reset selects
+    document.getElementById('homeTeamSelect').innerHTML = "";
+    document.getElementById('awayTeamSelect').innerHTML = "";
+
+    // Reset MOTW display (if exists)
+    if (document.getElementById('MotwHomeName')) {
+        document.getElementById('MotwHomeName').innerText = "";
+        document.getElementById('MotwAwayName').innerText = "";
+        document.getElementById('MotwTime').innerText = "";
+        document.getElementById('MotwDay').innerText = "";
+        document.getElementById('MotwReason').innerText = "";
+    }
+
+    // 4. Re-render clean state
+    renderAll();
+
+    alert("✅ League reset complete. System is now blank.");
+}
+
+        
+ let selectedLogoData = "";
+
+function processLogoInput() {
+    const inputVal = document.getElementById('unifiedLogoInput').value.trim();
+    const previewImg = document.getElementById('unifiedLogoPreview');
+    const placeholder = document.getElementById('previewPlaceholder');
+    const statusText = document.getElementById('previewStatus');
+
+    if (!inputVal) {
+        statusText.innerText = "Objection! Input field is empty.";
+        statusText.style.color = "#dc3545"; // Red error text
+        return;
+    }
+
+    statusText.innerText = "Processing...";
+    statusText.style.color = "var(--text-muted)";
+
+    // Regular Expression to check if the input is a URL
+    const isUrl = /^https?:\/\//i.test(inputVal);
+
+    if (isUrl) {
+        // RULING 1: It's a direct link. Render immediately.
+        renderPreview(inputVal, "Direct link applied successfully.");
+    } else {
+        // RULING 2: It's a text search. Call the search function.
+        // We append "FC logo" to heavily restrict the search to football crests.
+        const searchQuery = `${inputVal} FC logo png`;
+        
+        statusText.innerText = "Searching database...";
+        
+        /* * Replace this fetch block with your actual search API logic.
+         * For example, if your API returns a URL, pass that URL to renderPreview()
+         */
+        fetch(`https://your-search-api.com?q=${encodeURIComponent(searchQuery)}`)
+            .then(response => response.json())
+            .then(data => {
+                // Assuming your API returns the image URL in data.url
+                const fetchedUrl = data.url; 
+                renderPreview(fetchedUrl, `Search found a match for "${inputVal}"`);
+            })
+            .catch(error => {
+                statusText.innerText = "Search failed. Try a direct link instead.";
+                statusText.style.color = "#dc3545";
+            });
+    }
+}
+
+// Helper function to handle the actual rendering and error catching
+function renderPreview(imgUrl, successMessage) {
+    const previewImg = document.getElementById('unifiedLogoPreview');
+    const placeholder = document.getElementById('previewPlaceholder');
+    const statusText = document.getElementById('previewStatus');
+
+    // Attempt to load the image
+    previewImg.src = imgUrl;
+
+    previewImg.onload = function() {
+        // Evidence Admitted
+        previewImg.style.display = "block";
+        placeholder.style.display = "none";
+        statusText.innerText = successMessage;
+        statusText.style.color = "#28a745"; // Green success text
+        
+        selectedLogoData = imgUrl; // Save to global variable for the Add Team button
+    };
+
+    previewImg.onerror = function() {
+        // Evidence Rejected (Broken Link)
+        previewImg.style.display = "none";
+        placeholder.style.display = "block";
+        statusText.innerText = "Invalid image source. Please verify the link.";
+        statusText.style.color = "#dc3545";
+        selectedLogoData = ""; // Clear invalid data
+    };
+}
+
+
+// Update your addTeam function to use the finalLogoUrl
+function addTeam() {
+    const name = document.getElementById('teamNameInput').value.trim();
+    const logo = document.getElementById('unifiedLogoPreview').src || 'https://via.placeholder.com/30?text=⚽';
+    
+    if (!name) return alert("Enter a team name");
+    
+    db.teams.push({
+        id: Date.now().toString(),
+        name: name,
+        logo: logo,
+        p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+    });
+    
+    // Clear everything
+    document.getElementById('teamNameInput').value = '';
+    document.getElementById('unifiedLogoInput').value = '';
+    document.getElementById('previewPlaceholder').innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #444;"></i>`;
+    saveData();
+}
+
+        function deleteTeam(id) {
+            if(confirm("Delete this team?")) {
+                db.teams = db.teams.filter(t => t.id !== id);
+                saveData();
+            }
+        }
+
+function deleteFixture(id) {
+    if (!confirm("Delete this fixture?")) return;
+
+    db.fixtures = db.fixtures.filter(f => f.id !== id);
+
+    saveAndRefresh();
+}
+function addFixture() {
+    // 1. Grab the elements (Ensure these IDs match your HTML)
+    const homeSelect = document.getElementById('homeTeamSelect');
+    const awaySelect = document.getElementById('awayTeamSelect');
+    const matchdayInput = document.getElementById('matchdayInput');
+
+    // 2. Extract values
+    const homeId = homeSelect.value;
+    const awayId = awaySelect.value;
+    const matchday = parseInt(matchdayInput.value);
+
+    // 3. Validation - Prevent common mistakes
+    if (!homeId || !awayId) {
+        return alert("Please select both a Home and Away team.");
+    }
+    if (homeId === awayId) {
+        return alert("Error: A team cannot play against itself.");
+    }
+    if (isNaN(matchday) || matchday < 1) {
+        return alert("Please enter a valid Matchday number.");
+    }
+
+    // 4. Create the new fixture object
+    const newFixture = {
+        id: 'fix_' + Date.now(), // Unique ID using timestamp
+        homeId: homeId,
+        awayId: awayId,
+        matchday: matchday,
+        status: 'pending',
+        homeScore: null,
+        awayScore: null
+    };
+
+    // 5. Save to Database and Refresh
+    db.fixtures.push(newFixture);
+    
+    // Call your global save function
+    saveAndRefresh();
+
+    // 6. Optional: Reset inputs for the next match
+    matchdayInput.value = matchday; // Keep the same MD for convenience
+    alert("Fixture added successfully!");
+}
+// =========================
+// GENERATE RANDOM FIXTURES (FIXED)
+// =========================
+function generateRandomFixtures() {
+    if (db.teams.length < 2) return alert("Need at least 2 teams.");
+
+    let shuffled = [...db.teams].sort(() => 0.5 - Math.random());
+    let matchday = parseInt(document.getElementById('matchdayInput').value);
+
+    for (let i = 0; i < shuffled.length - 1; i += 2) {
+        db.fixtures.push({
+            id: Date.now().toString() + i,
+            homeId: shuffled[i].id,
+            awayId: shuffled[i + 1].id,
+            matchday: matchday,
+            status: 'pending',
+            homeScore: null,
+            awayScore: null
+        });
+    }
+
+    saveAndRefresh(); // 🔥 FIXED
+    alert("Random pairs generated for Matchday " + matchday);
+}
+
+
+// =========================
+// SUBMIT SCORE (SAFE)
+// =========================
+function submitScore(fixtureId) {
+    // 1. Get the input elements
+    const homeInput = document.getElementById(`home_score_${fixtureId}`);
+    const awayInput = document.getElementById(`away_score_${fixtureId}`);
+
+    // DEBUG: If these are null, your IDs in renderFixtures are wrong
+    if (!homeInput || !awayInput) {
+        console.error(`Inputs not found for fixture: ${fixtureId}`);
+        return alert("Error: Could not find score inputs.");
+    }
+
+    // 2. Parse values to actual Numbers
+    const homeScore = parseInt(homeInput.value);
+    const awayScore = parseInt(awayInput.value);
+
+    // 3. Validation
+    if (isNaN(homeScore) || isNaN(awayScore)) {
+        return alert("Please enter valid scores for both teams.");
+    }
+
+    // 4. Find the fixture in the database
+    const fixture = db.fixtures.find(f => f.id === fixtureId);
+    if (!fixture) return alert("Fixture not found in database.");
+
+    if (fixture.status === 'completed') {
+        return alert("This match has already been saved.");
+    }
+
+    // 5. Update Fixture Status
+    fixture.homeScore = homeScore;
+    fixture.awayScore = awayScore;
+    fixture.status = 'completed';
+
+    // 6. Update the Standings (Table)
+    updateTableStandings(fixture.homeId, fixture.awayId, homeScore, awayScore);
+
+    // 7. Save to LocalStorage and Refresh UI
+    saveAndRefresh();
+    
+    alert("Score saved and table updated!");
+}
+
+// =========================
+// UPDATE TABLE
+// =========================
+function updateTableStandings(homeId, awayId, homeScore, awayScore) {
+    let home = db.teams.find(t => t.id === homeId);
+    let away = db.teams.find(t => t.id === awayId);
+
+    if (!home || !away) return;
+
+    // Ensure all stats are numbers (Preventing the "NaN" or "011" bug)
+    const stats = ['p', 'w', 'd', 'l', 'gf', 'ga', 'gd', 'pts'];
+    [home, away].forEach(t => {
+        stats.forEach(s => { if (t[s] === undefined) t[s] = 0; });
+    });
+
+    // Update matches played
+    home.p++;
+    away.p++;
+
+    // Update Goals
+    home.gf += homeScore;
+    home.ga += awayScore;
+    away.gf += awayScore;
+    away.ga += homeScore;
+
+    // Update Win/Loss/Draw Logic
+    if (homeScore > awayScore) {
+        home.w++;
+        home.pts += 3;
+        away.l++;
+    } else if (homeScore < awayScore) {
+        away.w++;
+        away.pts += 3;
+        home.l++;
+    } else {
+        home.d++;
+        away.d++;
+        home.pts += 1;
+        away.pts += 1;
+    }
+
+    // Recalculate GD
+    home.gd = home.gf - home.ga;
+    away.gd = away.gf - away.ga;
+}
+
+
+// =========================
+// PLAYER SUGGESTIONS
+// =========================
+function populatePlayerSuggestions() {
+    const list = document.getElementById('playerList');
+    if (!list) return;
+
+    list.innerHTML = "";
+
+    db.teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.name;
+        list.appendChild(option);
+    });
+}
+
+
+// =========================
+// DELETE STAT BY INDEX
+// =========================
+function deleteByIndex(index) {
+    if (confirm(`Remove ${db.stats[index].name}?`)) {
+        db.stats.splice(index, 1);
+        saveAndRefresh();
+    }
+}
+
+function saveAndRefresh() {
+    // 1. Sort the league table before saving (Professional standard)
+    db.teams.sort((a, b) => {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        return (b.gd || 0) - (a.gd || 0);
+    });
+
+    // 2. Save to LocalStorage
+    firebase.database('eepl_db', JSON.stringify(db));
+    renderTeams();
+    renderStats();
+    // 3. Update the UI
+    renderFixtures();
+    if (typeof renderTable === "function") renderTable(); 
+    console.log("Data successfully synced to storage.");
+}
+
+/**
+ * Example Render function to show how the delete buttons connect
+ */
+function renderStats() {
+    const container = document.getElementById('statsDisplay'); // Adjust to your ID
+    if (!container) return;
+
+    container.innerHTML = db.stats.map((player, index) => `
+        <div class="stat-row">
+            <strong>${player.name}</strong>: ${player.goals} G, ${player.assists} A
+            <button onclick="deleteByIndex(${index})" class="del-btn">Delete</button>
+        </div>
+    `).join('');
+}
+
+        // --- RENDER FUNCTIONS ---
+        function renderAll() {
+            renderTeams();
+            renderFixtures();
+            renderStats();
+            renderNews(); 
+            populatePlayerSuggestions();
+            populateSelects();
+        }
+
+        function renderTeams() {
+            const tbody = document.getElementById('teamsTableBody');
+            tbody.innerHTML = '';
+            
+            // Sort by points, then goal difference
+            let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+            sortedTeams.forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${t.name}</strong></td>
+                        <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+                        <td>${t.gf}</td><td>${t.ga}</td><td style="color: var(--accent); font-weight: bold;">${t.pts}</td>
+                        <td><button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteTeam('${t.id}')">Del</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function populateSelects() {
+            const homeSelect = document.getElementById('homeTeamSelect');
+            const awaySelect = document.getElementById('awayTeamSelect');
+            homeSelect.innerHTML = '<option value="">Select Team...</option>';
+            awaySelect.innerHTML = '<option value="">Select Team...</option>';
+
+            db.teams.forEach(t => {
+                homeSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+                awaySelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+            });
+        }
+
+       function renderFixtures() {
+    const pendingBody = document.getElementById('pendingFixturesBody');
+    const completedBody = document.getElementById('completedFixturesBody');
+
+    pendingBody.innerHTML = '';
+    completedBody.innerHTML = '';
+
+    db.fixtures.forEach(f => {
+        const home = db.teams.find(t => t.id === f.homeId)?.name || 'Unknown';
+        const away = db.teams.find(t => t.id === f.awayId)?.name || 'Unknown';
+
+        if (f.status === 'pending') {
+            pendingBody.innerHTML += `
+                <tr>
+                    <td>MD ${f.matchday}</td>
+                    <td>${home} vs ${away}</td>
+                    <td>
+                        <input type="number" id="home_score_${f.id}" style="width:50px;">
+                        -
+                        <input type="number" id="away_score_${f.id}" style="width:50px;">
+                    </td>
+                    <td>
+                        <button onclick="submitScore('${f.id}')">Save</button>
+                        <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Delete</button>
+                    </td>
+                </tr>
+            `;
+        } else {
+            completedBody.innerHTML += `
+                <tr>
+                    <td>MD ${f.matchday}</td>
+                    <td>${home} vs ${away}</td>
+                    <td><strong>${f.homeScore} - ${f.awayScore}</strong></td>
+                    <td>
+                        <button onclick="undoFixtureStats('${f.id}')" style="background:#ff9800;">Undo</button>
+                        <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Delete</button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+}
+        // --- STATS LOGIC ---
+
+function updateStat() {
+    const name = document.getElementById('statPlayerName').value.trim();
+    const type = document.getElementById('statType').value;
+    const val = parseInt(document.getElementById('statValue').value);
+
+    if (!name) return alert("Enter player name");
+    if (isNaN(val)) return alert("Enter a valid number");
+
+    let player = db.stats.find(s => s.name.toLowerCase() === name.toLowerCase());
+    if (!player) {
+        player = { name: name, goals: 0, assists: 0 };
+        db.stats.push(player);
+    }
+
+    player[type] = val;
+    saveAndRefresh();
+}
+
+/**
+ * Deletes a player based on the name currently in the input field
+ */
+function deleteStat() {
+    const name = document.getElementById('statPlayerName').value.trim();
+    if (!name) return alert("Enter name to delete");
+
+    if (confirm(`Are you sure you want to delete ${name}?`)) {
+        db.stats = db.stats.filter(s => s.name.toLowerCase() !== name.toLowerCase());
+        saveAndRefresh();
+        document.getElementById('statPlayerName').value = "";
+    }
+}
+
+/**
+ * Deletes a player by their position in the array (called from the table)
+ */
+function deleteByIndex(index) {
+    const playerName = db.stats[index].name;
+    if (confirm(`Remove ${playerName} from the database?`)) {
+        db.stats.splice(index, 1);
+        saveAndRefresh();
+    }
+}
+
+/**
+ * Renders the table rows with a delete button for each player
+ */
+function renderStats() {
+    const tbody = document.getElementById('statsTableBody');
+    if (!tbody) return;
+
+    tbody.innerHTML = db.stats.map((player, index) => `
+        <tr>
+            <td>${player.name}</td>
+            <td>${player.goals}</td>
+            <td>${player.assists}</td>
+            <td>
+                <button 
+                    onclick="deleteByIndex(${index})" 
+                    style="background: #ff4d4d; padding: 4px 8px; font-size: 12px;">
+                    Delete
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Ensure the table loads when the page opens
+window.onload = renderStats;
+        function renderNews() {
+        const tbody = document.getElementById('newsTableBody');
+        tbody.innerHTML = '';
+
+        if (!db.news) db.news = []; // Safety check
+
+        db.news.forEach(item => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><span style="color: var(--accent); font-weight: bold; font-size: 0.8rem;">${item.tag}</span></td>
+                    <td>${item.text}</td>
+                    <td>
+                        <button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editNews('${item.id}')">Edit</button>
+                        <button class="secondary" style="padding: 5px 10px; font-size: 0.8rem; color: #ff4d4d;" onclick="deleteNews('${item.id}')">Del</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function saveNewsItem() {
+        const tag = document.getElementById('newsTag').value;
+        const text = document.getElementById('newsTextInput').value.trim();
+        const editId = document.getElementById('editNewsId').value;
+
+        if (!text) return alert("Please enter headline text.");
+
+        if (editId) {
+            // Update existing
+            const index = db.news.findIndex(n => n.id === editId);
+            if (index !== -1) {
+                db.news[index] = { ...db.news[index], tag, text };
+            }
+        } else {
+            // Add new
+            db.news.push({
+                id: Date.now().toString(),
+                tag: tag,
+                text: text
+            });
+        }
+
+        saveData();
+        cancelNewsEdit(); // Reset form
+        renderNews();
+    }
+
+    function editNews(id) {
+        const item = db.news.find(n => n.id === id);
+        if (!item) return;
+
+        document.getElementById('newsFormTitle').innerText = "Edit Headline";
+        document.getElementById('newsTag').value = item.tag;
+        document.getElementById('newsTextInput').value = item.text;
+        document.getElementById('editNewsId').value = item.id;
+        
+        document.getElementById('newsSubmitBtn').innerText = "Update Headline";
+        document.getElementById('newsCancelBtn').style.display = "block";
+    }
+
+    function cancelNewsEdit() {
+        document.getElementById('newsFormTitle').innerText = "Add New Headline";
+        document.getElementById('newsTag').value = "BREAKING";
+        document.getElementById('newsTextInput').value = "";
+        document.getElementById('editNewsId').value = "";
+        
+        document.getElementById('newsSubmitBtn').innerText = "Post to Ticker";
+        document.getElementById('newsCancelBtn').style.display = "none";
+    }
+
+    function deleteNews(id) {
+        if (confirm("Delete this headline?")) {
+            db.news = db.news.filter(n => n.id !== id);
+            saveData();
+            renderNews();
+        }
+    }
+    function loadData() {
+        const savedData = localStorage.getItem('eepl_db');
+        if (savedData) {
+            db = JSON.parse(savedData);
+            if (!db.news) db.news = []; // Initialize if it doesn't exist
+        }
+    }
+// --- AUTO-SUGGEST LOGIC ---
+
+function updateTeamSuggestions() {
+    const list = document.getElementById('teamList');
+    if (!list) return;
+
+    // Clear existing options
+    list.innerHTML = '';
+
+    // Loop through teams already added in the "Manage Teams" pane
+    db.teams.forEach(team => {
+        const option = document.createElement('option');
+        option.value = team.name; 
+        list.appendChild(option);
+    });
+}
+     
+function saveMOTW() {
+    const homeName = document.getElementById('editMotwHome').value.trim();
+    const awayName = document.getElementById('editMotwAway').value.trim();
+
+    const motwData = {
+        homeName,
+        awayName,
+        homeLogo: getTeamLogo(homeName),
+        awayLogo: getTeamLogo(awayName),
+        time: document.getElementById('editMotwTime').value,
+        day: document.getElementById('editMotwDay').value,
+        reason: document.getElementById('editMotwReason').value
+    };
+
+    firebase.database('leagueMOTW', JSON.stringify(motwData));
+
+    alert("Match of the Week Updated!");
+    displayMOTW();
+}
+function getTeamLogo(teamName) {
+    const team = db.teams.find(
+        t => t.name.toLowerCase() === teamName.toLowerCase()
+    );
+
+    return team ? team.logo : 'https://via.placeholder.com/50?text=⚽';
+}
+
+// Run this when the Admin page loads to fill the dropdown
+function populateLineupDropdown() {
+    const db = JSON.parse(localStorage.getItem('eepl_db')) || { teams: [] };
+    const select = document.getElementById('lineupTeamSelect');
+    
+    // Clear existing and add current teams
+    select.innerHTML = '<option value="">-- Choose Team --</option>';
+    db.teams.forEach(team => {
+        const opt = document.createElement('option');
+        opt.value = team.id;
+        opt.innerText = team.name;
+        select.appendChild(opt);
+    });
+}
+
+function uploadLineup() {
+    const teamId = document.getElementById('lineupTeamSelect').value;
+    const fileInput = document.getElementById('lineupInput');
+    const file = fileInput.files[0];
+
+    if (!teamId || !file) {
+        alert("Please select a team and an image!");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const base64Image = e.target.result;
+        
+        // Update the Database
+        const db = JSON.parse(localStorage.getItem('eepl_db'));
+        const teamIndex = db.teams.findIndex(t => t.id === teamId);
+
+        if (teamIndex !== -1) {
+            // Save image string to the team object
+            db.teams[teamIndex].lineupImage = base64Image;
+            
+            // Save updated DB back to localStorage
+            firebase.database('eepl_db', JSON.stringify(db));
+            alert("Tactical Lineup Saved Successfully!");
+            
+            // Clear input
+            fileInput.value = '';
+        }
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+// Call this on page load
+document.addEventListener('DOMContentLoaded', populateLineupDropdown);
+
+function saveTeamLineup(teamId, base64Image) {
+    const db = JSON.parse(localStorage.getItem('eepl_db'));
+    const teamIndex = db.teams.findIndex(t => t.id === teamId);
+    
+    // Save the image string into the team object
+    db.teams[teamIndex].lineupImage = base64Image; 
+    try {
+    firebase.database('eepl_db', JSON.stringify(db));
+    alert("Lineup Image Uploaded!");
+} catch (e) {
+    console.error(e); alert("SAVE FAILED: The image is too large for the memory,");
+}
+}
+
+function loadCurrentDetails() {
+    const teamId = document.getElementById('detailsTeamSelect').value;
+    const db = JSON.parse(localStorage.getItem('eepl_db'));
+    const team = db.teams.find(t => t.id === teamId);
+
+    if (team) {
+        document.getElementById('inStadium').value = team.stadium || '';
+        document.getElementById('inFounded').value = team.founded || '';
+        document.getElementById('inCountry').value = team.country || '';
+    }
+}
+
+function saveTeamDetails() {
+    const teamId = document.getElementById('detailsTeamSelect').value;
+    const stadium = document.getElementById('inStadium').value;
+    const founded = document.getElementById('inFounded').value;
+    const country = document.getElementById('inCountry').value;
+
+    if (!teamId) return alert("Select a team first!");
+
+    const db = JSON.parse(localStorage.getItem('eepl_db'));
+    const index = db.teams.findIndex(t => t.id === teamId);
+
+    if (index !== -1) {
+        // Update the object
+        db.teams[index].stadium = stadium;
+        db.teams[index].founded = founded;
+        db.teams[index].country = country;
+
+        firebase.database('eepl_db', JSON.stringify(db));
+        alert("Team details updated!");
+    }
+}
+function undoFixtureStats(fixtureId) {
+    if (!confirm("This will remove points from the table and move the match back to pending. Continue?")) return;
+
+    const fixture = db.fixtures.find(f => f.id === fixtureId);
+    if (!fixture) return;
+
+    // 1. Find the teams
+    let home = db.teams.find(t => t.id === fixture.homeId);
+    let away = db.teams.find(t => t.id === fixture.awayId);
+
+    if (home && away) {
+        // 2. Subtract the stats
+        home.p--; away.p--;
+        home.gf -= fixture.homeScore;
+        home.ga -= fixture.awayScore;
+        away.gf -= fixture.awayScore;
+        away.ga -= fixture.homeScore;
+
+        if (fixture.homeScore > fixture.awayScore) {
+            home.w--; home.pts -= 3; away.l--;
+        } else if (fixture.homeScore < fixture.awayScore) {
+            away.w--; away.pts -= 3; home.l--;
+        } else {
+            home.d--; home.pts -= 1; away.d--; away.pts -= 1;
+        }
+
+        home.gd = home.gf - home.ga;
+        away.gd = away.gf - away.ga;
+    }
+
+    // 3. Reset fixture status
+    fixture.status = 'pending';
+    fixture.homeScore = null;
+    fixture.awayScore = null;
+
+    // 4. Save and Refresh UI
+    saveAndRefresh();
+}
+
+function updateAllTeamDropdowns() {
+    const dbString = localStorage.getItem('eepl_db');
+    
+    // Debugger: This will show up in your F12 Console
+    console.log("Raw DB String:", dbString);
+
+    if (!dbString) {
+        console.error("Database 'eepl_db' not found in localStorage!");
+        return;
+    }
+
+    const db = JSON.parse(dbString);
+    
+    if (!db.teams || db.teams.length === 0) {
+        console.error("Database found, but 'teams' array is empty!");
+        return;
+    }
+
+    // List of every dropdown ID we want to fill
+    const selectIds = ['lineupTeamSelect', 'detailsTeamSelect'];
+
+    selectIds.forEach(id => {
+        const select = document.getElementById(id);
+        if (select) {
+            // Preserve the first "Choose Team" option
+            select.innerHTML = '<option value="">-- Choose Team --</option>';
+            
+            db.teams.forEach(team => {
+                const opt = document.createElement('option');
+                opt.value = team.id;
+                opt.innerText = team.name;
+                select.appendChild(opt);
+            });
+            console.log(`Dropdown '${id}' populated with ${db.teams.length} teams.`);
+        } else {
+            console.warn(`Element with ID '${id}' not found on this page.`);
+        }
+    });
+}
+
+// Run it immediately AND when the window fully loads
+window.onload = updateAllTeamDropdowns;
+
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to EEPL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Core Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* Navigation Bar Styling */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 60px;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+            box-sizing: border-box;
+        }
+
+        .logo-container {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo-main {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-image {
+            height: 40px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #000;
+        }
+        
+        /* Header Section */
+        header {
+            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.219), rgba(0, 0, 0, 0.219)), url('imagee.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            padding: 120px 20px 60px;
+            border-bottom: 2px solid #00e5ff;
+        }
+
+        .header-logo-large {
+            height: 200px;
+            margin-bottom: 20px;
+            width: auto;
+        }
+        
+        header h1 {
+            font-size: 3.0rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            letter-spacing: 5px;
+            margin: 0 0 20px 0;
+            color: #000000;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            font-family: cursive;
+            font-weight: bolder;
+            max-width: 1200px;
+            line-height: 1.6;
+            color: #000000;
+        }
+
+        /* Auth Card Styling */
+        .auth-section {
+            display: flex;
+            justify-content: center;
+            padding: 60px 20px;
+            background: #080808;
+        }
+
+        .auth-card { 
+            width: 100%; 
+            max-width: 500px; 
+            padding: 40px; 
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            border: 1px solid #222;
+        }
+
+        .auth-form { display: none; }
+        .auth-form.active { 
+            display: block; 
+            animation: fadeIn 0.5s ease; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 { font-size: 2.5rem; margin-bottom: 25px; font-weight: 300; text-align: center;}
+
+        .toggle-text { margin-top: 20px; font-size: 1rem; color: #ccc; text-align: center; }
+        .toggle-text span { color: #00e5ff; text-decoration: underline; cursor: pointer; transition: 0.3s;}
+
+        /* Input Styling */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-box { position: relative; }
+        .input-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
+        
+        .input-box input {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border-radius: 30px;
+            border: 1px solid #444;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            outline: none;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        .input-box input:focus { border-color: #00e5ff; }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+    .exp-card {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid #222;
+        padding: 40px 30px;
+        text-decoration: none;
+        text-align: center;
+        border-radius: 15px;
+        transition: all 0.5s cubic-bezier(0.2, 1, 0.3, 1);
+        opacity: 0;
+        transform: translateY(40px);
+    }
+
+    .exp-card.show {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .exp-card:hover {
+        border-color: #00e5ff;
+        background: rgba(0, 229, 255, 0.05);
+        transform: translateY(-10px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(0, 229, 255, 0.1);
+    }
+
+    .exp-card i {
+        font-size: 2.5rem;
+        color: #00e5ff;
+        margin-bottom: 20px;
+        display: block;
+    }
+
+    .exp-card h3 {
+        color: #fff;
+        font-size: 1.4rem;
+        margin-bottom: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .exp-card p {
+        color: #888;
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+        /* Error States */
+        .error-msg {
+            color: #ff4d4d;
+            font-size: 0.75rem;
+            margin: 5px 0 0 15px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .input-error { border: 1px solid #ff4d4d !important; }
+
+        @keyframes slideDown { from { opacity: 0; } to { opacity: 1; } }
+
+        .action-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 30px;
+            border: none;
+            background: #cfd8dc;
+            color: #333;
+            font-weight: bold;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .action-btn:hover { background: #00e5ff; box-shadow: 0 0 20px rgba(0, 229, 255, 0.5); }
+
+        .footer-utils { display: flex; justify-content: space-between; margin: 15px 0; font-size: 0.85rem; }
+        .footer-utils a { color: #ccc; text-decoration: none; }
+
+        .loader {
+            border: 4px solid #333;
+            border-top: 4px solid #00e5ff;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        footer {
+            text-align: center;
+            padding: 40px;
+            background: #050505;
+            border-top: 1px solid #222;
+        }
+
+        .social-bar i { margin: 0 10px; font-size: 1.5rem; color: #888; transition: 0.3s; }
+        .social-bar i:hover { color: #00e5ff; }
+
+        .legal-links a { color: #555; text-decoration: none; font-size: 0.8rem; margin: 0 5px; }
+
+        @media (max-width: 768px) {
+            nav { padding: 10px 20px; }
+            .form-row { flex-direction: column; gap: 0; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+    <nav>
+        <a href="home.html" class="logo-container">
+            <div class="logo-main">
+                <img src="logoo.png" class="logo-image" alt="Logo">
+                <span class="logo-text">EEPL</span>
+            </div>
+        </a>
+    </nav>
+
+    <header>
+        <img src="logoo.png" class="header-logo-large" alt="Logo Large">
+        <h1>ELITE PRO LEAGUE</h1>
+        <p>THE NEW ERA OF FOOTBALL...</p>
+    </header>
+
+<section class="experience" style="padding: 100px 20px; border-bottom: 1px solid #00e5ff; background: #080808;">
+    <h2 style="text-align: center; font-size: 2.5rem; color: #fff; margin-bottom: 60px; letter-spacing: 4px; text-transform: uppercase;">Experience the League</h2>
+
+    <div class="exp-grid" id="featureGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; max-width: 1300px; margin: 0 auto;">
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-trophy"></i>
+            <h3>Competitive Matches</h3>
+            <p>Play intense fixtures with real strategy and skill.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-users"></i>
+            <h3>Team Management</h3>
+            <p>Build your squad and dominate the table.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-chart-line"></i>
+            <h3>Live Stats</h3>
+            <p>Track performance, rankings and player growth.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-medal"></i>
+            <h3>Hall of Fame</h3>
+            <p>Immortalize your legacy alongside past champions.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-newspaper"></i>
+            <h3>Media Hub</h3>
+            <p>Read interviews, transfer news, and official releases.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-handshake"></i>
+            <h3>Fair Play Alliance</h3>
+            <p>A moderated environment ensuring elite sportsmanship.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-microchip"></i>
+            <h3>Tactical Analysis</h3>
+            <p>Deep-dive into opponent playstyles with heatmaps.</p>
+        </a>
+
+        <a href="#login-form" class="exp-card">
+            <i class="fas fa-globe"></i>
+            <h3>Global Rankings</h3>
+            <p>See how your entity ranks against the world's best.</p>
+        </a>
+
+    </div>
+</section>
+
+    <section class="auth-section">
+        <div class="auth-card">
+            <div id="login-form" class="auth-form active">
+                <h2>Login</h2>
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input id="login-email" type="email" placeholder="Email">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="login-password" type="password" placeholder="Password">
+                    </div>
+                </div>
+                <div class="footer-utils">
+                    <label><input type="checkbox"> Remember Me</label>
+                    <a href="reset.html">Forgot Password?</a>
+                </div>
+                <button class="action-btn" onclick="loginUser()">Login</button>
+                <p class="toggle-text">Don't have an account? <span onclick="showAuth('signup')">Register</span></p>
+            </div>
+
+            <div id="signup-form" class="auth-form">
+                <h2>Sign Up</h2>
+                <div class="form-row">
+                    <div class="input-group">
+                        <div class="input-box">
+                            <i class="fa-regular fa-user"></i>
+                            <input id="signup-firstname" type="text" placeholder="Firstname">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div class="input-box">
+                            <i class="fa-regular fa-user"></i>
+                            <input id="signup-lastname" type="text" placeholder="Lastname">
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input id="signup-email" type="email" placeholder="Email">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-solid fa-lock"></i>
+                        <input id="signup-password" type="password" placeholder="Password">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 0.8rem; color: #ccc;">
+                        <input type="checkbox" id="terms"> I agree to Terms & Conditions
+                    </label>
+                </div>
+                <button class="action-btn" onclick="registerUser()">Register</button>
+                <p class="toggle-text">Have an account? <span onclick="showAuth('login')">Login</span></p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="social-bar">
+                <a href="mailto:dayyviidentities@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/2347079692230" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://t.me/+5oz7mf9i-EcwNDM0" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.linkedin.com/in/dayyvyid-entities-5187a4312" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/dayy.viid" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div> 
+        <p style="color: #555; margin-top: 20px;">&copy; 2026 dayyviid Entities. All Rights Reserved.</p>
+        <div class="legal-links">
+            <a href="privacy.html">Privacy Policy</a> |
+            <a href="terms.html">Terms & Conditions</a>
+        </div>
+          <div class = "disclaimer-container" style="padding: 20px; background: rgba(255, 0, 0, 0.05); border: 1px solid#333; border-radius: 10px; margin: 20px auto; max-width: 800px; font-size: 0.85rem; color: #888; text-align: center; font-family: Arial, Helvetica, sans-serif;">
+            <p><strong> LEGAL DISCLAIMER:</strong></p>
+            <P>
+                The Elite Pro League (EEPL) is an independent competitive platform and is not affliated with, endorsed by, or sponsored by Konami Digital Entertainment Co., Ltd of Electronic Arts Inc. All product names, logos, and brands are property of Dayyviid Entities. All company, product, and service names used on this website are for identification purposes only.
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+
+        function showError(inputElement, message) {
+            clearErrors();
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-msg';
+            errorDiv.innerText = `* ${message}`;
+            
+            inputElement.classList.add('input-error');
+            const container = inputElement.closest('.input-group');
+            if (container) container.appendChild(errorDiv);
+            inputElement.focus();
+        }
+
+        function clearErrors() {
+            document.querySelectorAll('.error-msg').forEach(el => el.remove());
+            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+        }
+
+        function showAuth(type) {
+            clearErrors();
+            document.getElementById('login-form').classList.toggle('active', type === 'login');
+            document.getElementById('signup-form').classList.toggle('active', type === 'signup');
+        }
+
+        async function registerUser() {
+            clearErrors();
+            const fName = document.getElementById('signup-firstname');
+            const lName = document.getElementById('signup-lastname');
+            const email = document.getElementById('signup-email');
+            const pass = document.getElementById('signup-password');
+            const terms = document.getElementById('terms');
+
+            if (!fName.value) return showError(fName, "First name required");
+            if (!lName.value) return showError(lName, "Last name required");
+            if (!email.value) return showError(email, "Email required");
+            if (!pass.value) return showError(pass, "Password required");
+            if (!terms.checked) return showError(terms, "Accept our Terms");
+
+            try {
+                const response = await fetch(`${API_URL}/users`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        firstname: fName.value, 
+                        lastname: lName.value, 
+                        email: email.value, 
+                        password: pass.value 
+                    })
+                });
+
+                if (response.status === 201) {
+                    showWelcomeScreen(fName.value);
+                } else {
+                    const msg = await response.text();
+                    showError(email, msg || "Registration failed");
+                }
+            } catch (e) { 
+                showError(fName, "Server connection failed"); 
+            }
+        }
+
+        async function loginUser() {
+            clearErrors();
+            const email = document.getElementById('login-email');
+            const pass = document.getElementById('login-password');
+
+            if (!email.value) return showError(email, "Enter your email");
+            if (!pass.value) return showError(pass, "Enter your password");
+
+            try {
+                const response = await fetch(`${API_URL}/users/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email.value, password: pass.value })
+                });
+
+                const msg = await response.text();
+                
+                if (msg === 'Success' || response.ok) {
+                    const displayName = email.value.split('@')[0];
+                    showWelcomeScreen(displayName);
+                } else if (msg === 'Invalid Password') {
+                    showError(pass, "Incorrect Password");
+                } else {
+                    showError(email, "Entity does not exist or login failed");
+                }
+            } catch (e) { 
+                showError(email, "Server connection failed"); 
+            }
+        }
+
+        function showWelcomeScreen(name) {
+            const authCard = document.querySelector('.auth-card');
+            authCard.innerHTML = `
+                <div style="text-align: center; padding: 20px;">
+                    <h2 style="color: #00e5ff; font-size: 1.5rem">Welcome to EEPL, ${name}!</h2>
+                    <p style="letter-spacing: 2px; font-size: 1.2rem;">You now have access to the league hub.</p>
+                    <div class="loader"></div>
+                </div>
+            `;
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('userName', name);
+            setTimeout(() => { 
+                window.location.href = 'EEPL.html'; 
+            }, 2500);
+        }
+    document.addEventListener('DOMContentLoaded', () => {
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, observerOptions);
+
+        const cards = document.querySelectorAll('.exp-card');
+        cards.forEach((card, index) => {
+            // Stagger the animation so they pop up one by one
+            card.style.transitionDelay = `${(index % 3) * 0.15}s`; 
+            observer.observe(card);
+        });
+    });
+    </script>
+</body>
+</html>
+

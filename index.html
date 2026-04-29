@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dayyviid Entities | Game Production House</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+
+        #redirect-alert {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(5, 5, 5, 0.95);
+    padding: 12px 30px;
+    border: 1px solid #00e5ff;
+    border-radius: 0 0 10px 10px;
+    font-weight: bold;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-transform: uppercase;
+    z-index: 2000;
+    transition: 0.5s ease;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 229, 255, 0.2);
+    min-width: 240px; /* Wider for more details */
+    backdrop-filter: blur(15px);
+    
+        
+}
+#redirect-alert.show {
+    top: 0;
+}
+
+       /* Modern Gaming Aesthetic */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000f8;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation Bar Styling */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: #00e5ff79;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 60px;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+            box-sizing: border-box;
+            
+            
+        }
+
+        .logo {
+            display: flex;
+            align-items: center; 
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .logo-image {
+            height: 45px;
+            width: auto;
+        }
+
+        .logo-img {
+            height: 200px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .nav-links {
+            font-family: 'Times New Roman', Times, serif;
+            list-style: none;
+            display: flex;
+            gap: 40px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #000000;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            color: #ffffff;
+            cursor: pointer;
+        }
+        
+        /* SOCIAL BAR */
+        .social-bar {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .social-bar a {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #333;
+            border-radius: 50%;
+            color: #aaa;
+            font-size: 1.5rem;
+            transition: 0.3s;
+            text-decoration: none;
+            background: #0b0b0b;
+        }
+
+        .social-bar a:hover {
+            color: #00e5ff;
+            border-color: #00e5ff;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+            transform: translateY(-5px) scale(1.1);
+        }
+
+        /* HEADER - INTEGRATED IMAGE_0.PNG */
+        header {
+            font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(rgba(0, 0, 0, 0.219), rgba(0, 0, 0, 0.219)), url('image.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            padding: 120px 20px 60px;
+            border-bottom: 2px solid #00e5ff;
+        }
+        
+        h1 {
+            font-size: 3.5rem;
+    letter-spacing: 5px;
+    margin: 0 0 10px 0;
+    --white: #ffff;
+    --silver: #bdc3c7;
+    --cyan: #44ecff;
+
+    /* We push the cyan further down the line (70-80%).
+       The large silver gap at the start ensures 'DAYYV' stays silver.
+    */
+    background: linear-gradient(
+        to right, 
+        var(--silver) 0%,
+        var(--silver) 50%, 
+        var(--cyan) 6%, 
+        var(--silver) 90%,
+        var(--silver) 95%,
+        var(--white) 100%
+    );
+
+    /* Increased width to 300% to create a longer delay for the 'beam' */
+    background-size: 100% auto;
+ 
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+
+    font-weight: bold;
+    text-transform: uppercase;
+    display: inline-block; 
+
+}
+
+        .tagline {
+            font-family: 'Lucida Sans', sans-serif;
+            font-size: 1.5rem;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+
+        .tagline:hover {
+            color: #ffffff;
+        
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 100px 20px 50px 20px;
+        }
+
+        .section-title {
+            color: #fff;
+            border-left: 4px solid #fff;
+            padding-left: 15px;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-size: 1.4rem;
+        }
+
+        .login-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid #fff;
+            color: #fff;
+            text-transform: uppercase;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            padding: 10px;
+        }
+
+        .login-btn:hover {
+            color: #00e5ff;
+            border-color: #00e5ff;
+            box-shadow: 0 0 15px rgba(0, 229, 255, 0.5);
+            transform: translateY(-5px) scale(1.1);
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: #fff;
+            color: #000;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 2px;
+            transition: 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 20px;
+        }
+
+        .btn:hover {
+            background: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+            background: #050505;
+        }
+
+        .footer-link {
+            color: #555;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .footer-link:hover {
+            color: #00e5ff;
+        }
+
+
+        .legal-links a {
+            color: #555;
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: small
+        }
+
+        .legal-links:hover {
+            color: #ffffff; 
+        }
+
+        .user-profile-item {
+    display: flex;
+    align-items: center;
+}
+
+/* PFP Circular Image */
+.nav-pfp {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #ffffffb6;
+    transition: 0.3s;
+    vertical-align: middle;
+}
+
+.nav-pfp:hover {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+
+.pfp-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+/* Enhanced Dropdown Card */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: rgba(5, 5, 5, 0.95);
+    min-width: 200px; /* Wider for more details */
+    backdrop-filter: blur(15px);
+    border: 1px solid #00e5ff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 229, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1001;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #575b5c;
+}
+
+.user-info-header img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+}
+
+.user-details .name {
+    display: block;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.user-details .rank {
+    font-size: 0.7rem;
+    color: #c8e0ec;
+    text-transform: uppercase;
+}
+
+/* Profile Menu Links */
+.profile-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.profile-menu-links a {
+    padding: 10px;
+    color: #fff;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-menu-links a i {
+    color: #ffffff;
+    width: 20px;
+}
+
+.profile-menu-links a:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #00e5ff !important;
+}
+
+.profile-menu-links a i:hover {
+    color: #00e5ff;
+}
+
+.logout-link {
+    color: #fffefe !important;
+    margin-top: 10px;
+}
+
+/* Toggle Class */
+.show { display: block !important; }
+
+        hr { border: 0; border-top: 1px solid #222; margin: 40px 0; }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav { padding: 15px 25px; }
+            .nav-links {
+                position: fixed;
+                top: 60px;
+                right: -100%;
+                background: #111;
+                flex-direction: column;
+                width: 250px;
+                height: 100vh;
+                padding: 40px;
+                transition: 0.4s;
+                border-left: 1px solid #333;
+                z-index: 999;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { color: #fff; }
+            .nav-links a:hover { color: #00e5ff; }
+            .logo-img { height: 150px; }
+            .hamburger { display: block; }
+        }
+    </style>
+</head>
+<body>
+     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+    <div id="redirect-alert">Entity Already Logged In</div>
+    <nav>
+        <a href="#" class="logo">
+            <img src="logo.png" class="logo-image" alt="dE Logo">
+            <span class="logo-text">DAYYVID ENTITIES</span>
+        </a>
+
+        <a href="index.html" class="logo-container"></a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#creations">Creations</a></li>
+            <li><a href="#connect">Connect</a></li>
+            <li><a href="#login">Login</a></li>
+        </ul>
+
+        <div class="hamburger" onclick="toggleMenu()">&#9776;</div>
+    </nav>
+
+    <header>
+        <img src="logo.png" class="logo-img" alt="dE Logo">
+        <section id="login">
+        <h1>Dayyviid Entities</h1>
+        <p class="tagline">One World . Infinite Entities</p>
+        <a href="login.html" class="btn">ENTER YOUR ENTITY</a>
+    </header>
+
+    <div class="container">
+        <section id="about">     
+                </p>
+            <h2 class="section-title">About</h2>
+            <p>
+                <strong>DAYYVIID ENTITIES</strong> is an independent game production house dedicated to redefining digital experiences. 
+                We specialize in high-fidelity simulations that prioritize fluid physics, tactical depth, and immersive atmosphere. 
+                We operate at the intersection of imagination and digital reality, founded on the principle that gaming is the ultimate form of human expression.
+            </p>
+            <p>
+                We have dedicated our studio to the architecture of complex environments and the souls that inhabit them. 
+                We do not view ourselves merely as developers, but as curators of experience. Our studio was born from a desire 
+                to move past the "finite"—to create systems where player agency and narrative depth collide to create something 
+                that feels truly alive.
+            </p>
+            <hr>
+            <h2 class="section-title">The Vision</h2>
+            <p>
+                Led by producer <strong>David Ike-Ineh</strong>, our mission is to put the power of world-class mechanics directly 
+                into the hands of the global gaming community. We operate with a commitment to technical excellence, driven by 
+                the belief that a single world can hold infinite possibilities.
+            </p>
+            <p>
+                Our vision is to democratize high-tier gaming experiences, ensuring that every player, regardless of their location, has 
+                access to the most responsive, visceral, and polished gameplay imaginable. We don't follow industry trends; we hunt 
+                for the "infinite" in every concept, pushing the boundaries of what a small, dedicated team can manifest on a global scale.
+            </p>
+        </section>
+
+        <hr id="creations">
+
+        <section>
+            <h2 class="section-title">Our Creations</h2>
+            <p>
+                Every creation is a labor of passion and a masterpiece, designed to immerse players in worlds that challenge and inspire. 
+                We refer to our users as Entities, and our project a self-sustaining digital world with their own rules, physics, and heartbeat.
+            </p>
+            <p>
+                We prioritize "Atmospheric Integrity," ensuring that every creation offers a level of immersion that transcends the screen.
+            </p>
+            <p>
+                Our flagship project <strong>Zero: Extraction</strong> . A high-octane fighting game designed for precision and cinematic action. 
+                It serves as the benchmark for our commitment to fluid physics and tactical depth.
+             Currently in development. We are constantly stabilizing new realities and refining 
+                the mechanics of the future. Stay tuned for updates as it evolve from concept to playability.
+            </p>
+        </section>
+
+        <hr>
+
+        <section id="gallery">
+            <h2 class="section-title">Gallery</h2>
+            <p>
+                The Gallery is the visual pulse of <strong>DAYYVIID ENTITIES</strong>. It serves as a high-fidelity window into the worlds we are currently stabilizing.
+            </p>
+            <p>
+                This is not merely a collection, but a curated archive of our art direction, cinematic captures, and environmental storytelling.
+            </p>
+            <p>
+                In this space, you can witness the evolution of The Entity, from the raw, haunting beauty of early concept art to the polished and fluid motion of our simulations.
+            </p>
+            <a href="gallery.html" class="btn">GO TO GALLERY</a>
+        </section>
+
+        <hr id="connect">
+
+        <section>
+            <h2 class="section-title">CONNECT</h2>
+            <p>Step into our network and stay aligned with the evolution of DAYYVID ENTITIES.</p>
+            
+            <div class="social-bar">
+                <a href="mailto:davidchizitere1@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/2347079692230" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://t.me/+5oz7mf9i-EcwNDM0" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.linkedin.com/in/david-ineh-5187a4312" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/dayy.viid" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div>
+        </section>
+
+        <hr id="feedback">
+
+        <section>
+            <h2 class="section-title">FEEDBACK</h2>
+            <p>Every report, critique, and suggestion is treated as vital data for our next evolution. We listen, refine, and push forward.</p>
+            <a href="mailto:davidchizitere1@gmail.com?subject=Feedback" class="btn">SEND US YOUR FEEDBACK</a>
+        </section>
+    </div>
+
+    <footer>
+        <main class="legal-links">
+            &copy; 2026 Dayyviid Entities. All Rights Reserved. <br>
+
+        <div class="footer-link">
+        <a href="privacy.html" class="footer-link">Privacy Policy</a> | 
+        <a href="terms.html" class="footer-link">Terms of Service</a>
+        <div>
+    </footer>
+
+    <script>
+
+        document.addEventListener('DOMContentLoaded', () => {
+    // Check if the login page left a "note"
+    if (sessionStorage.getItem('showLoginAlert') === 'true') {
+        const alertBar = document.getElementById('redirect-alert');
+        
+        // Show the bar
+        alertBar.classList.add('show');
+        
+        // Remove the note so it doesn't show again on every refresh
+        sessionStorage.removeItem('showLoginAlert');
+        
+        // Slide it back up after 4 seconds
+        setTimeout(() => {
+            alertBar.classList.remove('show');
+        }, 4000);
+    }
+});
+
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userName = localStorage.getItem('userName') || 'User'; // Fallback to 'User'
+       const userEmail = localStorage.getItem('userEmail') || 'user@dayyviid.com';
+    // Load custom PFP or use default
+    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+
+    const navLinks = document.getElementById('navLinks');
+
+    if (isLoggedIn === 'true') {
+        // 1. Find the "Login" link and hide it
+        const allLinks = navLinks.querySelectorAll('li');
+        allLinks.forEach(li => {
+            if (li.textContent.toLowerCase().includes('login')) {
+                li.style.display = 'none';
+            }
+        });
+
+        // 2. Add the Profile Picture and Dropdown
+                navLinks.innerHTML += `
+            <li class="user-profile-item">
+                <div class="pfp-container" onclick="toggleUserMenu(event)">
+                    <img src="${savedPfp}" id="navPfpDisplay" class="nav-pfp">
+                    <div id="user-dropdown" class="dropdown-content">
+                        <div class="user-info-header">
+                            <img src="${savedPfp}" id="dropdownPfpDisplay">
+                            <div class="user-details">
+                                <span class="name">${userName}</span>
+                                <span class="rank">Authorized Entity</span>
+                            </div>
+                        </div>
+                        <div class="profile-menu-links">
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
+                            <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
+                            <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+                            <hr style="border: 0.5px solid #222; margin: 10px 0;">
+                            <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                        </div>
+                        <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
+                    </div>
+                </div>
+            </li>
+        `;
+    }
+});
+
+    const actionBtn = document.querySelector('.btn'); // THe "ENTER YOUR ENTITY" button
+
+    if (isLoggedIn === 'true' && actionBtn) {
+        // If logged in, change the button to lead to the profile or Creations
+        actionBtn.innerText = "ACCESS YOUR DOSSIER";
+        actionBtn.setAttribute('href', 'profile.html');
+    }
+
+function updatePfp(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            localStorage.setItem('userPfp', imageData); // Save to storage
+            document.getElementById('navPfpDisplay').src = imageData; // Update Nav
+            document.getElementById('dropdownPfpDisplay').src = imageData; // Update Card
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function triggerPfpUpload() {
+    document.getElementById('pfpInput').click();
+}
+
+
+
+// Update toggle function to prevent event bubbling
+function toggleUserMenu(event) {
+    event.stopPropagation(); // Prevents window.onclick from closing it immediately
+    document.getElementById('user-dropdown').classList.toggle('show');
+}
+
+function logout() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    window.location.reload(); 
+}
+
+
+    function toggleUserMenu() {
+        document.getElementById('user-dropdown').classList.toggle('show');
+    }
+
+    function logout() {
+        localStorage.clear(); // Clears login status and name
+        window.location.reload(); // Refresh to show original nav links
+    }
+
+    // Close dropdown if clicking elsewhere
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-pfp')) {
+            const dropdown = document.getElementById("user-dropdown");
+            if (dropdown && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        }
+    }
+
+
+</script>
+
+</body>
+</html>
+
+

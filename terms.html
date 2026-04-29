@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.5">
+    <title>Dayyviid Entities | Privacy Statement</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Global Reset */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.800), rgba(0, 0, 0, 0.800)), url('image.png');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #e0e0e0;
+            margin: 0;
+            line-height: 1.6;
+            scroll-behavior: smooth;
+        }
+
+        /* Navigation Bar Styling */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: #00e5ff79;
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 60px;
+            z-index: 1000;
+            border-bottom: 1px solid #222;
+        }
+
+        .logo-container {
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+        }
+
+        .logo-main {
+            display: flex;
+            align-items: center; 
+            gap: 12px;
+            color: #ffffff;
+        }
+
+        .logo-image {
+            height: 40px;
+            width: auto;
+        }
+
+        .logo-text {
+            font-weight: bold;
+            font-size: 20px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .logo-motto {
+            font-size: 0.65rem;
+            color: #00e5ff;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-top: -2px;
+            /* Adjusted for better alignment */
+            margin-left: 52px; 
+        }
+
+        .nav-links {
+            font-family: 'Times New Roman', Times, serif;
+            list-style: none;
+            display: flex;
+            gap: 40px;
+            margin: 0;
+            padding: 0;
+            align-items: center;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #000000;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            transition: 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        .nav-links a:hover {
+            color: #fff;
+        }
+
+        /* Hamburger Menu */
+        .hamburger {
+            display: none;
+            font-size: 1.8rem;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 140px 20px 80px 20px;
+        }
+
+        .policy-header {
+            text-align: left;
+            margin-bottom: 50px;
+            border-bottom: 1px solid #333;
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #fff;
+            margin: 0;
+            text-transform: uppercase;
+        }
+
+        .last-updated {
+            color: #76979b;
+            font-size: 0.9rem;
+            font-style: oblique;
+            margin-top: 10px;
+        }
+
+        .section-title {
+            color: #fff;
+            border-left: 3px solid #00e5ff;
+            padding-left: 15px;
+            margin: 40px 0 20px 0;
+            text-transform: uppercase;
+            font-size: 1.2rem;
+            letter-spacing: 1px;
+        }
+
+        .content-block {
+            background: #111;
+            padding: 25px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            border: 1px solid #222;
+        }
+
+        .highlight-box {
+            border: 1px solid #00e5ff33;
+            background: rgba(0, 229, 255, 0.05);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .social-bar {
+            margin-bottom: 20px;
+        }
+
+        .social-bar a {
+            color: #888;
+            font-size: 1.2rem;
+            margin: 0 10px;
+            transition: 0.3s;
+            text-decoration: none;
+        }
+
+        .social-bar a:hover {
+            color: #00e5ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 60px 40px;
+            font-size: 0.8rem;
+            color: #555;
+            border-top: 1px solid #222;
+            background: #050505;
+        }
+
+        .footer-link {
+            color: #555;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .footer-link:hover {
+            color: #c5c2c2;
+        }
+
+
+        .legal-links a {
+            color: #555;
+            text-decoration: none;
+            margin: 0 5px;
+            font-size: small
+        }
+
+        .legal-links:hover {
+            color: #00e5ff; 
+        }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav { padding: 15px 25px; }
+            .nav-links {
+                position: fixed;
+                top: 60px;
+                right: -100%;
+                background: #111;
+                flex-direction: column;
+                width: 250px;
+                height: 100vh;
+                padding: 40px;
+                transition: 0.4s;
+                border-left: 1px solid #333;
+                z-index: 999;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { color: #fff; }
+            .nav-links a:hover { color: #00e5ff; }
+            .hamburger { display: block; }
+        }.user-profile-item {
+    display: flex;
+    align-items: center;
+}
+
+        /* PFP Circular Image */
+.nav-pfp {
+    height: 50px;
+    width: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid #ffffffb6;
+    transition: 0.3s;
+    vertical-align: middle;
+}
+
+.nav-pfp:hover {
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.6);
+}
+
+.pfp-container {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+/* Enhanced Dropdown Card */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: rgba(5, 5, 5, 0.95);
+    min-width: 200px; /* Wider for more details */
+    backdrop-filter: blur(15px);
+    border: 1px solid #00e5ff;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 229, 255, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    z-index: 1001;
+    margin-top: 15px;
+    text-align: left;
+}
+
+.user-info-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #575b5c;
+}
+
+.user-info-header img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid #ffffff;
+}
+
+.user-details .name {
+    display: block;
+    color: #fff;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.user-details .rank {
+    font-size: 0.7rem;
+    color: #c8e0ec;
+    text-transform: uppercase;
+}
+
+/* Profile Menu Links */
+.profile-menu-links {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.profile-menu-links a {
+    padding: 10px;
+    color: #fff;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.profile-menu-links a i {
+    color: #ffffff;
+    width: 20px;
+}
+
+.profile-menu-links a:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #00e5ff !important;
+}
+
+.profile-menu-links a i:hover {
+    color: #00e5ff;
+}
+
+.logout-link {
+    color: #fffefe !important;
+    margin-top: 10px;
+}
+
+/* Toggle Class */
+.show { display: block !important; }
+
+        hr { border: 0; border-top: 1px solid #222; margin: 40px 0; }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 768px) {
+            nav { padding: 15px 25px; }
+            .nav-links {
+                position: fixed;
+                top: 60px;
+                right: -100%;
+                background: #111;
+                flex-direction: column;
+                width: 250px;
+                height: 100vh;
+                padding: 40px;
+                transition: 0.4s;
+                border-left: 1px solid #333;
+                z-index: 999;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { color: #fff; }
+            .nav-links a:hover { color: #00e5ff; }
+            .logo-img { height: 150px; }
+            .hamburger { display: block; }
+        }
+    </style>
+</head>
+<body>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+<script>
+  // 2. Your Config (Keep your keys exactly as they are)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCr1RsCKVUXZwFcwBg7C7ArvHr3hJAC0AU",
+    authDomain: "dayyviid-entities.firebaseapp.com",
+    projectId: "dayyviid-entities",
+    storageBucket: "dayyviid-entities.firebasestorage.app",
+    messagingSenderId: "355380060771",
+    appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
+    measurementId: "G-1W3TV23MQG"
+  };
+
+  // 3. Initialize Firebase (Compat Way)
+  const app = firebase.initializeApp(firebaseConfig);
+  const analytics = firebase.analytics();
+</script>
+    <nav>
+        <a href="index.html" class="logo-container">
+            <div class="logo-main">
+                <img src="logo.png" class="logo-image" alt="Dayyviid Entities Logo">
+                <span class="logo-text">DAYYVID ENTITIES</span>
+            </div>
+            <div class="logo-motto">One World . Infinite Entities</div>
+        </a>
+
+        <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html#about">About</a></li>
+            <li><a href="index.html#creations">Creations</a></li>
+            <li><a href="index.html#connect">Connect</a></li>
+            <li><a href="index.html#login">Login</a></li>
+        </ul>
+        <div class="hamburger" onclick="toggleMenu()">&#9776;</div>
+    </nav>
+
+    
+    <main class="container">
+        <div class="policy-header">
+            <h1>Terms and Conditions</h1>
+            <p class="last-updated">Last updated: April 9, 2026</p>
+        </div>
+
+        <p>Welcome to <strong>Dayyviid Entities</strong>. These Terms and Conditions govern your access to and use of our digital services. By accessing our platform, you agree to be bound by these terms, which constitute a legally binding agreement between you and Dayyviid Entities.</p>
+
+        <div class="highlight-box">
+            <strong>Legal Notice:</strong> Acceptance of these terms signifies <em>consensus ad idem</em>. If you do not agree to these terms, you are prohibited from utilizing our services.
+        </div>
+
+        <h2 class="section-title">1. Contractual Formation and Acceptance</h2>
+        <div class="content-block">
+            <p>Accessing the Dayyviid Entities platform constitutes an offer and acceptance in the eyes of the law. As famously noted by <strong>Sagay</strong> in the <em>Nigerian Law of Contract</em>, a contract is formed when there is an unconditional acceptance of an offer. Your continued use of this site is the conduct that signifies your acceptance of this digital contract.</p>
+            <p>We rely on the principle in <strong>Carlill v. Carbolic Smoke Ball Co</strong>, where the court held that performance of the condition (using the site) is a sufficient communication of acceptance. Thus, you are bound by these provisions from the moment your session begins.</p>
+        </div>
+
+        <h2 class="section-title">2. Eligiblity</h2>
+        <div class="content-block">
+            <p>To use our services, you must possess the legal capacity to enter into a contract under Nigerian law. This generally requires you to be of sound mind and at least 18 years of age. In <strong>Labinjoh v. Abake (1924)</strong>, the court affirmed that the age of majority for contractual purposes in Nigeria is guided by both common law and local statutes.</p>
+            <p>Minors (persons under 18) are generally deemed incapable of entering into binding contracts except for "necessaries." By using this platform, you represent that you meet the age requirement or are accessing the service under the supervision of a guardian who assumes full liability for your actions.</p>
+        </div>
+
+        <h2 class="section-title">3. User Conduct and Legality</h2>
+        <div class="content-block">
+            <p>Users must use the platform for lawful purposes only. Any attempt to disrupt service, distribute malware, or engage in fraudulent activities is a breach of this agreement. Under the <strong>Cybercrimes (Prohibition, Prevention, etc.) Act 2015</strong>, unauthorized access to computer data is a criminal offense in Nigeria.</p>
+            <p>We maintain a "Zero Tolerance" policy for illegal behavior. Citing the principle of <em>Ex Turpi Causa Non Oritur Actio</em> (from a dishonorable cause an action does not arise), we will not be liable for any damages resulting from a user's own illegal conduct on our platform.</p>
+        </div>
+
+        <h2 class="section-title">4. Intellectual Property Rights</h2>
+        <div class="content-block">
+            <p>All content, including logos, code, and graphics, is the property of Dayyviid Entities. This is protected under the <strong>Copyright Act (Chapter C28, LFN 2004)</strong>. Users are granted a limited, non-exclusive license to view content, but any reproduction or redistribution without express written consent is an infringement.</p>
+            <p>In <strong>Musical Copyright Society of Nigeria (MCSN) v. Adeokin Records (2007)</strong>, the court emphasized the protection of creative works. We vigorously defend our intellectual assets and will pursue legal remedies against any party that misappropriates our proprietary entities.</p>
+        </div>
+
+        <h2 class="section-title">5. Disclaimer of Warranties</h2>
+        <div class="content-block">
+            <p>Services are provided "as is" and "as available." To the maximum extent permitted by law, we disclaim all warranties, express or implied. We do not guarantee that the service will be uninterrupted or error-free. This is consistent with the principle of <em>Caveat Emptor</em> (let the buyer beware) regarding digital service availability.</p>
+            <p>While we strive for perfection, we cannot be held responsible for technical glitches beyond our control. This disclaimer is a standard administrative protection designed to manage user expectations and limit the entity's exposure to unforeseeable digital volatility.</p>
+        </div>
+
+        <h2 class="section-title">6. Limitation of Liability</h2>
+        <div class="content-block">
+            <p>In no event shall Dayyviid Entities be liable for any indirect, incidental, or consequential damages. Our liability is limited to the greatest extent permitted by the laws of the Federal Republic of Nigeria. This follows the rule in <strong>Hadley v. Baxendale (1854)</strong>, limiting damages to those reasonably foreseeable at the time of contract.</p>
+            <p>Furthermore, citing <strong>Anyah v. Imo Concorde Hotels Ltd (2002)</strong>, where the Supreme Court held that liability depends on the breach of a specific duty of care, we are not liable for losses where no duty was breached or where the loss resulted from third-party interference.</p>
+        </div>
+
+        <h2 class="section-title">7. Indemnification</h2>
+        <div class="content-block">
+            <p>You agree to indemnify and hold Dayyviid Entities harmless from any claims, losses, or expenses arising from your breach of these terms or your violation of any law. This is a contractual "Shield of Indemnity" that ensures the entity is not penalized for the individual negligence of its users.</p>
+            <p>In administrative and civil law, the person who causes the harm should bear the burden. By using this service, you accept the obligation to defend Dayyviid Entities against legal actions brought about by your specific misuse of our digital resources.</p>
+        </div>
+
+        <h2 class="section-title">8. Account Security and Responsibility</h2>
+        <div class="content-block">
+            <p>Users are responsible for maintaining the confidentiality of their account credentials. Any activity occurring under your account is your legal responsibility. You must notify us immediately of any unauthorized use. Failure to secure your account may be viewed as <strong>Contributory Negligence</strong> on your part.</p>
+            <p>This principle was illustrated in various financial law cases where the failure of a customer to protect their PIN or password limited their ability to recover damages. You are the primary custodian of your digital access point to the Dayyviid Entities world.</p>
+        </div>
+
+        <h2 class="section-title">9. Privacy and Data Usage</h2>
+        <div class="content-block">
+            <p>Your use of the platform is also governed by our Privacy Statement. We handle your data in accordance with the <strong>Nigeria Data Protection Act (NDPA) 2023</strong>. We ensure that your "Right to Privacy" under <strong>Section 37 of the Constitution</strong> is respected while we process data for service fulfillment.</p>
+            <p>We act as a responsible Data Controller. Any data shared with us is treated with the level of care mandated by the <strong>NDPR</strong>. We believe that a secure contract cannot exist without secure data, and we integrate privacy by design into our terms of service.</p>
+        </div>
+
+        <h2 class="section-title">10. Termination of Service</h2>
+        <div class="content-block">
+            <p>We reserve the right to suspend or terminate your access at our discretion, without notice, for conduct that we believe violates these terms. This is an administrative power necessary to maintain the integrity of our community. Such termination does not waive any other legal rights or remedies we may have.</p>
+            <p>The principle of <strong>Natural Justice</strong> (<em>fair hearing</em>) is respected; however, in cases of emergency security threats or flagrant breaches, immediate suspension is a reasonable administrative action to prevent wider harm to other users and the platform's infrastructure.</p>
+        </div>
+
+        <h2 class="section-title">11. Third-Party Services and Links</h2>
+        <div class="content-block">
+            <p>Our services may integrate with third-party APIs or provide links to external websites. We do not endorse or assume responsibility for these third-party entities. Your interaction with them is governed by their respective terms. This is a clear boundary of our <strong>Privity of Contract</strong>.</p>
+            <p>As held in <strong>Dunlop Pneumatic Tyre Co Ltd v Selfridge & Co Ltd (1915)</strong>, only parties to a contract can sue or be sued on it. Since you are not in a contract with us regarding third-party content, we remain a "legal stranger" to those specific interactions.</p>
+        </div>
+
+        <h2 class="section-title">12. Modifications to Terms</h2>
+        <div class="content-block">
+            <p>We reserve the right to amend these terms at any time. Changes will be effective immediately upon posting. Your continued use of the platform after changes are posted constitutes acceptance of the new terms. This ensures the contract remains dynamic and reflects the current legal and technical landscape.</p>
+            <p>In <strong>Lakanmi v. Attorney General of Western Nigeria (1970)</strong>, the court emphasized the stability of legal status. We provide notice of changes to ensure you are never "ambushed" by new obligations, maintaining the <strong>Legitimate Expectation</strong> of fairness in our dealings.</p>
+        </div>
+
+        <h2 class="section-title">13. Governing Law and Jurisdiction</h2>
+        <div class="content-block">
+            <p>These terms are governed by the laws of the <strong>Federal Republic of Nigeria</strong>. Any disputes arising from this agreement shall be subject to the exclusive jurisdiction of the Nigerian courts. This provides a clear "Choice of Law" and "Choice of Forum" for all parties involved.</p>
+            <p>This is consistent with the <strong>Private International Law</strong> principles recognized in Nigeria. By agreeing to these terms, you waive any objection to such jurisdiction on the grounds of <em>forum non-conveniens</em>, ensuring a centralized and predictable legal resolution process.</p>
+        </div>
+
+        <h2 class="section-title">14. Dispute Resolution (Arbitration)</h2>
+        <div class="content-block">
+            <p>In the event of a dispute, parties agree to first attempt resolution through mediation. If unsuccessful, the matter shall be referred to arbitration under the <strong>Arbitration and Mediation Act 2023</strong>. This is a cost-effective and efficient alternative to traditional litigation.</p>
+            <p>Arbitration allows for technical experts to adjudicate digital disputes, ensuring a more nuanced understanding of the issues. This administrative preference for Alternative Dispute Resolution (ADR) reflects modern legal trends toward decongesting the courtrooms and achieving swift justice.</p>
+        </div>
+
+        <h2 class="section-title">15. Severability</h2>
+        <div class="content-block">
+            <p>If any provision of these terms is found to be unenforceable or invalid by a court of competent jurisdiction, the remaining provisions shall remain in full force and effect. This ensures that the "Legal Life" of the contract continues even if one limb is severed.</p>
+            <p>This is a standard clause in Nigerian commercial drafting. It prevents a minor legal flaw from nullifying the entire agreement, preserving the intent of the parties and the overall structure of the relationship between Dayyviid Entities and the user.</p>
+        </div>
+
+        <h2 class="section-title">16. Force Majeure</h2>
+        <div class="content-block">
+            <p>Dayyviid Entities shall not be liable for any failure to perform its obligations where such failure results from any cause beyond our reasonable control, including acts of God, war, or large-scale internet outages. This is the doctrine of <strong>Frustration of Contract</strong>.</p>
+            <p>In <strong>Mazin Engineering Ltd v. Tower Aluminium (1993)</strong>, the court recognized that external, uncontrollable events can discharge or suspend contractual obligations. In the digital world, significant cyber-attacks or infrastructure collapses serve as modern examples of these irresistible forces.</p>
+        </div>
+
+        <h2 class="section-title">17. Entire Agreement</h2>
+        <div class="content-block">
+            <p>These Terms and Conditions, along with the Privacy Statement, constitute the <strong>Entire Agreement</strong> between you and Dayyviid Entities. No other verbal or written representations shall be binding. This follows the <strong>Parol Evidence Rule</strong>, which excludes outside evidence that contradicts the written contract.</p>
+            <p>This ensures clarity and finality. By housing all rules in one place, we eliminate ambiguity and provide a "Single Source of Truth" for our legal relationship. For any questions regarding these terms, please contact our legal desk at <strong>legal@Dayyviid-entities.com</strong>.</p>
+        </div>
+
+    </div>
+    </main>
+
+    <footer>
+        <main class="social-bar">
+            <div>
+                <a href="mailto:davidchizitere1@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
+                <a href="https://wa.me/2349014699873" target="_blank" title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                <a href="https://t.me/+5oz7mf9i-EcwNDM0" target="_blank" title="Telegram"><i class="fab fa-telegram"></i></a>
+                <a href="https://www.linkedin.com/in/david-ineh-5187a4312" target="_blank" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                <a href="https://www.instagram.com/dayy.viid" target="_blank" title="Instagram"><i class="fab fa-instagram"></i></a>
+            </div> 
+            <p>
+        <div class="footer-link">
+         &copy; 2026 Dayyviid Entities. All Rights Reserved. <br>
+            <div class="legal-links">
+                <a href="privacy.html">Privacy Policy</a> |
+                <a href="terms.html">Terms & Conditions</a>
+        </div>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+        }
+                document.addEventListener('DOMContentLoaded', () => {
+    
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
+    const userName = localStorage.getItem('userName') || 'User'; // Fallback to 'User'
+       const userEmail = localStorage.getItem('userEmail') || 'user@dayyviid.com';
+    // Load custom PFP or use default
+    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+
+    const navLinks = document.getElementById('navLinks');
+
+    if (isLoggedIn === 'true') {
+        // 1. Find the "Login" link and hide it
+        const allLinks = navLinks.querySelectorAll('li');
+        allLinks.forEach(li => {
+            if (li.textContent.toLowerCase().includes('login')) {
+                li.style.display = 'none';
+            }
+        });
+
+        // 2. Add the Profile Picture and Dropdown
+                navLinks.innerHTML += `
+            <li class="user-profile-item">
+                <div class="pfp-container" onclick="toggleUserMenu(event)">
+                    <img src="${savedPfp}" id="navPfpDisplay" class="nav-pfp">
+                    <div id="user-dropdown" class="dropdown-content">
+                        <div class="user-info-header">
+                            <img src="${savedPfp}" id="dropdownPfpDisplay">
+                            <div class="user-details">
+                                <span class="name">${userName}</span>
+                                <span class="rank">Authorized Entity</span>
+                            </div>
+                        </div>
+                        <div class="profile-menu-links">
+                            <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
+                            <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
+                            <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+                            <hr style="border: 0.5px solid #222; margin: 10px 0;">
+                            <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                        </div>
+                        <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
+                    </div>
+                </div>
+            </li>
+        `;
+    }
+});
+
+    const actionBtn = document.querySelector('.btn'); // THe "ENTER YOUR ENTITY" button
+
+    if (isLoggedIn === 'true' && actionBtn) {
+        // If logged in, change the button to lead to the profile or Creations
+        actionBtn.innerText = "ACCESS YOUR DOSSIER";
+        actionBtn.setAttribute('href', 'profile.html');
+    }
+
+function updatePfp(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            localStorage.setItem('userPfp', imageData); // Save to storage
+            document.getElementById('navPfpDisplay').src = imageData; // Update Nav
+            document.getElementById('dropdownPfpDisplay').src = imageData; // Update Card
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function triggerPfpUpload() {
+    document.getElementById('pfpInput').click();
+}
+
+
+
+// Update toggle function to prevent event bubbling
+function toggleUserMenu(event) {
+    event.stopPropagation(); // Prevents window.onclick from closing it immediately
+    document.getElementById('user-dropdown').classList.toggle('show');
+}
+
+function logout() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userName');
+    window.location.reload(); 
+}
+
+
+    function toggleUserMenu() {
+        document.getElementById('user-dropdown').classList.toggle('show');
+    }
+
+    function logout() {
+        localStorage.clear(); // Clears login status and name
+        window.location.reload(); // Refresh to show original nav links
+    }
+
+    // Close dropdown if clicking elsewhere
+    window.onclick = function(event) {
+        if (!event.target.matches('.nav-pfp')) {
+            const dropdown = document.getElementById("user-dropdown");
+            if (dropdown && dropdown.classList.contains('show')) {
+                dropdown.classList.remove('show');
+            }
+        }
+    }
+    </script>
+</body>
+</html>
+
