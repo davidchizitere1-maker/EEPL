@@ -355,69 +355,90 @@
     </div>
 </section>
 
-    <section class="auth-section">
-        <div class="auth-card">
-            <div id="login-form" class="auth-form active">
-                <h2>Login</h2>
-                <div class="input-group">
-                    <div class="input-box">
-                        <i class="fa-regular fa-envelope"></i>
-                        <input id="login-email" type="email" placeholder="Email">
-                    </div>
+    <!-- Welcome Message Placeholder (Hidden by default until logged in) -->
+<div id="user-dashboard" style="display: none; text-align: center; padding: 20px;">
+    <h2>Welcome, <span id="display-username"></span>!</h2>
+    <button class="action-btn" onclick="logoutUser()" style="margin-top: 15px; width: auto; padding: 10px 20px;">Logout</button>
+</div>
+
+<section class="auth-section" id="auth-section">
+    <div class="auth-card">
+        <div id="login-form" class="auth-form active">
+            <h2>Login</h2>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-regular fa-id-badge"></i>
+                    <input id="signup-username" type="text" placeholder="Team Name">
                 </div>
-                <div class="input-group">
-                    <div class="input-box">
-                        <i class="fa-solid fa-lock"></i>
-                        <input id="login-password" type="password" placeholder="Password">
-                    </div>
-                </div>
-                <div class="footer-utils">
-                    <label><input type="checkbox"> Remember Me</label>
-                    <a href="reset.html">Forgot Password?</a>
-                </div>
-                <button class="action-btn" onclick="loginUser()">Login</button>
-                <p class="toggle-text">Don't have an account? <span onclick="showAuth('signup')">Register</span></p>
             </div>
 
-            <div id="signup-form" class="auth-form">
-                <h2>Sign Up</h2>
-                <div class="form-row">
-                    <div class="input-group">
-                        <div class="input-box">
-                            <i class="fa-regular fa-user"></i>
-                            <input id="signup-firstname" type="text" placeholder="Firstname">
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <div class="input-box">
-                            <i class="fa-regular fa-user"></i>
-                            <input id="signup-lastname" type="text" placeholder="Lastname">
-                        </div>
-                    </div>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input id="login-email" type="email" placeholder="Email">
                 </div>
-                <div class="input-group">
-                    <div class="input-box">
-                        <i class="fa-regular fa-envelope"></i>
-                        <input id="signup-email" type="email" placeholder="Email">
-                    </div>
-                </div>
-                <div class="input-group">
-                    <div class="input-box">
-                        <i class="fa-solid fa-lock"></i>
-                        <input id="signup-password" type="password" placeholder="Password">
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label style="font-size: 0.8rem; color: #ccc;">
-                        <input type="checkbox" id="terms"> I agree to Terms & Conditions
-                    </label>
-                </div>
-                <button class="action-btn" onclick="registerUser()">Register</button>
-                <p class="toggle-text">Have an account? <span onclick="showAuth('login')">Login</span></p>
             </div>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-solid fa-lock"></i>
+                    <input id="login-password" type="password" placeholder="Password">
+                </div>
+            </div>
+            <div class="footer-utils">
+                <label><input type="checkbox"> Remember Me</label>
+                <a href="reset.html">Forgot Password?</a>
+            </div>
+            <button class="action-btn" onclick="loginUser()">Login</button>
+            <p class="toggle-text">Don't have an account? <span onclick="showAuth('signup')">Register</span></p>
         </div>
-    </section>
 
+        <div id="signup-form" class="auth-form">
+            <h2>Sign Up</h2>
+            <div class="form-row">
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-regular fa-user"></i>
+                        <input id="signup-firstname" type="text" placeholder="Firstname">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <div class="input-box">
+                        <i class="fa-regular fa-user"></i>
+                        <input id="signup-lastname" type="text" placeholder="Lastname">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Username Field -->
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-regular fa-id-badge"></i>
+                    <input id="signup-username" type="text" placeholder="Team Name">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input id="signup-email" type="email" placeholder="Email">
+                </div>
+            </div>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-solid fa-lock"></i>
+                    <input id="signup-password" type="password" placeholder="Password">
+                </div>
+            </div>
+            <div class="input-group">
+                <label style="font-size: 0.8rem; color: #ccc;">
+                    <input type="checkbox" id="terms"> I agree to Terms & Conditions
+                </label>
+            </div>
+            <button class="action-btn" onclick="registerUser()">Register</button>
+            <p class="toggle-text">Have an account? <span onclick="showAuth('login')">Login</span></p>
+        </div>
+    </div>
+</section>
     <footer>
         <div class="social-bar">
                 <a href="mailto:dayyviidentities@gmail.com" title="Email"><i class="fas fa-envelope"></i></a>
@@ -440,7 +461,7 @@
     </footer>
 
     <script>
-        // --- FIREBASE AUTHENTICATION REFINEMENT ---
+// --- FIREBASE AUTHENTICATION REFINEMENT ---
 
 function showError(inputElement, message) {
     clearErrors();
@@ -469,26 +490,29 @@ async function registerUser() {
     clearErrors();
     const fName = document.getElementById('signup-firstname');
     const lName = document.getElementById('signup-lastname');
+    const username = document.getElementById('signup-username'); // Grab the new username field
     const email = document.getElementById('signup-email');
     const pass = document.getElementById('signup-password');
     const terms = document.getElementById('terms');
 
     if (!fName.value) return showError(fName, "First name required");
     if (!lName.value) return showError(lName, "Last name required");
+    if (!username.value) return showError(username, "Username required"); // Validate username
     if (!email.value) return showError(email, "Email required");
     if (!pass.value) return showError(pass, "Password required");
     if (!terms.checked) return showError(terms, "Accept our Terms");
 
     try {
         // Firebase Auth: Create User
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email.value, pass.value);
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email.value, username.value, pass.value);
         
-        // Update Firebase profile with the First Name
+        // Update Firebase profile with the USERNAME instead of the First Name
         await userCredential.user.updateProfile({
-            displayName: fName.value
+            displayName: username.value
         });
 
-        showWelcomeScreen(fName.value);
+        // Show the welcome screen with the new username
+        showWelcomeScreen(username.value);
     } catch (error) {
         // Handle Firebase specific errors
         if (error.code === 'auth/email-already-in-use') {
@@ -505,17 +529,20 @@ async function loginUser() {
     clearErrors();
     const email = document.getElementById('login-email');
     const pass = document.getElementById('login-password');
+    const username = document.getElementById('signup-username');
 
     if (!email.value) return showError(email, "Enter your email");
     if (!pass.value) return showError(pass, "Enter your password");
+    if (!username.value) return showError(username, "Enter your Team Name");
 
     try {
         // Firebase Auth: Sign In
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, username.value, pass.value);
         const user = userCredential.user;
         
-        // Use displayName if set, otherwise fallback to email prefix
-        const displayName = user.displayName || email.value.split('@')[0];
+    
+        const displayName = username.value;
+        
         showWelcomeScreen(displayName);
     } catch (error) {
         // Handle Firebase specific errors
@@ -565,7 +592,7 @@ document.addEventListener('DOMContentLoaded', () => {
         observer.observe(card);
     });
 });
-    </script>
+</script>
 </body>
 </html>
 
