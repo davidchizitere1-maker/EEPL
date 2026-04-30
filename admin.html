@@ -24,7 +24,8 @@
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
@@ -43,6 +44,7 @@
   const app = firebase.initializeApp(firebaseConfig);
   const analytics = firebase.analytics();
 </script>
+
 
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -314,574 +316,582 @@
 </button></section></main>
 
     <script>
-        // Data Architecture
-        let db = JSON.parse(localStorage.getItem('eepl_db')) || {
-            teams: [],
-            fixtures: [],
-            stats: [],
-            news: [] 
-        };
+    // --- CLOUD DATA ARCHITECTURE ---
+    let db = {
+        teams: [],
+        fixtures: [],
+        stats: [],
+        news: [] 
+    };
 
-        // Initialize App
-        document.addEventListener('DOMContentLoaded', () => {
-            loadData();
+    // Reference to your central league database in Firebase
+    const dbRef = firebase.database().ref('league_data');
+
+    // Initialize App & Listen for Live Cloud Updates
+    document.addEventListener('DOMContentLoaded', () => {
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                // Merge cloud data with default architecture to prevent undefined errors
+                db = {
+                    teams: data.teams || [],
+                    fixtures: data.fixtures || [],
+                    stats: data.stats || [],
+                    news: data.news || []
+                };
+            }
+            
+            // Re-render the UI whenever cloud data changes
             renderAll();
             populateLineupDropdown();
             updateAllTeamDropdowns();
         });
 
-        // Tab Switcher
-        function switchPane(paneId, clickedTab) {
-            document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
-            document.getElementById(paneId).classList.add('active');
-            clickedTab.classList.add('active');
-        }
-
-        function saveData() {
-    // 🔥 Save previous positions BEFORE sorting updates
-    const sorted = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
-
-    sorted.forEach((team, index) => {
-        team.prevRank = index; // store last position
-    });
-
-    localStorage.setItem('eepl_db', JSON.stringify(db));
-    renderAll();
-}
-
-        function clearAllData() {
-    if (!confirm("⚠️ This will permanently delete EVERYTHING in the league. Continue?")) return;
-
-    // 1. Clear storage
-    localStorage.removeItem('eepl_db');
-    localStorage.removeItem('leagueMOTW');
-
-    // 2. Reset database COMPLETELY
-    db = {
-        teams: [],
-        fixtures: [],
-        stats: [],
-        news: []
-    };
-
-    // 3. Reset UI manually (important)
-    document.getElementById('teamsTableBody').innerHTML = "";
-    document.getElementById('pendingFixturesBody').innerHTML = "";
-    document.getElementById('statsTableBody').innerHTML = "";
-    document.getElementById('newsTableBody').innerHTML = "";
-
-    // Reset selects
-    document.getElementById('homeTeamSelect').innerHTML = "";
-    document.getElementById('awayTeamSelect').innerHTML = "";
-
-    // Reset MOTW display (if exists)
-    if (document.getElementById('MotwHomeName')) {
-        document.getElementById('MotwHomeName').innerText = "";
-        document.getElementById('MotwAwayName').innerText = "";
-        document.getElementById('MotwTime').innerText = "";
-        document.getElementById('MotwDay').innerText = "";
-        document.getElementById('MotwReason').innerText = "";
-    }
-
-    // 4. Re-render clean state
-    renderAll();
-
-    alert("✅ League reset complete. System is now blank.");
-}
-
-        
- let selectedLogoData = "";
-
-function processLogoInput() {
-    const inputVal = document.getElementById('unifiedLogoInput').value.trim();
-    const previewImg = document.getElementById('unifiedLogoPreview');
-    const placeholder = document.getElementById('previewPlaceholder');
-    const statusText = document.getElementById('previewStatus');
-
-    if (!inputVal) {
-        statusText.innerText = "Objection! Input field is empty.";
-        statusText.style.color = "#dc3545"; // Red error text
-        return;
-    }
-
-    statusText.innerText = "Processing...";
-    statusText.style.color = "var(--text-muted)";
-
-    // Regular Expression to check if the input is a URL
-    const isUrl = /^https?:\/\//i.test(inputVal);
-
-    if (isUrl) {
-        // RULING 1: It's a direct link. Render immediately.
-        renderPreview(inputVal, "Direct link applied successfully.");
-    } else {
-        // RULING 2: It's a text search. Call the search function.
-        // We append "FC logo" to heavily restrict the search to football crests.
-        const searchQuery = `${inputVal} FC logo png`;
-        
-        statusText.innerText = "Searching database...";
-        
-        /* * Replace this fetch block with your actual search API logic.
-         * For example, if your API returns a URL, pass that URL to renderPreview()
-         */
-        fetch(`https://your-search-api.com?q=${encodeURIComponent(searchQuery)}`)
-            .then(response => response.json())
-            .then(data => {
-                // Assuming your API returns the image URL in data.url
-                const fetchedUrl = data.url; 
-                renderPreview(fetchedUrl, `Search found a match for "${inputVal}"`);
-            })
-            .catch(error => {
-                statusText.innerText = "Search failed. Try a direct link instead.";
-                statusText.style.color = "#dc3545";
-            });
-    }
-}
-
-// Helper function to handle the actual rendering and error catching
-function renderPreview(imgUrl, successMessage) {
-    const previewImg = document.getElementById('unifiedLogoPreview');
-    const placeholder = document.getElementById('previewPlaceholder');
-    const statusText = document.getElementById('previewStatus');
-
-    // Attempt to load the image
-    previewImg.src = imgUrl;
-
-    previewImg.onload = function() {
-        // Evidence Admitted
-        previewImg.style.display = "block";
-        placeholder.style.display = "none";
-        statusText.innerText = successMessage;
-        statusText.style.color = "#28a745"; // Green success text
-        
-        selectedLogoData = imgUrl; // Save to global variable for the Add Team button
-    };
-
-    previewImg.onerror = function() {
-        // Evidence Rejected (Broken Link)
-        previewImg.style.display = "none";
-        placeholder.style.display = "block";
-        statusText.innerText = "Invalid image source. Please verify the link.";
-        statusText.style.color = "#dc3545";
-        selectedLogoData = ""; // Clear invalid data
-    };
-}
-
-
-// Update your addTeam function to use the finalLogoUrl
-function addTeam() {
-    const name = document.getElementById('teamNameInput').value.trim();
-    const logo = document.getElementById('unifiedLogoPreview').src || 'https://via.placeholder.com/30?text=⚽';
-    
-    if (!name) return alert("Enter a team name");
-    
-    db.teams.push({
-        id: Date.now().toString(),
-        name: name,
-        logo: logo,
-        p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
-    });
-    
-    // Clear everything
-    document.getElementById('teamNameInput').value = '';
-    document.getElementById('unifiedLogoInput').value = '';
-    document.getElementById('previewPlaceholder').innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #444;"></i>`;
-    saveData();
-    
-}
-
-        function deleteTeam(id) {
-            if(confirm("Delete this team?")) {
-                db.teams = db.teams.filter(t => t.id !== id);
-                saveData();
+        // Load MOTW separately
+        firebase.database().ref('leagueMOTW').on('value', (snapshot) => {
+            if (snapshot.exists() && typeof displayMOTW === "function") {
+                displayMOTW(snapshot.val());
             }
+        });
+    });
+
+    // --- MASTER CLOUD SAVE FUNCTION ---
+    function saveAndRefresh() {
+        // 1. Sort the league table logically before saving
+        db.teams.sort((a, b) => {
+            if (b.pts !== a.pts) return b.pts - a.pts;
+            return (b.gd || 0) - (a.gd || 0);
+        });
+
+        // 2. Save previous positions for form trends
+        db.teams.forEach((team, index) => {
+            team.prevRank = index; 
+        });
+
+        // 3. Push entire state to Firebase
+        dbRef.set(db)
+            .then(() => console.log("Database synchronized with Cloud."))
+            .catch(error => alert("Sync Error: " + error.message));
+    }
+
+    // Alias for older functions calling saveData()
+    function saveData() {
+        saveAndRefresh();
+    }
+
+    // --- SYSTEM RESET ---
+    function clearAllData() {
+        if (!confirm("⚠️ WARNING: This permanently deletes EVERYTHING from the cloud. Continue?")) return;
+
+        // Reset database COMPLETELY
+        db = { teams: [], fixtures: [], stats: [], news: [] };
+        
+        // Wipe Firebase Nodes
+        dbRef.remove();
+        firebase.database().ref('leagueMOTW').remove();
+
+        // Clear local UI
+        document.getElementById('teamsTableBody').innerHTML = "";
+        document.getElementById('pendingFixturesBody').innerHTML = "";
+        document.getElementById('completedFixturesBody').innerHTML = "";
+        document.getElementById('statsTableBody').innerHTML = "";
+        document.getElementById('newsTableBody').innerHTML = "";
+        document.getElementById('homeTeamSelect').innerHTML = "";
+        document.getElementById('awayTeamSelect').innerHTML = "";
+
+        alert("✅ League reset complete. The cloud database is now blank.");
+    }
+
+    // --- TAB SWITCHER ---
+    function switchPane(paneId, clickedTab) {
+        document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+        document.getElementById(paneId).classList.add('active');
+        clickedTab.classList.add('active');
+    }
+
+    // --- LOGO PROCESSING ---
+    let selectedLogoData = "";
+
+    function processLogoInput() {
+        const inputVal = document.getElementById('unifiedLogoInput').value.trim();
+        const statusText = document.getElementById('previewStatus');
+
+        if (!inputVal) {
+            statusText.innerText = "Objection! Input field is empty.";
+            statusText.style.color = "#dc3545"; 
+            return;
         }
 
-function deleteFixture(id) {
-    if (!confirm("Delete this fixture?")) return;
+        statusText.innerText = "Processing...";
+        statusText.style.color = "var(--text-muted)";
 
-    db.fixtures = db.fixtures.filter(f => f.id !== id);
+        const isUrl = /^https?:\/\//i.test(inputVal);
 
-    saveAndRefresh();
-}
-function addFixture() {
-    // 1. Grab the elements (Ensure these IDs match your HTML)
-    const homeSelect = document.getElementById('homeTeamSelect');
-    const awaySelect = document.getElementById('awayTeamSelect');
-    const matchdayInput = document.getElementById('matchdayInput');
-
-    // 2. Extract values
-    const homeId = homeSelect.value;
-    const awayId = awaySelect.value;
-    const matchday = parseInt(matchdayInput.value);
-
-    // 3. Validation - Prevent common mistakes
-    if (!homeId || !awayId) {
-        return alert("Please select both a Home and Away team.");
-    }
-    if (homeId === awayId) {
-        return alert("Error: A team cannot play against itself.");
-    }
-    if (isNaN(matchday) || matchday < 1) {
-        return alert("Please enter a valid Matchday number.");
+        if (isUrl) {
+            renderPreview(inputVal, "Direct link applied successfully.");
+        } else {
+            statusText.innerText = "Searching database...";
+            const searchQuery = `${inputVal} FC logo png`;
+            
+            // Standard placeholder search mechanism 
+            fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(searchQuery)}&format=json`)
+                .then(response => response.json())
+                .then(data => {
+                    const fetchedUrl = data.Image || 'https://via.placeholder.com/150?text=Logo+Not+Found'; 
+                    renderPreview(fetchedUrl, `Search executed for "${inputVal}"`);
+                })
+                .catch(() => {
+                    statusText.innerText = "Search failed. Try a direct link instead.";
+                    statusText.style.color = "#dc3545";
+                });
+        }
     }
 
-    // 4. Create the new fixture object
-    const newFixture = {
-        id: 'fix_' + Date.now(), // Unique ID using timestamp
-        homeId: homeId,
-        awayId: awayId,
-        matchday: matchday,
-        status: 'pending',
-        homeScore: null,
-        awayScore: null
-    };
+    function renderPreview(imgUrl, successMessage) {
+        const previewImg = document.getElementById('unifiedLogoPreview');
+        const placeholder = document.getElementById('previewPlaceholder');
+        const statusText = document.getElementById('previewStatus');
 
-    // 5. Save to Database and Refresh
-    db.fixtures.push(newFixture);
-    
-    // Call your global save function
-    saveAndRefresh();
+        previewImg.src = imgUrl;
 
-    // 6. Optional: Reset inputs for the next match
-    matchdayInput.value = matchday; // Keep the same MD for convenience
-    alert("Fixture added successfully!");
-}
-// =========================
-// GENERATE RANDOM FIXTURES (FIXED)
-// =========================
-function generateRandomFixtures() {
-    if (db.teams.length < 2) return alert("Need at least 2 teams.");
+        previewImg.onload = function() {
+            previewImg.style.display = "block";
+            placeholder.style.display = "none";
+            statusText.innerText = successMessage;
+            statusText.style.color = "#28a745"; 
+            selectedLogoData = imgUrl; 
+        };
 
-    let shuffled = [...db.teams].sort(() => 0.5 - Math.random());
-    let matchday = parseInt(document.getElementById('matchdayInput').value);
+        previewImg.onerror = function() {
+            previewImg.style.display = "none";
+            placeholder.style.display = "block";
+            statusText.innerText = "Invalid image source. Please verify the link.";
+            statusText.style.color = "#dc3545";
+            selectedLogoData = ""; 
+        };
+    }
 
-    for (let i = 0; i < shuffled.length - 1; i += 2) {
+    // --- TEAM MANAGEMENT ---
+    function addTeam() {
+        const name = document.getElementById('teamNameInput').value.trim();
+        const logo = selectedLogoData || 'https://via.placeholder.com/30?text=⚽';
+        
+        if (!name) return alert("Enter a team name");
+        
+        db.teams.push({
+            id: 'team_' + Date.now().toString(),
+            name: name,
+            logo: logo,
+            p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+        });
+        
+        document.getElementById('teamNameInput').value = '';
+        document.getElementById('unifiedLogoInput').value = '';
+        document.getElementById('previewPlaceholder').style.display = "block";
+        document.getElementById('unifiedLogoPreview').style.display = "none";
+        
+        saveAndRefresh();
+    }
+
+    function deleteTeam(id) {
+        if(confirm("Delete this team?")) {
+            db.teams = db.teams.filter(t => t.id !== id);
+            saveAndRefresh();
+        }
+    }
+
+    function saveTeamDetails() {
+        const teamId = document.getElementById('detailsTeamSelect').value;
+        const stadium = document.getElementById('inStadium').value;
+        const founded = document.getElementById('inFounded').value;
+        const country = document.getElementById('inCountry').value;
+
+        if (!teamId) return alert("Select a team first!");
+
+        const index = db.teams.findIndex(t => t.id === teamId);
+        if (index !== -1) {
+            db.teams[index].stadium = stadium;
+            db.teams[index].founded = founded;
+            db.teams[index].country = country;
+            saveAndRefresh();
+            alert("Team details updated on Cloud!");
+        }
+    }
+
+    function uploadLineup() {
+        const teamId = document.getElementById('lineupTeamSelect').value;
+        const fileInput = document.getElementById('lineupInput');
+        const file = fileInput.files[0];
+
+        if (!teamId || !file) {
+            return alert("Please select a team and an image!");
+        }
+
+        // Keep file sizes reasonable to prevent Firebase payload rejections
+        if (file.size > 2 * 1024 * 1024) { 
+            return alert("File is too large! Please upload an image under 2MB.");
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64Image = e.target.result;
+            const teamIndex = db.teams.findIndex(t => t.id === teamId);
+
+            if (teamIndex !== -1) {
+                db.teams[teamIndex].lineupImage = base64Image;
+                saveAndRefresh();
+                alert("Tactical Lineup Synced to Cloud Successfully!");
+                fileInput.value = '';
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // --- FIXTURE MANAGEMENT ---
+    function addFixture() {
+        const homeId = document.getElementById('homeTeamSelect').value;
+        const awayId = document.getElementById('awayTeamSelect').value;
+        const matchday = parseInt(document.getElementById('matchdayInput').value);
+
+        if (!homeId || !awayId) return alert("Please select both a Home and Away team.");
+        if (homeId === awayId) return alert("Error: A team cannot play against itself.");
+        if (isNaN(matchday) || matchday < 1) return alert("Please enter a valid Matchday number.");
+
         db.fixtures.push({
-            id: Date.now().toString() + i,
-            homeId: shuffled[i].id,
-            awayId: shuffled[i + 1].id,
+            id: 'fix_' + Date.now(),
+            homeId: homeId,
+            awayId: awayId,
             matchday: matchday,
             status: 'pending',
             homeScore: null,
             awayScore: null
         });
-    }
 
-    saveAndRefresh(); // 🔥 FIXED
-    alert("Random pairs generated for Matchday " + matchday);
-}
-
-
-// =========================
-// SUBMIT SCORE (SAFE)
-// =========================
-function submitScore(fixtureId) {
-    // 1. Get the input elements
-    const homeInput = document.getElementById(`home_score_${fixtureId}`);
-    const awayInput = document.getElementById(`away_score_${fixtureId}`);
-
-    // DEBUG: If these are null, your IDs in renderFixtures are wrong
-    if (!homeInput || !awayInput) {
-        console.error(`Inputs not found for fixture: ${fixtureId}`);
-        return alert("Error: Could not find score inputs.");
-    }
-
-    // 2. Parse values to actual Numbers
-    const homeScore = parseInt(homeInput.value);
-    const awayScore = parseInt(awayInput.value);
-
-    // 3. Validation
-    if (isNaN(homeScore) || isNaN(awayScore)) {
-        return alert("Please enter valid scores for both teams.");
-    }
-
-    // 4. Find the fixture in the database
-    const fixture = db.fixtures.find(f => f.id === fixtureId);
-    if (!fixture) return alert("Fixture not found in database.");
-
-    if (fixture.status === 'completed') {
-        return alert("This match has already been saved.");
-    }
-
-    // 5. Update Fixture Status
-    fixture.homeScore = homeScore;
-    fixture.awayScore = awayScore;
-    fixture.status = 'completed';
-
-    // 6. Update the Standings (Table)
-    updateTableStandings(fixture.homeId, fixture.awayId, homeScore, awayScore);
-
-    // 7. Save to LocalStorage and Refresh UI
-    saveAndRefresh();
-    
-    alert("Score saved and table updated!");
-}
-
-// =========================
-// UPDATE TABLE
-// =========================
-function updateTableStandings(homeId, awayId, homeScore, awayScore) {
-    let home = db.teams.find(t => t.id === homeId);
-    let away = db.teams.find(t => t.id === awayId);
-
-    if (!home || !away) return;
-
-    // Ensure all stats are numbers (Preventing the "NaN" or "011" bug)
-    const stats = ['p', 'w', 'd', 'l', 'gf', 'ga', 'gd', 'pts'];
-    [home, away].forEach(t => {
-        stats.forEach(s => { if (t[s] === undefined) t[s] = 0; });
-    });
-
-    // Update matches played
-    home.p++;
-    away.p++;
-
-    // Update Goals
-    home.gf += homeScore;
-    home.ga += awayScore;
-    away.gf += awayScore;
-    away.ga += homeScore;
-
-    // Update Win/Loss/Draw Logic
-    if (homeScore > awayScore) {
-        home.w++;
-        home.pts += 3;
-        away.l++;
-    } else if (homeScore < awayScore) {
-        away.w++;
-        away.pts += 3;
-        home.l++;
-    } else {
-        home.d++;
-        away.d++;
-        home.pts += 1;
-        away.pts += 1;
-    }
-
-    // Recalculate GD
-    home.gd = home.gf - home.ga;
-    away.gd = away.gf - away.ga;
-}
-
-
-// =========================
-// PLAYER SUGGESTIONS
-// =========================
-function populatePlayerSuggestions() {
-    const list = document.getElementById('playerList');
-    if (!list) return;
-
-    list.innerHTML = "";
-
-    db.teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team.name;
-        list.appendChild(option);
-    });
-}
-
-
-// =========================
-// DELETE STAT BY INDEX
-// =========================
-function deleteByIndex(index) {
-    if (confirm(`Remove ${db.stats[index].name}?`)) {
-        db.stats.splice(index, 1);
         saveAndRefresh();
+        alert("Fixture added successfully!");
     }
-}
 
-function saveAndRefresh() {
-    // 1. Sort the league table before saving (Professional standard)
-    db.teams.sort((a, b) => {
-        if (b.pts !== a.pts) return b.pts - a.pts;
-        return (b.gd || 0) - (a.gd || 0);
-    });
+    function generateRandomFixtures() {
+        if (db.teams.length < 2) return alert("Need at least 2 teams.");
 
-    // 2. Save to LocalStorage
-    localStorage.setItem('eepl_db', JSON.stringify(db));
-    renderTeams();
-    renderStats();
-    // 3. Update the UI
-    renderFixtures();
-    if (typeof renderTable === "function") renderTable(); 
-    console.log("Data successfully synced to storage.");
-}
+        let shuffled = [...db.teams].sort(() => 0.5 - Math.random());
+        let matchday = parseInt(document.getElementById('matchdayInput').value);
 
-/**
- * Example Render function to show how the delete buttons connect
- */
-function renderStats() {
-    const container = document.getElementById('statsDisplay'); // Adjust to your ID
-    if (!container) return;
-
-    container.innerHTML = db.stats.map((player, index) => `
-        <div class="stat-row">
-            <strong>${player.name}</strong>: ${player.goals} G, ${player.assists} A
-            <button onclick="deleteByIndex(${index})" class="del-btn">Delete</button>
-        </div>
-    `).join('');
-}
-
-        // --- RENDER FUNCTIONS ---
-        function renderAll() {
-            renderTeams();
-            renderFixtures();
-            renderStats();
-            renderNews(); 
-            populatePlayerSuggestions();
-            populateSelects();
+        for (let i = 0; i < shuffled.length - 1; i += 2) {
+            db.fixtures.push({
+                id: 'fix_' + Date.now().toString() + i,
+                homeId: shuffled[i].id,
+                awayId: shuffled[i + 1].id,
+                matchday: matchday,
+                status: 'pending',
+                homeScore: null,
+                awayScore: null
+            });
         }
 
-        function renderTeams() {
-            const tbody = document.getElementById('teamsTableBody');
-            tbody.innerHTML = '';
-            
-            // Sort by points, then goal difference
-            let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+        saveAndRefresh();
+        alert("Random pairs generated for Matchday " + matchday);
+    }
 
-            sortedTeams.forEach(t => {
-                tbody.innerHTML += `
+    function deleteFixture(id) {
+        if (!confirm("Delete this fixture?")) return;
+        db.fixtures = db.fixtures.filter(f => f.id !== id);
+        saveAndRefresh();
+    }
+
+    function submitScore(fixtureId) {
+        const homeInput = document.getElementById(`home_score_${fixtureId}`);
+        const awayInput = document.getElementById(`away_score_${fixtureId}`);
+
+        if (!homeInput || !awayInput) return alert("Error: Could not find score inputs.");
+
+        const homeScore = parseInt(homeInput.value);
+        const awayScore = parseInt(awayInput.value);
+
+        if (isNaN(homeScore) || isNaN(awayScore)) return alert("Please enter valid scores.");
+
+        const fixture = db.fixtures.find(f => f.id === fixtureId);
+        if (!fixture) return alert("Fixture not found in database.");
+        if (fixture.status === 'completed') return alert("This match has already been saved.");
+
+        fixture.homeScore = homeScore;
+        fixture.awayScore = awayScore;
+        fixture.status = 'completed';
+
+        updateTableStandings(fixture.homeId, fixture.awayId, homeScore, awayScore);
+        saveAndRefresh();
+        alert("Score synced globally!");
+    }
+
+    function undoFixtureStats(fixtureId) {
+        if (!confirm("This removes points and sets match back to pending. Continue?")) return;
+
+        const fixture = db.fixtures.find(f => f.id === fixtureId);
+        if (!fixture) return;
+
+        let home = db.teams.find(t => t.id === fixture.homeId);
+        let away = db.teams.find(t => t.id === fixture.awayId);
+
+        if (home && away) {
+            home.p--; away.p--;
+            home.gf -= fixture.homeScore;
+            home.ga -= fixture.awayScore;
+            away.gf -= fixture.awayScore;
+            away.ga -= fixture.homeScore;
+
+            if (fixture.homeScore > fixture.awayScore) {
+                home.w--; home.pts -= 3; away.l--;
+            } else if (fixture.homeScore < fixture.awayScore) {
+                away.w--; away.pts -= 3; home.l--;
+            } else {
+                home.d--; home.pts -= 1; away.d--; away.pts -= 1;
+            }
+
+            home.gd = home.gf - home.ga;
+            away.gd = away.gf - away.ga;
+        }
+
+        fixture.status = 'pending';
+        fixture.homeScore = null;
+        fixture.awayScore = null;
+
+        saveAndRefresh();
+    }
+
+    function updateTableStandings(homeId, awayId, homeScore, awayScore) {
+        let home = db.teams.find(t => t.id === homeId);
+        let away = db.teams.find(t => t.id === awayId);
+
+        if (!home || !away) return;
+
+        const stats = ['p', 'w', 'd', 'l', 'gf', 'ga', 'gd', 'pts'];
+        [home, away].forEach(t => {
+            stats.forEach(s => { if (t[s] === undefined) t[s] = 0; });
+        });
+
+        home.p++; away.p++;
+        home.gf += homeScore; home.ga += awayScore;
+        away.gf += awayScore; away.ga += homeScore;
+
+        if (homeScore > awayScore) {
+            home.w++; home.pts += 3; away.l++;
+        } else if (homeScore < awayScore) {
+            away.w++; away.pts += 3; home.l++;
+        } else {
+            home.d++; away.d++; home.pts += 1; away.pts += 1;
+        }
+
+        home.gd = home.gf - home.ga;
+        away.gd = away.gf - away.ga;
+    }
+
+    // --- STATS MANAGEMENT ---
+    function updateStat() {
+        const name = document.getElementById('statPlayerName').value.trim();
+        const type = document.getElementById('statType').value;
+        const val = parseInt(document.getElementById('statValue').value);
+
+        if (!name) return alert("Enter player name");
+        if (isNaN(val)) return alert("Enter a valid number");
+
+        let player = db.stats.find(s => s.name.toLowerCase() === name.toLowerCase());
+        if (!player) {
+            player = { name: name, goals: 0, assists: 0 };
+            db.stats.push(player);
+        }
+
+        player[type] = val;
+        saveAndRefresh();
+    }
+
+    function deleteByIndex(index) {
+        const playerName = db.stats[index].name;
+        if (confirm(`Remove ${playerName} from the database?`)) {
+            db.stats.splice(index, 1);
+            saveAndRefresh();
+        }
+    }
+
+    // --- NEWS MANAGEMENT ---
+    function saveNewsItem() {
+        const tag = document.getElementById('newsTag').value;
+        const text = document.getElementById('newsTextInput').value.trim();
+        const editId = document.getElementById('editNewsId').value;
+
+        if (!text) return alert("Please enter headline text.");
+
+        if (editId) {
+            const index = db.news.findIndex(n => n.id === editId);
+            if (index !== -1) {
+                db.news[index] = { ...db.news[index], tag, text };
+            }
+        } else {
+            db.news.push({ id: Date.now().toString(), tag: tag, text: text });
+        }
+
+        saveAndRefresh();
+        cancelNewsEdit(); 
+    }
+
+    function editNews(id) {
+        const item = db.news.find(n => n.id === id);
+        if (!item) return;
+
+        document.getElementById('newsFormTitle').innerText = "Edit Headline";
+        document.getElementById('newsTag').value = item.tag;
+        document.getElementById('newsTextInput').value = item.text;
+        document.getElementById('editNewsId').value = item.id;
+        document.getElementById('newsSubmitBtn').innerText = "Update Headline";
+        document.getElementById('newsCancelBtn').style.display = "block";
+    }
+
+    function cancelNewsEdit() {
+        document.getElementById('newsFormTitle').innerText = "Add New Headline";
+        document.getElementById('newsTag').value = "BREAKING";
+        document.getElementById('newsTextInput').value = "";
+        document.getElementById('editNewsId').value = "";
+        document.getElementById('newsSubmitBtn').innerText = "Post to Ticker";
+        document.getElementById('newsCancelBtn').style.display = "none";
+    }
+
+    function deleteNews(id) {
+        if (confirm("Delete this headline?")) {
+            db.news = db.news.filter(n => n.id !== id);
+            saveAndRefresh();
+        }
+    }
+
+    // --- MOTW MANAGEMENT ---
+    function saveMOTW() {
+        const homeName = document.getElementById('editMotwHome').value.trim();
+        const awayName = document.getElementById('editMotwAway').value.trim();
+
+        const getTeamLogo = (name) => {
+            const team = db.teams.find(t => t.name.toLowerCase() === name.toLowerCase());
+            return team ? team.logo : 'https://via.placeholder.com/50?text=⚽';
+        };
+
+        const motwData = {
+            homeName,
+            awayName,
+            homeLogo: getTeamLogo(homeName),
+            awayLogo: getTeamLogo(awayName),
+            time: document.getElementById('editMotwTime').value,
+            day: document.getElementById('editMotwDay').value,
+            reason: document.getElementById('editMotwReason').value
+        };
+
+        firebase.database().ref('leagueMOTW').set(motwData)
+            .then(() => alert("Match of the Week Synchronized!"))
+            .catch(error => alert("Failed to sync MOTW: " + error.message));
+    }
+
+    // --- RENDER FUNCTIONS ---
+    function renderAll() {
+        renderTeams();
+        renderFixtures();
+        renderStats();
+        renderNews(); 
+        populateSelects();
+        
+        // Auto-suggestions logic wrappers if elements exist
+        const playerList = document.getElementById('playerList');
+        if (playerList) {
+            playerList.innerHTML = "";
+            db.teams.forEach(t => playerList.appendChild(new Option(t.name)));
+        }
+        
+        const teamList = document.getElementById('teamList');
+        if (teamList) {
+            teamList.innerHTML = "";
+            db.teams.forEach(t => teamList.appendChild(new Option(t.name)));
+        }
+    }
+
+    function renderTeams() {
+        const tbody = document.getElementById('teamsTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        
+        let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+        sortedTeams.forEach(t => {
+            tbody.innerHTML += `
+                <tr>
+                    <td><strong>${t.name}</strong></td>
+                    <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
+                    <td>${t.gf}</td><td>${t.ga}</td><td style="color: var(--accent); font-weight: bold;">${t.pts}</td>
+                    <td><button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteTeam('${t.id}')">Del</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function renderFixtures() {
+        const pendingBody = document.getElementById('pendingFixturesBody');
+        const completedBody = document.getElementById('completedFixturesBody');
+        if(!pendingBody || !completedBody) return;
+
+        pendingBody.innerHTML = '';
+        completedBody.innerHTML = '';
+
+        db.fixtures.forEach(f => {
+            const home = db.teams.find(t => t.id === f.homeId)?.name || 'Unknown';
+            const away = db.teams.find(t => t.id === f.awayId)?.name || 'Unknown';
+
+            if (f.status === 'pending') {
+                pendingBody.innerHTML += `
                     <tr>
-                        <td><strong>${t.name}</strong></td>
-                        <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
-                        <td>${t.gf}</td><td>${t.ga}</td><td style="color: var(--accent); font-weight: bold;">${t.pts}</td>
-                        <td><button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteTeam('${t.id}')">Del</button></td>
+                        <td>MD ${f.matchday}</td>
+                        <td>${home} vs ${away}</td>
+                        <td>
+                            <input type="number" id="home_score_${f.id}" style="width:50px;">
+                            -
+                            <input type="number" id="away_score_${f.id}" style="width:50px;">
+                        </td>
+                        <td>
+                            <button onclick="submitScore('${f.id}')">Save</button>
+                            <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>
+                        </td>
                     </tr>
                 `;
-            });
-        }
-
-        function populateSelects() {
-            const homeSelect = document.getElementById('homeTeamSelect');
-            const awaySelect = document.getElementById('awayTeamSelect');
-            homeSelect.innerHTML = '<option value="">Select Team...</option>';
-            awaySelect.innerHTML = '<option value="">Select Team...</option>';
-
-            db.teams.forEach(t => {
-                homeSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-                awaySelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-            });
-        }
-
-       function renderFixtures() {
-    const pendingBody = document.getElementById('pendingFixturesBody');
-    const completedBody = document.getElementById('completedFixturesBody');
-
-    pendingBody.innerHTML = '';
-    completedBody.innerHTML = '';
-
-    db.fixtures.forEach(f => {
-        const home = db.teams.find(t => t.id === f.homeId)?.name || 'Unknown';
-        const away = db.teams.find(t => t.id === f.awayId)?.name || 'Unknown';
-
-        if (f.status === 'pending') {
-            pendingBody.innerHTML += `
-                <tr>
-                    <td>MD ${f.matchday}</td>
-                    <td>${home} vs ${away}</td>
-                    <td>
-                        <input type="number" id="home_score_${f.id}" style="width:50px;">
-                        -
-                        <input type="number" id="away_score_${f.id}" style="width:50px;">
-                    </td>
-                    <td>
-                        <button onclick="submitScore('${f.id}')">Save</button>
-                        <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Delete</button>
-                    </td>
-                </tr>
-            `;
-        } else {
-            completedBody.innerHTML += `
-                <tr>
-                    <td>MD ${f.matchday}</td>
-                    <td>${home} vs ${away}</td>
-                    <td><strong>${f.homeScore} - ${f.awayScore}</strong></td>
-                    <td>
-                        <button onclick="undoFixtureStats('${f.id}')" style="background:#ff9800;">Undo</button>
-                        <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Delete</button>
-                    </td>
-                </tr>
-            `;
-        }
-    });
-}
-        // --- STATS LOGIC ---
-
-function updateStat() {
-    const name = document.getElementById('statPlayerName').value.trim();
-    const type = document.getElementById('statType').value;
-    const val = parseInt(document.getElementById('statValue').value);
-
-    if (!name) return alert("Enter player name");
-    if (isNaN(val)) return alert("Enter a valid number");
-
-    let player = db.stats.find(s => s.name.toLowerCase() === name.toLowerCase());
-    if (!player) {
-        player = { name: name, goals: 0, assists: 0 };
-        db.stats.push(player);
+            } else {
+                completedBody.innerHTML += `
+                    <tr>
+                        <td>MD ${f.matchday}</td>
+                        <td>${home} vs ${away}</td>
+                        <td><strong>${f.homeScore} - ${f.awayScore}</strong></td>
+                        <td>
+                            <button onclick="undoFixtureStats('${f.id}')" style="background:#ff9800;">Undo</button>
+                            <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>
+                        </td>
+                    </tr>
+                `;
+            }
+        });
     }
 
-    player[type] = val;
-    saveAndRefresh();
-}
+    function renderStats() {
+        const tbody = document.getElementById('statsTableBody');
+        if (!tbody) return;
 
-/**
- * Deletes a player based on the name currently in the input field
- */
-function deleteStat() {
-    const name = document.getElementById('statPlayerName').value.trim();
-    if (!name) return alert("Enter name to delete");
-
-    if (confirm(`Are you sure you want to delete ${name}?`)) {
-        db.stats = db.stats.filter(s => s.name.toLowerCase() !== name.toLowerCase());
-        saveAndRefresh();
-        document.getElementById('statPlayerName').value = "";
+        tbody.innerHTML = db.stats.map((player, index) => `
+            <tr>
+                <td>${player.name}</td>
+                <td>${player.goals}</td>
+                <td>${player.assists}</td>
+                <td>
+                    <button onclick="deleteByIndex(${index})" style="background: #ff4d4d; padding: 4px 8px; font-size: 12px;">Del</button>
+                </td>
+            </tr>
+        `).join('');
     }
-}
 
-/**
- * Deletes a player by their position in the array (called from the table)
- */
-function deleteByIndex(index) {
-    const playerName = db.stats[index].name;
-    if (confirm(`Remove ${playerName} from the database?`)) {
-        db.stats.splice(index, 1);
-        saveAndRefresh();
-    }
-}
-
-/**
- * Renders the table rows with a delete button for each player
- */
-function renderStats() {
-    const tbody = document.getElementById('statsTableBody');
-    if (!tbody) return;
-
-    tbody.innerHTML = db.stats.map((player, index) => `
-        <tr>
-            <td>${player.name}</td>
-            <td>${player.goals}</td>
-            <td>${player.assists}</td>
-            <td>
-                <button 
-                    onclick="deleteByIndex(${index})" 
-                    style="background: #ff4d4d; padding: 4px 8px; font-size: 12px;">
-                    Delete
-                </button>
-            </td>
-        </tr>
-    `).join('');
-}
-
-// Ensure the table loads when the page opens
-window.onload = renderStats;
-        function renderNews() {
+    function renderNews() {
         const tbody = document.getElementById('newsTableBody');
+        if (!tbody) return;
         tbody.innerHTML = '';
-
-        if (!db.news) db.news = []; // Safety check
 
         db.news.forEach(item => {
             tbody.innerHTML += `
@@ -897,296 +907,37 @@ window.onload = renderStats;
         });
     }
 
-    function saveNewsItem() {
-        const tag = document.getElementById('newsTag').value;
-        const text = document.getElementById('newsTextInput').value.trim();
-        const editId = document.getElementById('editNewsId').value;
+    function populateSelects() {
+        const homeSelect = document.getElementById('homeTeamSelect');
+        const awaySelect = document.getElementById('awayTeamSelect');
+        if(!homeSelect || !awaySelect) return;
 
-        if (!text) return alert("Please enter headline text.");
+        homeSelect.innerHTML = '<option value="">Select Team...</option>';
+        awaySelect.innerHTML = '<option value="">Select Team...</option>';
 
-        if (editId) {
-            // Update existing
-            const index = db.news.findIndex(n => n.id === editId);
-            if (index !== -1) {
-                db.news[index] = { ...db.news[index], tag, text };
+        db.teams.forEach(t => {
+            homeSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+            awaySelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+        });
+    }
+
+    function populateLineupDropdown() {
+        const select = document.getElementById('lineupTeamSelect');
+        if(!select) return;
+        select.innerHTML = '<option value="">-- Choose Team --</option>';
+        db.teams.forEach(team => select.appendChild(new Option(team.name, team.id)));
+    }
+
+    function updateAllTeamDropdowns() {
+        const selectIds = ['lineupTeamSelect', 'detailsTeamSelect'];
+        selectIds.forEach(id => {
+            const select = document.getElementById(id);
+            if (select) {
+                select.innerHTML = '<option value="">-- Choose Team --</option>';
+                db.teams.forEach(team => select.appendChild(new Option(team.name, team.id)));
             }
-        } else {
-            // Add new
-            db.news.push({
-                id: Date.now().toString(),
-                tag: tag,
-                text: text
-            });
-        }
-
-        saveData();
-        cancelNewsEdit(); // Reset form
-        renderNews();
+        });
     }
-
-    function editNews(id) {
-        const item = db.news.find(n => n.id === id);
-        if (!item) return;
-
-        document.getElementById('newsFormTitle').innerText = "Edit Headline";
-        document.getElementById('newsTag').value = item.tag;
-        document.getElementById('newsTextInput').value = item.text;
-        document.getElementById('editNewsId').value = item.id;
-        
-        document.getElementById('newsSubmitBtn').innerText = "Update Headline";
-        document.getElementById('newsCancelBtn').style.display = "block";
-    }
-
-    function cancelNewsEdit() {
-        document.getElementById('newsFormTitle').innerText = "Add New Headline";
-        document.getElementById('newsTag').value = "BREAKING";
-        document.getElementById('newsTextInput').value = "";
-        document.getElementById('editNewsId').value = "";
-        
-        document.getElementById('newsSubmitBtn').innerText = "Post to Ticker";
-        document.getElementById('newsCancelBtn').style.display = "none";
-    }
-
-    function deleteNews(id) {
-        if (confirm("Delete this headline?")) {
-            db.news = db.news.filter(n => n.id !== id);
-            saveData();
-            renderNews();
-        }
-    }
-    function loadData() {
-        const savedData = localStorage.getItem('eepl_db');
-        if (savedData) {
-            db = JSON.parse(savedData);
-            if (!db.news) db.news = []; // Initialize if it doesn't exist
-        }
-    }
-// --- AUTO-SUGGEST LOGIC ---
-
-function updateTeamSuggestions() {
-    const list = document.getElementById('teamList');
-    if (!list) return;
-
-    // Clear existing options
-    list.innerHTML = '';
-
-    // Loop through teams already added in the "Manage Teams" pane
-    db.teams.forEach(team => {
-        const option = document.createElement('option');
-        option.value = team.name; 
-        list.appendChild(option);
-    });
-}
-     
-function saveMOTW() {
-    const homeName = document.getElementById('editMotwHome').value.trim();
-    const awayName = document.getElementById('editMotwAway').value.trim();
-
-    const motwData = {
-        homeName,
-        awayName,
-        homeLogo: getTeamLogo(homeName),
-        awayLogo: getTeamLogo(awayName),
-        time: document.getElementById('editMotwTime').value,
-        day: document.getElementById('editMotwDay').value,
-        reason: document.getElementById('editMotwReason').value
-    };
-
-    localStorage.setItem('leagueMOTW', JSON.stringify(motwData));
-
-    alert("Match of the Week Updated!");
-    displayMOTW();
-}
-function getTeamLogo(teamName) {
-    const team = db.teams.find(
-        t => t.name.toLowerCase() === teamName.toLowerCase()
-    );
-
-    return team ? team.logo : 'https://via.placeholder.com/50?text=⚽';
-}
-
-// Run this when the Admin page loads to fill the dropdown
-function populateLineupDropdown() {
-    const db = JSON.parse(localStorage.getItem('eepl_db')) || { teams: [] };
-    const select = document.getElementById('lineupTeamSelect');
-    
-    // Clear existing and add current teams
-    select.innerHTML = '<option value="">-- Choose Team --</option>';
-    db.teams.forEach(team => {
-        const opt = document.createElement('option');
-        opt.value = team.id;
-        opt.innerText = team.name;
-        select.appendChild(opt);
-    });
-}
-
-function uploadLineup() {
-    const teamId = document.getElementById('lineupTeamSelect').value;
-    const fileInput = document.getElementById('lineupInput');
-    const file = fileInput.files[0];
-
-    if (!teamId || !file) {
-        alert("Please select a team and an image!");
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const base64Image = e.target.result;
-        
-        // Update the Database
-        const db = JSON.parse(localStorage.getItem('eepl_db'));
-        const teamIndex = db.teams.findIndex(t => t.id === teamId);
-
-        if (teamIndex !== -1) {
-            // Save image string to the team object
-            db.teams[teamIndex].lineupImage = base64Image;
-            
-            // Save updated DB back to localStorage
-            localStorage.setItem('eepl_db', JSON.stringify(db));
-            alert("Tactical Lineup Saved Successfully!");
-            
-            // Clear input
-            fileInput.value = '';
-        }
-    };
-    
-    reader.readAsDataURL(file);
-}
-
-// Call this on page load
-document.addEventListener('DOMContentLoaded', populateLineupDropdown);
-
-function saveTeamLineup(teamId, base64Image) {
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
-    const teamIndex = db.teams.findIndex(t => t.id === teamId);
-    
-    // Save the image string into the team object
-    db.teams[teamIndex].lineupImage = base64Image; 
-    try {
-    localStorage.setItem('eepl_db', JSON.stringify(db));
-    alert("Lineup Image Uploaded!");
-} catch (e) {
-    console.error(e); alert("SAVE FAILED: The image is too large for the memory,");
-}
-}
-
-function loadCurrentDetails() {
-    const teamId = document.getElementById('detailsTeamSelect').value;
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
-    const team = db.teams.find(t => t.id === teamId);
-
-    if (team) {
-        document.getElementById('inStadium').value = team.stadium || '';
-        document.getElementById('inFounded').value = team.founded || '';
-        document.getElementById('inCountry').value = team.country || '';
-    }
-}
-
-function saveTeamDetails() {
-    const teamId = document.getElementById('detailsTeamSelect').value;
-    const stadium = document.getElementById('inStadium').value;
-    const founded = document.getElementById('inFounded').value;
-    const country = document.getElementById('inCountry').value;
-
-    if (!teamId) return alert("Select a team first!");
-
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
-    const index = db.teams.findIndex(t => t.id === teamId);
-
-    if (index !== -1) {
-        // Update the object
-        db.teams[index].stadium = stadium;
-        db.teams[index].founded = founded;
-        db.teams[index].country = country;
-
-        localStorage.setItem('eepl_db', JSON.stringify(db));
-        alert("Team details updated!");
-    }
-}
-function undoFixtureStats(fixtureId) {
-    if (!confirm("This will remove points from the table and move the match back to pending. Continue?")) return;
-
-    const fixture = db.fixtures.find(f => f.id === fixtureId);
-    if (!fixture) return;
-
-    // 1. Find the teams
-    let home = db.teams.find(t => t.id === fixture.homeId);
-    let away = db.teams.find(t => t.id === fixture.awayId);
-
-    if (home && away) {
-        // 2. Subtract the stats
-        home.p--; away.p--;
-        home.gf -= fixture.homeScore;
-        home.ga -= fixture.awayScore;
-        away.gf -= fixture.awayScore;
-        away.ga -= fixture.homeScore;
-
-        if (fixture.homeScore > fixture.awayScore) {
-            home.w--; home.pts -= 3; away.l--;
-        } else if (fixture.homeScore < fixture.awayScore) {
-            away.w--; away.pts -= 3; home.l--;
-        } else {
-            home.d--; home.pts -= 1; away.d--; away.pts -= 1;
-        }
-
-        home.gd = home.gf - home.ga;
-        away.gd = away.gf - away.ga;
-    }
-
-    // 3. Reset fixture status
-    fixture.status = 'pending';
-    fixture.homeScore = null;
-    fixture.awayScore = null;
-
-    // 4. Save and Refresh UI
-    saveAndRefresh();
-}
-
-function updateAllTeamDropdowns() {
-    const dbString = localStorage.getItem('eepl_db');
-    
-    // Debugger: This will show up in your F12 Console
-    console.log("Raw DB String:", dbString);
-
-    if (!dbString) {
-        console.error("Database 'eepl_db' not found in localStorage!");
-        return;
-    }
-
-    const db = JSON.parse(dbString);
-    
-    if (!db.teams || db.teams.length === 0) {
-        console.error("Database found, but 'teams' array is empty!");
-        return;
-    }
-
-    // List of every dropdown ID we want to fill
-    const selectIds = ['lineupTeamSelect', 'detailsTeamSelect'];
-
-    selectIds.forEach(id => {
-        const select = document.getElementById(id);
-        if (select) {
-            // Preserve the first "Choose Team" option
-            select.innerHTML = '<option value="">-- Choose Team --</option>';
-            
-            db.teams.forEach(team => {
-                const opt = document.createElement('option');
-                opt.value = team.id;
-                opt.innerText = team.name;
-                select.appendChild(opt);
-            });
-            console.log(`Dropdown '${id}' populated with ${db.teams.length} teams.`);
-        } else {
-            console.warn(`Element with ID '${id}' not found on this page.`);
-        }
-    });
-}
-
-// Run it immediately AND when the window fully loads
-window.onload = updateAllTeamDropdowns;
-
-
-    </script>
+</script>
 </body>
 </html>

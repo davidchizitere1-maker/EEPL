@@ -263,7 +263,8 @@
     </style>
 </head>
 <body>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script> 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
@@ -439,134 +440,131 @@
     </footer>
 
     <script>
-        const API_URL = 'http://localhost:3000';
+        // --- FIREBASE AUTHENTICATION REFINEMENT ---
 
-        function showError(inputElement, message) {
-            clearErrors();
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-msg';
-            errorDiv.innerText = `* ${message}`;
-            
-            inputElement.classList.add('input-error');
-            const container = inputElement.closest('.input-group');
-            if (container) container.appendChild(errorDiv);
-            inputElement.focus();
-        }
+function showError(inputElement, message) {
+    clearErrors();
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'error-msg';
+    errorDiv.innerText = `* ${message}`;
+    
+    inputElement.classList.add('input-error');
+    const container = inputElement.closest('.input-group');
+    if (container) container.appendChild(errorDiv);
+    inputElement.focus();
+}
 
-        function clearErrors() {
-            document.querySelectorAll('.error-msg').forEach(el => el.remove());
-            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-        }
+function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(el => el.remove());
+    document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+}
 
-        function showAuth(type) {
-            clearErrors();
-            document.getElementById('login-form').classList.toggle('active', type === 'login');
-            document.getElementById('signup-form').classList.toggle('active', type === 'signup');
-        }
+function showAuth(type) {
+    clearErrors();
+    document.getElementById('login-form').classList.toggle('active', type === 'login');
+    document.getElementById('signup-form').classList.toggle('active', type === 'signup');
+}
 
-        async function registerUser() {
-            clearErrors();
-            const fName = document.getElementById('signup-firstname');
-            const lName = document.getElementById('signup-lastname');
-            const email = document.getElementById('signup-email');
-            const pass = document.getElementById('signup-password');
-            const terms = document.getElementById('terms');
+async function registerUser() {
+    clearErrors();
+    const fName = document.getElementById('signup-firstname');
+    const lName = document.getElementById('signup-lastname');
+    const email = document.getElementById('signup-email');
+    const pass = document.getElementById('signup-password');
+    const terms = document.getElementById('terms');
 
-            if (!fName.value) return showError(fName, "First name required");
-            if (!lName.value) return showError(lName, "Last name required");
-            if (!email.value) return showError(email, "Email required");
-            if (!pass.value) return showError(pass, "Password required");
-            if (!terms.checked) return showError(terms, "Accept our Terms");
+    if (!fName.value) return showError(fName, "First name required");
+    if (!lName.value) return showError(lName, "Last name required");
+    if (!email.value) return showError(email, "Email required");
+    if (!pass.value) return showError(pass, "Password required");
+    if (!terms.checked) return showError(terms, "Accept our Terms");
 
-            try {
-                const response = await fetch(`${API_URL}/users`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        firstname: fName.value, 
-                        lastname: lName.value, 
-                        email: email.value, 
-                        password: pass.value 
-                    })
-                });
-
-                if (response.status === 201) {
-                    showWelcomeScreen(fName.value);
-                } else {
-                    const msg = await response.text();
-                    showError(email, msg || "Registration failed");
-                }
-            } catch (e) { 
-                showError(fName, "Server connection failed"); 
-            }
-        }
-
-        async function loginUser() {
-            clearErrors();
-            const email = document.getElementById('login-email');
-            const pass = document.getElementById('login-password');
-
-            if (!email.value) return showError(email, "Enter your email");
-            if (!pass.value) return showError(pass, "Enter your password");
-
-            try {
-                const response = await fetch(`${API_URL}/users/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email.value, password: pass.value })
-                });
-
-                const msg = await response.text();
-                
-                if (msg === 'Success' || response.ok) {
-                    const displayName = email.value.split('@')[0];
-                    showWelcomeScreen(displayName);
-                } else if (msg === 'Invalid Password') {
-                    showError(pass, "Incorrect Password");
-                } else {
-                    showError(email, "Entity does not exist or login failed");
-                }
-            } catch (e) { 
-                showError(email, "Server connection failed"); 
-            }
-        }
-
-        function showWelcomeScreen(name) {
-            const authCard = document.querySelector('.auth-card');
-            authCard.innerHTML = `
-                <div style="text-align: center; padding: 20px;">
-                    <h2 style="color: #00e5ff; font-size: 1.5rem">Welcome to EEPL, ${name}!</h2>
-                    <p style="letter-spacing: 2px; font-size: 1.2rem;">You now have access to the league hub.</p>
-                    <div class="loader"></div>
-                </div>
-            `;
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', name);
-            setTimeout(() => { 
-                window.location.href = 'EEPL.html'; 
-            }, 2500);
-        }
-    document.addEventListener('DOMContentLoaded', () => {
-        const observerOptions = {
-            threshold: 0.1
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('show');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, observerOptions);
-
-        const cards = document.querySelectorAll('.exp-card');
-        cards.forEach((card, index) => {
-            // Stagger the animation so they pop up one by one
-            card.style.transitionDelay = `${(index % 3) * 0.15}s`; 
-            observer.observe(card);
+    try {
+        // Firebase Auth: Create User
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email.value, pass.value);
+        
+        // Update Firebase profile with the First Name
+        await userCredential.user.updateProfile({
+            displayName: fName.value
         });
+
+        showWelcomeScreen(fName.value);
+    } catch (error) {
+        // Handle Firebase specific errors
+        if (error.code === 'auth/email-already-in-use') {
+            showError(email, "Email already in use.");
+        } else if (error.code === 'auth/weak-password') {
+            showError(pass, "Password is too weak.");
+        } else {
+            showError(email, error.message);
+        }
+    }
+}
+
+async function loginUser() {
+    clearErrors();
+    const email = document.getElementById('login-email');
+    const pass = document.getElementById('login-password');
+
+    if (!email.value) return showError(email, "Enter your email");
+    if (!pass.value) return showError(pass, "Enter your password");
+
+    try {
+        // Firebase Auth: Sign In
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
+        const user = userCredential.user;
+        
+        // Use displayName if set, otherwise fallback to email prefix
+        const displayName = user.displayName || email.value.split('@')[0];
+        showWelcomeScreen(displayName);
+    } catch (error) {
+        // Handle Firebase specific errors
+        if (error.code === 'auth/wrong-password') {
+            showError(pass, "Incorrect Password");
+        } else if (error.code === 'auth/user-not-found') {
+            showError(email, "No account found with this email.");
+        } else {
+            showError(email, "Login failed: " + error.message);
+        }
+    }
+}
+
+function showWelcomeScreen(name) {
+    const authCard = document.querySelector('.auth-card');
+    authCard.innerHTML = `
+        <div style="text-align: center; padding: 20px;">
+            <h2 style="color: #00e5ff; font-size: 1.5rem">Welcome to EEPL, ${name}!</h2>
+            <p style="letter-spacing: 2px; font-size: 1.2rem;">You now have access to the league hub.</p>
+            <div class="loader"></div>
+        </div>
+    `;
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('userName', name);
+    setTimeout(() => { 
+        window.location.href = 'EEPL.html'; 
+    }, 2500);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const observerOptions = {
+        threshold: 0.1
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('show');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    const cards = document.querySelectorAll('.exp-card');
+    cards.forEach((card, index) => {
+        card.style.transitionDelay = `${(index % 3) * 0.15}s`; 
+        observer.observe(card);
     });
+});
     </script>
 </body>
 </html>

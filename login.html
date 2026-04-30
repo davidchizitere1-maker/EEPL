@@ -7,13 +7,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script>
     (function() {
-        const isLoggedIn = localStorage.getItem('isLoggedIn');
-        if (isLoggedIn === 'true') {
-            // Leave a "note" for the home page
-            localStorage.setItem('showLoginAlert', 'true');
-            // Redirect immediately
-            window.location.href = 'index.html'; 
-        }
+        // Listen for Firebase Auth state to handle existing sessions
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                // Keep the "note" for the index page to trigger the alert bar
+                localStorage.setItem('showLoginAlert', 'true');
+                
+                // Redirect immediately to the index page
+                window.location.href = 'index.html'; 
+            }
+        });
     })();
 </script>
 
@@ -265,6 +268,7 @@
 </head>
 <body>
         <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
@@ -388,120 +392,137 @@
         </main>
     </footer>
     <script>
-        const API_URL = 'http://localhost:3000';
+        // No more local API_URL needed
+    const db = firebase.database();
+    const auth = firebase.auth();
 
-        function showError(inputElement, message) {
-            clearErrors();
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-msg';
-            errorDiv.innerText = `* ${message}`;
-            
-            inputElement.classList.add('input-error');
-            inputElement.closest('.input-group').appendChild(errorDiv);
-            inputElement.focus();
-        }
+    function showError(inputElement, message) {
+        clearErrors();
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-msg';
+        errorDiv.innerText = `* ${message}`;
+        
+        inputElement.classList.add('input-error');
+        inputElement.closest('.input-group').appendChild(errorDiv);
+        inputElement.focus();
+    }
 
-        function clearErrors() {
-            document.querySelectorAll('.error-msg').forEach(el => el.remove());
-            document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
-        }
+    function clearErrors() {
+        document.querySelectorAll('.error-msg').forEach(el => el.remove());
+        document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
+    }
 
-        function showAuth(type) {
-            clearErrors();
-            document.getElementById('login-form').classList.toggle('active', type === 'login');
-            document.getElementById('signup-form').classList.toggle('active', type === 'signup');
-        }
+    function showAuth(type) {
+        clearErrors();
+        document.getElementById('login-form').classList.toggle('active', type === 'login');
+        document.getElementById('signup-form').classList.toggle('active', type === 'signup');
+    }
 
-        async function registerUser() {
-            clearErrors();
-            const fName = document.getElementById('signup-firstname');
-            const lName = document.getElementById('signup-lastname');
-            const email = document.getElementById('signup-email');
-            const pass = document.getElementById('signup-password');
-            const terms = document.getElementById('terms');
+    async function registerUser() {
+        clearErrors();
+        const fName = document.getElementById('signup-firstname');
+        const lName = document.getElementById('signup-lastname');
+        const email = document.getElementById('signup-email');
+        const pass = document.getElementById('signup-password');
+        const terms = document.getElementById('terms');
 
-            if (!fName.value) return showError(fName, "First name required");
-            if (!lName.value) return showError(lName, "Last name required");
-            if (!email.value) return showError(email, "Email required");
-            if (!pass.value) return showError(pass, "Password required");
-            if (!terms.checked) return showError(terms, "Accept our Terms");
+        if (!fName.value) return showError(fName, "First name required");
+        if (!lName.value) return showError(lName, "Last name required");
+        if (!email.value) return showError(email, "Email required");
+        if (!pass.value) return showError(pass, "Password required");
+        if (!terms.checked) return showError(terms, "Accept our Terms");
 
-            try {
-                const response = await fetch(`${API_URL}/users`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        firstname: fName.value, 
-                        lastname: lName.value, 
-                        email: email.value, 
-                        password: pass.value 
-                    })
-                });
+        try {
+            // 1. Create the user in Firebase Auth
+            const userCredential = await auth.createUserWithEmailAndPassword(email.value, pass.value);
+            const user = userCredential.user;
 
-                if (response.status === 201) {
-                    showWelcomeScreen(fName.value);
-                } else {
-                    const msg = await response.text();
-                    showError(email, msg || "Registration failed");
-                }
-            } catch (e) { 
-                showError(fName, "Server connection failed"); 
+            // 2. Store additional entity data in Realtime Database
+            await db.ref('users/' + user.uid).set({
+                firstname: fName.value,
+                lastname: lName.value,
+                email: email.value,
+                joinedAt: firebase.database.ServerValue.TIMESTAMP
+            });
+
+            // 3. Trigger the welcome sequence
+            showWelcomeScreen(fName.value);
+
+        } catch (error) {
+            // Handle Firebase specific errors
+            if (error.code === 'auth/email-already-in-use') {
+                showError(email, "This entity email is already registered");
+            } else if (error.code === 'auth/weak-password') {
+                showError(pass, "Password must be at least 6 characters");
+            } else {
+                showError(email, error.message);
             }
         }
+    }
 
         async function loginUser() {
-            clearErrors();
-            const email = document.getElementById('login-email');
-            const pass = document.getElementById('login-password');
+        clearErrors();
+        const email = document.getElementById('login-email');
+        const pass = document.getElementById('login-password');
 
-            if (!email.value) return showError(email, "Enter your email");
-            if (!pass.value) return showError(pass, "Enter your password");
+        if (!email.value) return showError(email, "Enter your email");
+        if (!pass.value) return showError(pass, "Enter your password");
 
-            try {
-                const response = await fetch(`${API_URL}/users/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email.value, password: pass.value })
-                });
+        try {
+            // 1. Authenticate with Firebase
+            const userCredential = await auth.signInWithEmailAndPassword(email.value, pass.value);
+            const user = userCredential.user;
 
-                const msg = await response.text();
-                
-                if (msg === 'Success') {
-                    const displayName = email.value.split('@')[0];
-                    showWelcomeScreen(displayName);
-                } else if (msg === 'Invalid Password') {
-                    showError(pass, "Incorrect Password");
-                } else if (msg === 'Entity does not exist' || response.status === 400) {
-                    showError(email, "Entity does not exist");
-                } else {
-                    showError(email, "Login failed");
-                }
-            } catch (e) { 
-                showError(email, "Server connection failed"); 
+            // 2. Retrieve user profile data for the display name
+            const snapshot = await db.ref('users/' + user.uid).once('value');
+            const userData = snapshot.val();
+            
+            // Use stored firstname or fallback to email prefix
+            const displayName = (userData && userData.firstname) 
+                ? userData.firstname 
+                : email.value.split('@')[0];
+            
+            showWelcomeScreen(displayName);
+
+        } catch (error) {
+            // Mapping Firebase error codes to your UI logic
+            if (error.code === 'auth/wrong-password') {
+                showError(pass, "Incorrect Password");
+            } else if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+                showError(email, "Entity does not exist");
+            } else if (error.code === 'auth/too-many-requests') {
+                showError(email, "Too many attempts. Try again later.");
+            } else {
+                showError(email, "Login failed: " + error.message);
             }
         }
+    }
 
         function showWelcomeScreen(name) {
-            const authCard = document.querySelector('.auth-card');
-            authCard.innerHTML = `
-                <div style="animation: fadeIn 0.8s ease;">
-                    <h2 style="color: #00e5ff;">Welcome, ${name}!</h2>
-                    <p style="letter-spacing: 2px;">SYNCHRONIZING ENTITY DATA...</p>
-                    <div class="loader"></div>
-                </div>
-            `;
-            localStorage.setItem('isLoggedIn', 'true');
-            localStorage.setItem('userName', name);
-            setTimeout(() => { 
-                window.location.href = 'index.html'; 
-            }, 2500);
-        }
+        const authCard = document.querySelector('.auth-card');
+        authCard.innerHTML = `
+            <div style="animation: fadeIn 0.8s ease;">
+                <h2 style="color: #00e5ff;">Welcome, ${name}!</h2>
+                <p style="letter-spacing: 2px;">SYNCHRONIZING ENTITY DATA...</p>
+                <div class="loader"></div>
+            </div>
+        `;
 
-        function toggleMenu() {
-            const navLinks = document.getElementById('navLinks');
+        // Firebase Auth manages the 'isLoggedIn' state automatically.
+        // We set a small note for the index page to trigger the success alert.
+        localStorage.setItem('showLoginAlert', 'true');
+
+        setTimeout(() => { 
+            window.location.href = 'index.html'; 
+        }, 2500);
+    }
+
+    function toggleMenu() {
+        const navLinks = document.getElementById('navLinks');
+        if (navLinks) {
             navLinks.classList.toggle('active');
         }
-
+    }
         
     </script>
 </body>

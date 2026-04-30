@@ -510,117 +510,122 @@
     </footer>
 
     <script>
-        function toggleMenu() {
-            const navLinks = document.getElementById('navLinks');
-            navLinks.classList.toggle('active');
-        }
-        document.addEventListener('DOMContentLoaded', () => {
-    
-    const isLoggedIn = localStorage.getItem('isLoggedIn');
-    const userName = localStorage.getItem('userName') || 'User'; // Fallback to 'User'
-       const userEmail = localStorage.getItem('userEmail') || 'user@dayyviid.com';
-    // Load custom PFP or use default
-    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
-
+// 1. Menu Toggle Logic
+function toggleMenu() {
     const navLinks = document.getElementById('navLinks');
+    navLinks.classList.toggle('active');
+}
 
-    if (isLoggedIn === 'true') {
-        // 1. Find the "Login" link and hide it
-        const allLinks = navLinks.querySelectorAll('li');
-        allLinks.forEach(li => {
-            if (li.textContent.toLowerCase().includes('login')) {
-                li.style.display = 'none';
-            }
-        });
+// 2. Auth Observer & UI Sync
+document.addEventListener('DOMContentLoaded', () => {
+    
+    // Listening for the Firebase Auth session
+    firebase.auth().onAuthStateChanged((user) => {
+        const navLinks = document.getElementById('navLinks');
+        const actionBtn = document.querySelector('.btn');
 
-        // 2. Add the Profile Picture and Dropdown
-                navLinks.innerHTML += `
-            <li class="user-profile-item">
-                <div class="pfp-container" onclick="toggleUserMenu(event)">
-                    <img src="${savedPfp}" id="navPfpDisplay" class="nav-pfp">
-                    <div id="user-dropdown" class="dropdown-content">
-                        <div class="user-info-header">
-                            <img src="${savedPfp}" id="dropdownPfpDisplay">
-                            <div class="user-details">
-                                <span class="name">${userName}</span>
-                                <span class="rank">Authorized Entity</span>
+        if (user) {
+            // USER IS LOGGED IN
+            const userName = user.displayName || 'Authorized Entity';
+            
+            // Check Firebase Database for a custom PFP, fallback to Google PFP, then to UI-Avatars
+            firebase.database().ref('users/' + user.uid + '/photoURL').once('value').then((snapshot) => {
+                const savedPfp = snapshot.val() || user.photoURL || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+
+                // Hide Login Links
+                const allLinks = navLinks.querySelectorAll('li');
+                allLinks.forEach(li => {
+                    if (li.textContent.toLowerCase().includes('login')) {
+                        li.style.display = 'none';
+                    }
+                });
+
+                // Inject Profile UI if missing
+                if (!document.getElementById('navPfpDisplay')) {
+                    navLinks.innerHTML += `
+                        <li class="user-profile-item">
+                            <div class="pfp-container" onclick="toggleUserMenu(event)">
+                                <img src="${savedPfp}" id="navPfpDisplay" class="nav-pfp">
+                                <div id="user-dropdown" class="dropdown-content">
+                                    <div class="user-info-header">
+                                        <img src="${savedPfp}" id="dropdownPfpDisplay">
+                                        <div class="user-details">
+                                            <span class="name">${userName}</span>
+                                            <span class="rank">Authorized Entity</span>
+                                        </div>
+                                    </div>
+                                    <div class="profile-menu-links">
+                                        <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
+                                        <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
+                                        <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
+                                        <hr style="border: 0.5px solid #222; margin: 10px 0;">
+                                        <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                                    </div>
+                                    <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
+                                </div>
                             </div>
-                        </div>
-                        <div class="profile-menu-links">
-                            <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
-                            <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
-                            <a href="setting.html"><i class="fas fa-cog"></i> Settings</a>
-                            <hr style="border: 0.5px solid #222; margin: 10px 0;">
-                            <a href="#" onclick="logout()" class="logout-link"><i class="fas fa-sign-out-alt"></i> Log out</a>
-                        </div>
-                        <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
-                    </div>
-                </div>
-            </li>
-        `;
-    }
+                        </li>
+                    `;
+                }
+            });
+
+            // Update Page Buttons
+            if (actionBtn) {
+                actionBtn.innerText = "ACCESS YOUR DOSSIER";
+                actionBtn.setAttribute('href', 'profile.html');
+            }
+
+        } else {
+            // USER IS LOGGED OUT - (HTML defaults will show)
+        }
+    });
 });
 
-    const actionBtn = document.querySelector('.btn'); // THe "ENTER YOUR ENTITY" button
-
-    if (isLoggedIn === 'true' && actionBtn) {
-        // If logged in, change the button to lead to the profile or Creations
-        actionBtn.innerText = "ACCESS YOUR DOSSIER";
-        actionBtn.setAttribute('href', 'profile.html');
-    }
-
+// 3. Updated PFP Upload (Saving to Database)
 function updatePfp(input) {
     if (input.files && input.files[0]) {
         const reader = new FileReader();
+        const user = firebase.auth().currentUser;
+
         reader.onload = function(e) {
             const imageData = e.target.result;
-            localStorage.setItem('userPfp', imageData); // Save to storage
-            document.getElementById('navPfpDisplay').src = imageData; // Update Nav
-            document.getElementById('dropdownPfpDisplay').src = imageData; // Update Card
+            if (user) {
+                firebase.database().ref('users/' + user.uid).update({
+                    photoURL: imageData
+                }).then(() => {
+                    document.getElementById('navPfpDisplay').src = imageData;
+                    document.getElementById('dropdownPfpDisplay').src = imageData;
+                });
+            }
         };
         reader.readAsDataURL(input.files[0]);
     }
 }
 
-function triggerPfpUpload() {
-    document.getElementById('pfpInput').click();
+// 4. Firebase Logout
+function logout() {
+    firebase.auth().signOut().then(() => {
+        window.location.reload(); 
+    });
 }
 
+// Utility Helpers
+function triggerPfpUpload() { document.getElementById('pfpInput').click(); }
 
-
-// Update toggle function to prevent event bubbling
 function toggleUserMenu(event) {
-    event.stopPropagation(); // Prevents window.onclick from closing it immediately
+    event.stopPropagation();
     document.getElementById('user-dropdown').classList.toggle('show');
 }
 
-function logout() {
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userName');
-    window.location.reload(); 
-}
-
-
-    function toggleUserMenu() {
-        document.getElementById('user-dropdown').classList.toggle('show');
-    }
-
-    function logout() {
-        localStorage.clear(); // Clears login status and name
-        window.location.reload(); // Refresh to show original nav links
-    }
-
-    // Close dropdown if clicking elsewhere
-    window.onclick = function(event) {
-        if (!event.target.matches('.nav-pfp')) {
-            const dropdown = document.getElementById("user-dropdown");
-            if (dropdown && dropdown.classList.contains('show')) {
-                dropdown.classList.remove('show');
-            }
+window.onclick = function(event) {
+    if (!event.target.matches('.nav-pfp')) {
+        const dropdown = document.getElementById("user-dropdown");
+        if (dropdown && dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
         }
     }
-
-    </script>
+}
+</script>
 </body>
 </html>
 

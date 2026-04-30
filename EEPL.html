@@ -762,108 +762,119 @@ These highlights capture the skill and strategy of a competition where every gam
     <script>
         
         const userName = localStorage.getItem('userName') || 'Manager';
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
+const dbRef = firebase.database().ref('league_data');
 
-            // Redirect if not logged in
-            if (isLoggedIn !== 'true') {
-                // window.location.href = 'index.html'; 
-            }
+document.addEventListener('DOMContentLoaded', () => {
+    const isLoggedIn = localStorage.getItem('isLoggedIn');
 
-            // Update UI with User Data
-            document.getElementById('displayUsername').innerText = userName;
-            document.getElementById('welcomeName').innerText = userName;
-            document.getElementById('dropdownName').innerText = userName;
+    // Redirect if not logged in
+    if (isLoggedIn !== 'true') {
+        // window.location.href = 'index.html'; 
+    }
 
-            // Handle PFP
-            const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
-            document.getElementById('navPfpDisplay').src = savedPfp;
-            document.getElementById('dropdownPfpDisplay').src = savedPfp;
+    // Update UI with User Data
+    document.getElementById('displayUsername').innerText = userName;
+    document.getElementById('welcomeName').innerText = userName;
+    document.getElementById('dropdownName').innerText = userName;
 
-            // Load and Render Database Data
-            loadLeagueData();
-        });
+    // Handle PFP from Firebase (Assuming PFP is stored under user_profiles/userName)
+    const pfpRef = firebase.database().ref(`user_profiles/${userName}/pfp`);
+    pfpRef.on('value', (snapshot) => {
+        const savedPfp = snapshot.val() || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+        document.getElementById('navPfpDisplay').src = savedPfp;
+        document.getElementById('dropdownPfpDisplay').src = savedPfp;
+    });
 
-        // Toggle Dropdown
-        function toggleUserMenu(event) {
-            event.stopPropagation();
-            const dropdown = document.getElementById('user-dropdown');
-            dropdown.classList.toggle('show');
+    // Load and Render Database Data via Firebase Listener
+    loadLeagueData();
+});
+
+// Toggle Dropdown
+function toggleUserMenu(event) {
+    event.stopPropagation();
+    const dropdown = document.getElementById('user-dropdown');
+    dropdown.classList.toggle('show');
+}
+
+// Close dropdown when clicking outside
+window.onclick = function(event) {
+    const dropdown = document.getElementById('user-dropdown');
+    if (!event.target.closest('.pfp-container')) {
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
         }
+    }
+}
 
-        // Close dropdown when clicking outside
-        window.onclick = function(event) {
-            const dropdown = document.getElementById('user-dropdown');
-            if (!event.target.closest('.pfp-container')) {
-                if (dropdown.classList.contains('show')) {
-                    dropdown.classList.remove('show');
-                }
-            }
-        }
+// Switch Tabs
+function switchPane(paneId, clickedTab) {
+    document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
+    document.getElementById(paneId).classList.add('active');
+    clickedTab.classList.add('active');
+}
 
-        // Switch Tabs
-        function switchPane(paneId, clickedTab) {
-            document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(l => l.classList.remove('active'));
-            document.getElementById(paneId).classList.add('active');
-            clickedTab.classList.add('active');
-        }
+// Update PFP
+function triggerPfpUpload() { document.getElementById('pfpInput').click(); }
 
-        // Update PFP
-        function triggerPfpUpload() { document.getElementById('pfpInput').click(); }
-        
-        function updatePfp(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const data = e.target.result;
-                    localStorage.setItem('userPfp', data);
-                    document.getElementById('navPfpDisplay').src = data;
-                    document.getElementById('dropdownPfpDisplay').src = data;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
+function updatePfp(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = e.target.result;
+            // Save PFP to Firebase instead of localStorage
+            firebase.database().ref(`user_profiles/${userName}`).update({
+                pfp: data
+            });
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
-        function logout() {
-            localStorage.removeItem('isLoggedIn');
-            window.location.reload();
-        }
+function logout() {
+    localStorage.removeItem('isLoggedIn');
+    window.location.reload();
+}
 
-        // ==========================================
-        // DYNAMIC LEAGUE DATA INTEGRATION
-        // ==========================================
-       function loadLeagueData() {
-    const dbString = localStorage.getItem('eepl_db');
-    // Initialize db with a news array as well
-    let db = dbString ? JSON.parse(dbString) : { teams: [], fixtures: [], stats: [], news: [] };
-    
+// ==========================================
+// DYNAMIC LEAGUE DATA INTEGRATION (FIREBASE)
+// ==========================================
+function loadLeagueData() {
     const seasonStatus = document.getElementById('seasonStatus');
 
-    // 1. ALWAYS update the news ticker, even if teams aren't added yet.
-    // This allows you to post "Coming Soon" news!
-    updateNewsTicker(db); 
-
-    if (db.teams.length === 0) {
-        // RULING: Removed the redundant 'const db = JSON.parse' line here to avoid errors.
+    // Real-time listener for the central league database
+    dbRef.on('value', (snapshot) => {
+        const data = snapshot.val();
         
-        // Empty State
-        seasonStatus.innerText = "The league/season is yet to begin. Waiting for Admin to add teams.";
-        document.getElementById('standingsContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-list-ol fa-3x" style="margin-bottom:15px; color:#444;"></i><br>League has not started yet.</div>`;
-        document.getElementById('fixturesContent').innerHTML = `<div class="empty-state"><i class="fa-regular fa-calendar-days fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No fixtures generated yet.</div>`;
-        document.getElementById('statsContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-chart-simple fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No stats recorded yet.</div>`;
-    } else {
-        // Active State
-        seasonStatus.innerText = "The season is currently active. Keep pushing for the top spot.";
-        renderDashboard(db);
-        renderStandings(db);
-        renderFixtures(db);
-        renderStats(db);
-        calculateLeagueInsights(db);
-        populateH2HSelect(db);
-        initTeamsPane(db);
-    }
+        // Initialize db with defaults if cloud data is null
+        let db = {
+            teams: (data && data.teams) ? data.teams : [],
+            fixtures: (data && data.fixtures) ? data.fixtures : [],
+            stats: (data && data.stats) ? data.stats : [],
+            news: (data && data.news) ? data.news : []
+        };
+
+        // 1. ALWAYS update the news ticker
+        updateNewsTicker(db);
+
+        if (db.teams.length === 0) {
+            // Empty State
+            seasonStatus.innerText = "The league/season is yet to begin. Waiting for Admin to add teams.";
+            document.getElementById('standingsContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-list-ol fa-3x" style="margin-bottom:15px; color:#444;"></i><br>League has not started yet.</div>`;
+            document.getElementById('fixturesContent').innerHTML = `<div class="empty-state"><i class="fa-regular fa-calendar-days fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No fixtures generated yet.</div>`;
+            document.getElementById('statsContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-chart-simple fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No stats recorded yet.</div>`;
+        } else {
+            // Active State
+            seasonStatus.innerText = "The season is currently active. Keep pushing for the top spot.";
+            renderDashboard(db);
+            renderStandings(db);
+            renderFixtures(db);
+            renderStats(db);
+            calculateLeagueInsights(db);
+            populateH2HSelect(db);
+            initTeamsPane(db);
+        }
+    });
 }
 
         function getTeamName(db, teamId) {
@@ -872,25 +883,35 @@ These highlights capture the skill and strategy of a competition where every gam
         }
 
         function renderDashboard(db) {
+            // Ensure teams exist before attempting to sort
+            if (!db.teams || db.teams.length === 0) return;
+
             let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
             
             // Find user's team by name (case insensitive)
+            // Note: userName is defined globally from localStorage/Firebase Profile
             let myTeamIndex = sortedTeams.findIndex(t => t.name.toLowerCase() === userName.toLowerCase());
             let myTeam = myTeamIndex !== -1 ? sortedTeams[myTeamIndex] : null;
 
-            document.getElementById('totalPlayersText').innerText = `Out of ${db.teams.length} Players`;
+            const totalPlayersElem = document.getElementById('totalPlayersText');
+            if (totalPlayersElem) {
+                totalPlayersElem.innerText = `Out of ${db.teams.length} Players`;
+            }
 
             if (myTeam) {
-                // Position
+                // Position logic
                 let pos = myTeamIndex + 1;
                 let suffix = "th";
                 if (pos % 10 === 1 && pos !== 11) suffix = "st";
                 else if (pos % 10 === 2 && pos !== 12) suffix = "nd";
                 else if (pos % 10 === 3 && pos !== 13) suffix = "rd";
-                document.getElementById('myPosition').innerText = pos + suffix;
+                
+                const posElem = document.getElementById('myPosition');
+                if (posElem) posElem.innerText = pos + suffix;
 
-                // Form
-                let completedMatches = db.fixtures.filter(f => f.status === 'completed' && (f.homeId === myTeam.id || f.awayId === myTeam.id));
+                // Form logic (pulling from Firebase fixtures)
+                let completedMatches = (db.fixtures || []).filter(f => f.status === 'completed' && (f.homeId === myTeam.id || f.awayId === myTeam.id));
+                
                 // Get last 5
                 let recent = completedMatches.slice(-5);
                 let formHTML = '';
@@ -903,28 +924,38 @@ These highlights capture the skill and strategy of a competition where every gam
                         let won = isHome ? (f.homeScore > f.awayScore) : (f.awayScore > f.homeScore);
                         let draw = f.homeScore === f.awayScore;
                         
-                        if (won) formHTML += `<span style="background: #28a745; padding: 5px 10px; border-radius: 4px; font-weight: bold;">W</span>`;
-                        else if (draw) formHTML += `<span style="background: #6c757d; padding: 5px 10px; border-radius: 4px; font-weight: bold;">D</span>`;
-                        else formHTML += `<span style="background: #dc3545; padding: 5px 10px; border-radius: 4px; font-weight: bold;">L</span>`;
+                        if (won) formHTML += `<span style="background: #28a745; padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 3px;">W</span>`;
+                        else if (draw) formHTML += `<span style="background: #6c757d; padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 3px;">D</span>`;
+                        else formHTML += `<span style="background: #dc3545; padding: 5px 10px; border-radius: 4px; font-weight: bold; margin-right: 3px;">L</span>`;
                     });
                 }
-                document.getElementById('myForm').innerHTML = formHTML;
+                const formElem = document.getElementById('myForm');
+                if (formElem) formElem.innerHTML = formHTML;
 
-                // Next Match
-                let nextMatch = db.fixtures.find(f => f.status === 'pending' && (f.homeId === myTeam.id || f.awayId === myTeam.id));
-                if (nextMatch) {
+                // Next Match logic
+                let nextMatch = (db.fixtures || []).find(f => f.status === 'pending' && (f.homeId === myTeam.id || f.awayId === myTeam.id));
+                const nextMatchElem = document.getElementById('myNextMatch');
+                const nextMatchTimeElem = document.getElementById('myNextMatchTime');
+
+                if (nextMatch && nextMatchElem && nextMatchTimeElem) {
                     let opponentId = nextMatch.homeId === myTeam.id ? nextMatch.awayId : nextMatch.homeId;
-                    document.getElementById('myNextMatch').innerText = `vs ${getTeamName(db, opponentId)}`;
-                    document.getElementById('myNextMatchTime').innerHTML = `<i class="fa-regular fa-clock"></i> Matchday ${nextMatch.matchday}`;
-                } else {
-                    document.getElementById('myNextMatch').innerText = `vs TBD`;
-                    document.getElementById('myNextMatchTime').innerHTML = `<i class="fa-regular fa-clock"></i> No scheduled matches`;
+                    nextMatchElem.innerText = `vs ${getTeamName(db, opponentId)}`;
+                    nextMatchTimeElem.innerHTML = `<i class="fa-regular fa-clock"></i> Matchday ${nextMatch.matchday}`;
+                } else if (nextMatchElem && nextMatchTimeElem) {
+                    nextMatchElem.innerText = `vs TBD`;
+                    nextMatchTimeElem.innerHTML = `<i class="fa-regular fa-clock"></i> No scheduled matches`;
                 }
             }
         }
 
+// Initialize local state for UI movement arrows
+let previousRanks = JSON.parse(localStorage.getItem("eepl_prevRanks")) || {};
+let movementState = JSON.parse(localStorage.getItem("eepl_movement")) || {};
+
 function renderStandings(db) {
-    let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+    if (!db.teams || db.teams.length === 0) return;
+
+    let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || (b.gd || 0) - (a.gd || 0));
 
     let html = `
     <div class="table-container">
@@ -939,48 +970,39 @@ function renderStandings(db) {
             </thead>
             <tbody>`;
 
-    let newRanks = {}; // 🔥 TEMP storage for THIS render
+    let newRanks = {}; 
 
     sortedTeams.forEach((t, index) => {
-
         let pos = index + 1;
 
-        // 🧠 MOVEMENT LOGIC (FIXED)
+        // MOVEMENT LOGIC
         let prev = previousRanks[t.id];
-
         let arrow = movementState[t.id] || `<span style="color:#aaa;font-weight:900;">—</span>`;
         let arrowColor = "#888";
 
         if (prev !== undefined) {
             if (pos < prev) {
                 arrow = `<span style="color:#00ff88; font-weight:900;">▲</span>`;
-    } 
-    else if (pos > prev) {
-        arrow = `<span style="color:#ff4d4d; font-weight:900;">▼</span>`;
-    }
+            } else if (pos > prev) {
+                arrow = `<span style="color:#ff4d4d; font-weight:900;">▼</span>`;
+            }
         }
 
-        // Save NEW position
+        // Store NEW position for next render calculation
         newRanks[t.id] = pos;
 
-        // 🟢 TOP 3 STYLE
+        // TOP 3 STYLE
         let rowStyle = "";
         if (pos <= 3) {
-            rowStyle = `
-                background: rgba(0, 229, 255, 0.08);
-                border-left: 4px solid #00e5ff;
-            `;
+            rowStyle = `background: rgba(0, 229, 255, 0.08); border-left: 4px solid #00e5ff;`;
         }
 
-        // 🔴 BOTTOM 3 STYLE
-        if (pos > sortedTeams.length - 3) {
-            rowStyle = `
-                background: rgba(255, 0, 85, 0.08);
-                border-left: 4px solid #ff0055;
-            `;
+        // BOTTOM 3 STYLE
+        if (pos > sortedTeams.length - 3 && sortedTeams.length > 5) {
+            rowStyle = `background: rgba(255, 0, 85, 0.08); border-left: 4px solid #ff0055;`;
         }
 
-        // 👤 USER HIGHLIGHT
+        // USER HIGHLIGHT
         let isMe = t.name.toLowerCase() === userName.toLowerCase();
         if (isMe) {
             rowStyle += `font-weight:bold; color:var(--accent);`;
@@ -991,24 +1013,18 @@ function renderStandings(db) {
         html += `
         <tr style="${rowStyle}">
             <td class="rank">${pos}</td>
-
-            
             <td class="team-name" style="font-size: 16px; display: flex; align-items: center; gap: 15px; padding: 10px 5px;">
-    <img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-    <span style="font-weight: 600; color: #fff;">${t.name}</span>
-</td>
-
-            <td>${t.p}</td>
-            <td>${t.w}</td>
-            <td>${t.d}</td>
-            <td>${t.l}</td>
-
-            <td>${t.gf}</td>
-            <td>${t.ga}</td>
-            <td>${t.gd > 0 ? '+' + t.gd : t.gd}</td>
-
-            <td class="pts">${t.pts}</td>
-
+                <img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+                <span style="font-weight: 600; color: #fff;">${t.name}</span>
+            </td>
+            <td>${t.p || 0}</td>
+            <td>${t.w || 0}</td>
+            <td>${t.d || 0}</td>
+            <td>${t.l || 0}</td>
+            <td>${t.gf || 0}</td>
+            <td>${t.ga || 0}</td>
+            <td>${(t.gd || 0) > 0 ? '+' + t.gd : (t.gd || 0)}</td>
+            <td class="pts">${t.pts || 0}</td>
             <td style="font-size:16px; font-weight:bold; color:${arrowColor};">
                 ${arrow}
             </td>
@@ -1017,13 +1033,17 @@ function renderStandings(db) {
 
     html += `</tbody></table></div>`;
 
-    document.getElementById('standingsContent').innerHTML = html;
+    const container = document.getElementById('standingsContent');
+    if (container) container.innerHTML = html;
 
-    // 🔥 SAVE NEW POSITIONS (CRITICAL FIX)
-    previousRanks = newRanks;
+    // UPDATE PREVIOUS RANKS & MOVEMENT STATE
+    updateMovement(db);
 }
-function updateMovement() {
-    let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+
+function updateMovement(db) {
+    if (!db.teams) return;
+    
+    let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || (b.gd || 0) - (a.gd || 0));
 
     let newRanks = {};
     let newMovement = {};
@@ -1049,34 +1069,40 @@ function updateMovement() {
     previousRanks = newRanks;
     movementState = newMovement;
 
+    // Persist to local storage so movement is visible across refreshes
     localStorage.setItem("eepl_prevRanks", JSON.stringify(previousRanks));
     localStorage.setItem("eepl_movement", JSON.stringify(movementState));
 }
-let previousRanks = JSON.parse(localStorage.getItem("eepl_prevRanks")) || {};
-let movementState = JSON.parse(localStorage.getItem("eepl_movement")) || {};
-        function renderFixtures(db) {
-    let upcoming = db.fixtures.filter(f => f.status === 'pending');
-    let results = db.fixtures.filter(f => f.status === 'completed');
+
+    function renderFixtures(db) {
+    // Ensure fixtures and teams exist
+    const fixtures = db.fixtures || [];
+    const teams = db.teams || [];
+
+    let upcoming = fixtures.filter(f => f.status === 'pending');
+    let results = fixtures.filter(f => f.status === 'completed');
 
     let html = '';
 
-    // Upcoming
+    // Helper for missing logos
+    const defaultLogo = 'https://via.placeholder.com/34?text=⚽';
+
+    // Upcoming Matches
     if (upcoming.length > 0) {
         html += `<h3 style="margin-bottom: 15px; color: var(--accent);">Upcoming Matches</h3><div class="fixture-list">`;
         upcoming.forEach(f => {
-            const homeTeam = db.teams.find(t => t.id === f.homeId);
-            const awayTeam = db.teams.find(t => t.id === f.awayId);
+            const homeTeam = teams.find(t => t.id === f.homeId);
+            const awayTeam = teams.find(t => t.id === f.awayId);
 
-            // BUG FIX: Only render if both teams exist
             if (homeTeam && awayTeam) {
                 html += `
                 <div class="fixture-card">
                     <div class="matchup" style="display: flex; align-items: center; gap: 10px;">
-                        <img src="${homeTeam.logo || ''}" style="margin-top: 4px; width:34px; height:34px; object-fit: contain;"> 
+                        <img src="${homeTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;"> 
                         <span>${homeTeam.name}</span> 
                         <span class="vs">VS</span> 
                         <span>${awayTeam.name}</span>
-                        <img src="${awayTeam.logo || ''}" style="margin-top: 4px; width:34px; height:34px; object-fit: contain;">
+                        <img src="${awayTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;">
                     </div>
                     <div class="match-time">Matchday ${f.matchday}</div>
                 </div>`;
@@ -1087,30 +1113,35 @@ let movementState = JSON.parse(localStorage.getItem("eepl_movement")) || {};
 
     // Results
     if (results.length > 0) {
-        html += `<h3 style="margin-bottom: 15px; color: var(--text-muted);">Recent Results</h3><div class="fixture-list">`;
+        html += `<h3 style="margin-top: 25px; margin-bottom: 15px; color: var(--text-muted);">Recent Results</h3><div class="fixture-list">`;
+        // Show newest results first
         [...results].reverse().forEach(f => {
-            const homeTeam = db.teams.find(t => t.id === f.homeId);
-            const awayTeam = db.teams.find(t => t.id === f.awayId);
+            const homeTeam = teams.find(t => t.id === f.homeId);
+            const awayTeam = teams.find(t => t.id === f.awayId);
 
             if (homeTeam && awayTeam) {
                 html += `
-                <div class="fixture-card" style="opacity: 0.7;">
+                <div class="fixture-card" style="opacity: 0.85;">
                     <div class="matchup" style="display: flex; align-items: center; gap: 10px;">
-                        <img src="${homeTeam.logo || ''}" style="margin-top: 4px; width:34px; height:34px; object-fit: contain;"> 
+                        <img src="${homeTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;"> 
                         <span>${homeTeam.name}</span> 
-                        <span style="background: #222; padding: 5px 15px; border-radius: 5px; color: #fff; font-weight: bold;">${f.homeScore} - ${f.awayScore}</span> 
+                        <span style="background: #1a1a1a; padding: 5px 12px; border-radius: 5px; color: var(--accent); font-weight: bold; border: 1px solid #333;">${f.homeScore} - ${f.awayScore}</span> 
                         <span>${awayTeam.name}</span>
-                        <img src="${awayTeam.logo || ''}" style="margin-top: 4px; width:34px; height:34px; object-fit: contain;">
+                        <img src="${awayTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;">
                     </div>
-                    <div class="match-time">MD ${f.matchday}<br>FT</div>
+                    <div class="match-time">MD ${f.matchday}<br><span style="font-size: 0.7rem; color: var(--accent);">FULL TIME</span></div>
                 </div>`;
             }
         });
         html += `</div>`;
     }
 
+    // Empty State
     if (upcoming.length === 0 && results.length === 0) {
-        html = `<div class="empty-state"><i class="fa-regular fa-calendar-days fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No fixtures generated yet.</div>`;
+        html = `<div class="empty-state">
+                    <i class="fa-regular fa-calendar-days fa-3x" style="margin-bottom:15px; color:#444;"></i>
+                    <br>No fixtures generated yet.
+                </div>`;
     }
 
     const container = document.getElementById('fixturesContent');
@@ -1119,157 +1150,182 @@ let movementState = JSON.parse(localStorage.getItem("eepl_movement")) || {};
     }
 }
 
-       function renderStats(db) {
+    function renderStats(db) {
     if (!db.stats || db.stats.length === 0) {
-        document.getElementById('statsContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-chart-simple fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No stats recorded yet.</div>`;
+        const statsElem = document.getElementById('statsContent');
+        if (statsElem) {
+            statsElem.innerHTML = `<div class="empty-state"><i class="fa-solid fa-chart-simple fa-3x" style="margin-bottom:15px; color:#444;"></i><br>No stats recorded yet.</div>`;
+        }
         return;
     }
 
-    let sortedGoals = [...db.stats].sort((a, b) => b.goals - a.goals).slice(0, 5);
-    let sortedAssists = [...db.stats].sort((a, b) => b.assists - a.assists).slice(0, 5);
+    // Sort and take top 5 for Goals and Assists (Saves)
+    let sortedGoals = [...db.stats].sort((a, b) => (b.goals || 0) - (a.goals || 0)).slice(0, 5);
+    let sortedAssists = [...db.stats].sort((a, b) => (b.assists || 0) - (a.assists || 0)).slice(0, 5);
 
     let html = `<div class="dashboard-grid">`;
     
     // Helper function to find logo inside the render loop
     const getLogo = (playerName) => {
-        // Find the team where the player belongs
+        if (!db.teams) return 'https://via.placeholder.com/40?text=⚽';
+        // Find the team where the player belongs (assuming name matching)
         const team = db.teams.find(t => t.name.toLowerCase() === playerName.toLowerCase());
-        return team ? team.logo : 'https://via.placeholder.com/20?text=⚽'; 
+        return team ? team.logo : 'https://via.placeholder.com/40?text=⚽'; 
     };
 
     // Goals Table
     html += `
     <div class="table-container">
-        <table style="font-size: 0.9rem;">
+        <table style="width: 100%; font-size: 0.9rem;">
             <thead>
-                <tr><th colspan="3" style="color: var(--accent); font-size: 1rem;"><i class="fa-solid fa-futbol"></i> Top Goal Scorers</th></tr>
-                <tr><th>#</th><th>Player</th><th>Goals</th></tr>
+                <tr><th colspan="3" style="color: var(--accent); font-size: 1rem; padding: 10px;"><i class="fa-solid fa-futbol"></i> Top Goal Scorers</th></tr>
+                <tr><th style="width: 40px;">#</th><th>Player</th><th style="width: 60px;">Goals</th></tr>
             </thead>
             <tbody>`;
+    
     sortedGoals.forEach((s, index) => {
-        if (s.goals > 0) {
+        if ((s.goals || 0) > 0) {
             const logo = getLogo(s.name);
             html += `
                 <tr>
                     <td class="rank">${index + 1}</td>
-                    <td style="font-size: 15px; display:flex; align-items: center; gap: 8px;">
-                        <img src="${logo}" style="width: 40px; height: 40px; object-fit: contain;">
-                        ${s.name}
+                    <td style="font-size: 15px; display:flex; align-items: center; gap: 12px; padding: 10px 5px;">
+                        <img src="${logo}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                        <span style="font-weight: 500;">${s.name}</span>
                     </td>
-                    <td class="pts">${s.goals}</td>
+                    <td class="pts" style="font-weight: bold; color: var(--accent);">${s.goals}</td>
                 </tr>`;
         }
     });
     html += `</tbody></table></div>`;
 
-    // Assists Table
+    // Assists (Golden Saves) Table
     html += `
     <div class="table-container">
-        <table style="font-size: 0.9rem;">
+        <table style="width: 100%; font-size: 0.9rem;">
             <thead>
                 <tr><th colspan="3" style="color: var(--accent); font-size: 1rem; padding: 10px;"><i class="fa-solid fa-mitten"></i> Golden Saves</th></tr>
-                <tr><th>#</th><th>Keeper</th><th>Saves</th></tr>
+                <tr><th style="width: 40px;">#</th><th>Keeper</th><th style="width: 60px;">Saves</th></tr>
             </thead>
             <tbody>`;
+    
     sortedAssists.forEach((s, index) => {
-        if(s.assists > 0) {
+        if((s.assists || 0) > 0) {
             const logo = getLogo(s.name);
             html += `
                 <tr>
                     <td class="rank">${index + 1}</td>
-                    <td style="display: flex; align-items: center; gap: 8px;">
-                        <img src="${logo}" style="width: 20px; height: 20px; object-fit: contain;">
-                        ${s.name}
+                    <td style="display: flex; align-items: center; gap: 12px; padding: 10px 5px;">
+                        <img src="${logo}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">
+                        <span style="font-weight: 500;">${s.name}</span>
                     </td>
-                    <td class="pts">${s.assists}</td>
+                    <td class="pts" style="font-weight: bold; color: var(--accent);">${s.assists}</td>
                 </tr>`;
         }
     });
     html += `</tbody></table></div></div>`;
 
-    document.getElementById('statsContent').innerHTML = html;
+    const statsElem = document.getElementById('statsContent');
+    if (statsElem) {
+        statsElem.innerHTML = html;
+    }
 }
-        // 1. Fill the dropdown with all players EXCEPT the current user
+// 1. Fill the dropdown with all players EXCEPT the current user
 function populateH2HSelect(db) {
     const select = document.getElementById('h2hOpponentSelect');
-    const myTeam = db.teams.find(t => t.name.toLowerCase() === userName.toLowerCase());
-    
+    if (!select || !db.teams) return;
+
+    // Use a clean slate for the dropdown
     select.innerHTML = '<option value="">Select an Opponent...</option>';
     
     db.teams.forEach(t => {
+        // Exclude the current user's team from the opponent list
         if (t.name.toLowerCase() !== userName.toLowerCase()) {
             select.innerHTML += `<option value="${t.id}">${t.name}</option>`;
         }
     });
 }
 
-// 2. Calculate the Win/Draw/Loss stats
+// 2. Calculate the Win/Draw/Loss stats from Firebase
 function calculateH2H() {
-    const db = JSON.parse(localStorage.getItem('eepl_db')) || { teams: [], fixtures: [] };
     const opponentId = document.getElementById('h2hOpponentSelect').value;
-    const myTeam = db.teams.find(t => t.name.toLowerCase() === userName.toLowerCase());
+    if (!opponentId) return alert("Please select an opponent.");
 
-    if (!opponentId || !myTeam) return alert("Please select an opponent.");
+    // Fetch the latest data from Firebase to ensure accuracy
+    dbRef.once('value').then((snapshot) => {
+        const db = snapshot.val() || { teams: [], fixtures: [] };
+        const myTeam = db.teams.find(t => t.name.toLowerCase() === userName.toLowerCase());
 
-    let wins = 0, draws = 0, losses = 0;
+        if (!myTeam) return alert("Your team profile was not found.");
 
-    const matches = db.fixtures.filter(f => {
-        return f.status === 'completed' && 
-               ((f.homeId === myTeam.id && f.awayId === opponentId) || 
-                (f.homeId === opponentId && f.awayId === myTeam.id));
+        let wins = 0, draws = 0, losses = 0;
+
+        // Filter fixtures that are completed and involve both teams
+        const matches = (db.fixtures || []).filter(f => {
+            return f.status === 'completed' && 
+                   ((f.homeId === myTeam.id && f.awayId === opponentId) || 
+                    (f.homeId === opponentId && f.awayId === myTeam.id));
+        });
+
+        matches.forEach(m => {
+            const isHome = m.homeId === myTeam.id;
+            const myScore = isHome ? m.homeScore : m.awayScore;
+            const opScore = isHome ? m.awayScore : m.homeScore;
+
+            if (myScore > opScore) wins++;
+            else if (myScore < opScore) losses++;
+            else draws++;
+        });
+
+        // Display Results
+        const resultContainer = document.getElementById('h2hResult');
+        if (resultContainer) {
+            resultContainer.style.display = 'block';
+            document.getElementById('h2hWins').innerText = wins;
+            document.getElementById('h2hDraws').innerText = draws;
+            document.getElementById('h2hLosses').innerText = losses;
+
+            const opponent = db.teams.find(t => t.id === opponentId);
+            const opName = opponent ? opponent.name : 'Unknown';
+            document.getElementById('h2hSummary').innerText = `Total encounters: ${matches.length} matches against ${opName}`;
+        }
     });
-
-    matches.forEach(m => {
-        const isHome = m.homeId === myTeam.id;
-        const myScore = isHome ? m.homeScore : m.awayScore;
-        const opScore = isHome ? m.awayScore : m.homeScore;
-
-        if (myScore > opScore) wins++;
-        else if (myScore < opScore) losses++;
-        else draws++;
-    });
-
-    // Display Results
-    document.getElementById('h2hResult').style.display = 'block';
-    document.getElementById('h2hWins').innerText = wins;
-    document.getElementById('h2hDraws').innerText = draws;
-    document.getElementById('h2hLosses').innerText = losses;
-
-    const opName = db.teams.find(t => t.id === opponentId).name;
-    document.getElementById('h2hSummary').innerText = `Total encounters: ${matches.length} matches against ${opName}`;
 }
+
+// 3. Update the News Ticker with Firebase news data
 function updateNewsTicker(db) {
     const tickerContainer = document.getElementById('newsContent');
+    if (!tickerContainer) return;
     
-    // 1. Check if there is any news in the database
+    // Check if there is any news in the Firebase database
     if (db.news && db.news.length > 0) {
         let newsHtml = '';
 
-        // 2. Loop through the news quotes you added in the Admin page
+        // Loop through the news items added by the Admin
         db.news.forEach(item => {
             newsHtml += `
                 <div class="ticker-item">
-                    <span>${item.tag}:</span> ${item.text}
+                    <span style="color: var(--accent); font-weight: bold; text-transform: uppercase;">${item.tag}:</span> ${item.text}
                 </div>`;
         });
 
-        // 3. Inject the new quotes into the ticker
         tickerContainer.innerHTML = newsHtml;
     } else {
-        // Fallback if the Admin hasn't added news yet
-        tickerContainer.innerHTML = `<div class="ticker-item"><span>EEPL:</span> Welcome to the new season! Waiting for admin updates.</div>`;
+        // Fallback message if news is empty
+        tickerContainer.innerHTML = `<div class="ticker-item"><span>EEPL:</span> Welcome to the season! Waiting for admin updates.</div>`;
     }
 }
+
  function calculateLeagueInsights(db) {
     // 1. STRICTOR FILTER: Ensure the match is completed AND has valid numeric values
-    // This prevents "null" or "empty" fixtures from being counted as 0 or 1
-    const completed = db.fixtures.filter(f => 
+    const fixtures = db.fixtures || [];
+    const completed = fixtures.filter(f => 
         f.status === 'completed' && 
         f.homeScore !== undefined && f.homeScore !== null && f.homeScore !== "" &&
         f.awayScore !== undefined && f.awayScore !== null && f.awayScore !== ""
     );
 
-    // 2. DATA RESET: Ensure we start from absolute zero
+    // 2. DATA RESET
     let totalGoals = 0;
     let cleanSheets = 0;
 
@@ -1277,10 +1333,9 @@ function updateNewsTicker(db) {
         const h = parseInt(f.homeScore);
         const a = parseInt(f.awayScore);
 
-        // Add to total
         totalGoals += (h + a);
 
-        // Clean Sheet Check: A clean sheet occurs when a team concedes 0
+        // Clean Sheet Check
         if (h === 0) cleanSheets++;
         if (a === 0) cleanSheets++;
     });
@@ -1288,7 +1343,7 @@ function updateNewsTicker(db) {
     // 3. CALCULATION
     const avgGoals = completed.length > 0 ? (totalGoals / completed.length).toFixed(1) : "0.0";
 
-    // 4. DOM UPDATE WITH VALIDATION
+    // 4. DOM UPDATE
     const updateEl = (id, val) => {
         const el = document.getElementById(id);
         if (el) el.innerText = val;
@@ -1298,102 +1353,138 @@ function updateNewsTicker(db) {
     updateEl('totalGoals', totalGoals);
     updateEl('leagueCleans', cleanSheets);
 
-    // 5. SEASON PROGRESS (Dynamic Matchday Calculation)
-    const teamCount = db.teams.length;
-    const totalExpected = teamCount > 1 ? (teamCount - 1) * 2 : 0;
+    // 5. SEASON PROGRESS
+    const teamCount = (db.teams || []).length;
+    // Standard double round-robin formula
+    const totalExpectedMatchdays = teamCount > 1 ? (teamCount - 1) * 2 : 0;
     
-    // Find highest matchday number from the completed fixtures
     const currentMD = completed.length > 0 
         ? Math.max(...completed.map(f => parseInt(f.matchday || 0))) 
         : 0;
 
-    const progressPercent = totalExpected > 0 ? (currentMD / totalExpected) * 100 : 0;
+    const progressPercent = totalExpectedMatchdays > 0 ? (currentMD / totalExpectedMatchdays) * 100 : 0;
 
     const progressBar = document.getElementById('seasonProgress');
     const matchdayText = document.getElementById('matchdayCounter');
 
     if (progressBar) progressBar.style.width = `${Math.min(progressPercent, 100)}%`;
-    if (matchdayText) matchdayText.innerText = `Matchday: ${currentMD} / ${totalExpected}`;
+    if (matchdayText) matchdayText.innerText = `Matchday: ${currentMD} / ${totalExpectedMatchdays}`;
 }
-document.addEventListener("DOMContentLoaded", displayMOTW);
-function displayMOTW() {
-    const data = JSON.parse(localStorage.getItem('leagueMOTW'));
-    if (!data) return;
 
-    // Text
-    document.getElementById('motwHomeName').innerText = data.homeName;
-    document.getElementById('motwAwayName').innerText = data.awayName;
-    document.getElementById('motwTime').innerText = data.time;
-    document.getElementById('motwDay').innerText = data.day;
-    document.getElementById('motwReasonText').innerText = `"${data.reason}"`;
+// Listen for MOTW updates from Firebase
+firebase.database().ref('league_motw').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        displayMOTW(data);
+    }
+});
 
-    // Logos (THIS WAS YOUR ISSUE)
-    document.getElementById('motwHomeLogo').innerHTML =
-        `<img src="${data.homeLogo}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+function displayMOTW(data) {
+    // Text Updates
+    const hName = document.getElementById('motwHomeName');
+    const aName = document.getElementById('motwAwayName');
+    const mTime = document.getElementById('motwTime');
+    const mDay = document.getElementById('motwDay');
+    const mReason = document.getElementById('motwReasonText');
 
-    document.getElementById('motwAwayLogo').innerHTML =
-        `<img src="${data.awayLogo}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+    if (hName) hName.innerText = data.homeName || "TBD";
+    if (aName) aName.innerText = data.awayName || "TBD";
+    if (mTime) mTime.innerText = data.time || "--:--";
+    if (mDay) mDay.innerText = data.day || "Matchday -";
+    if (mReason) mReason.innerText = `"${data.reason || 'Big match incoming!'}"`;
+
+    // Logos with fallback placeholders
+    const homeLogoContainer = document.getElementById('motwHomeLogo');
+    const awayLogoContainer = document.getElementById('motwAwayLogo');
+    const placeholder = 'https://via.placeholder.com/100?text=⚽';
+
+    if (homeLogoContainer) {
+        homeLogoContainer.innerHTML =
+            `<img src="${data.homeLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+    }
+
+    if (awayLogoContainer) {
+        awayLogoContainer.innerHTML =
+            `<img src="${data.awayLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+    }
 }
 
 // ==========================================
-// TEAMS PANE INTEGRATION
+// TEAMS PANE INTEGRATION (FIREBASE)
 // ==========================================
 
 function initTeamsPane(db) {
+    // Safety check for Firebase data structure
     if (!db || !db.teams || db.teams.length === 0) return;
     renderTeamTabs(db);
 }
 
 function renderTeamTabs(db) {
     const tabsContainer = document.getElementById('teamTabs');
-    tabsContainer.innerHTML = ''; // Clear static tabs
+    if (!tabsContainer) return;
+    
+    tabsContainer.innerHTML = ''; // Clear existing tabs
 
-    // Sort teams alphabetically for the tabs (optional, but clean)
+    // Sort teams alphabetically so the UI remains consistent
     const sortedTeams = [...db.teams].sort((a, b) => a.name.localeCompare(b.name));
 
     sortedTeams.forEach((t, index) => {
         const btn = document.createElement('button');
-        btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
         
-        // Add minimal inline style or rely on your CSS for tab buttons
+        // Setup initial classes and styles
+        btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
+        btn.innerText = t.name;
+        
+        // Manual styling to match your dashboard theme
         btn.style.padding = '10px 20px';
         btn.style.cursor = 'pointer';
         btn.style.background = 'transparent';
         btn.style.border = 'none';
-        btn.style.borderBottom = index === 0 ? '2px solid var(--accent-blue, #00e5ff)' : '2px solid transparent';
-        btn.style.color = index === 0 ? 'var(--accent-blue, #00e5ff)' : '#fff';
-
-        btn.innerText = t.name;
+        btn.style.fontSize = '14px';
+        btn.style.transition = '0.3s';
         
+        // Set active/inactive visual state
+        if (index === 0) {
+            btn.style.borderBottom = '2px solid var(--accent, #00e5ff)';
+            btn.style.color = 'var(--accent, #00e5ff)';
+        } else {
+            btn.style.borderBottom = '2px solid transparent';
+            btn.style.color = '#fff';
+        }
+
         btn.onclick = (e) => {
-            // Manage Active State
-            document.querySelectorAll('#teamTabs .tab-btn').forEach(b => {
+            // 1. Reset all tabs in this container
+            const allTabs = tabsContainer.querySelectorAll('.tab-btn');
+            allTabs.forEach(b => {
                 b.style.borderBottom = '2px solid transparent';
                 b.style.color = '#fff';
                 b.classList.remove('active');
             });
-            btn.classList.add('active');
-            btn.style.borderBottom = '2px solid var(--accent-blue, #00e5ff)';
-            btn.style.color = 'var(--accent-blue, #00e5ff)';
 
+            // 2. Set current tab to active
+            btn.classList.add('active');
+            btn.style.borderBottom = '2px solid var(--accent, #00e5ff)';
+            btn.style.color = 'var(--accent, #00e5ff)';
+
+            // 3. Trigger the profile loader from the Firebase db
             loadTeamProfile(t.id, db);
         };
+        
         tabsContainer.appendChild(btn);
     });
 
-    // Load the first team by default
+    // Automatically load the first team in the sorted list on init
     if (sortedTeams.length > 0) {
         loadTeamProfile(sortedTeams[0].id, db);
     }
 }
 
 function loadTeamProfile(teamId, db) {
-    
     const team = db.teams.find(t => t.id === teamId);
     if (!team) return;
 
-    // 1. Calculate Position
-    const leagueStandings = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
+    // 1. Calculate Position from current Firebase standings
+    const leagueStandings = [...db.teams].sort((a, b) => b.pts - a.pts || (b.gd || 0) - (a.gd || 0));
     const position = leagueStandings.findIndex(t => t.id === teamId) + 1;
     let suffix = "TH";
     if (position % 10 === 1 && position !== 11) suffix = "ST";
@@ -1401,124 +1492,163 @@ function loadTeamProfile(teamId, db) {
     else if (position % 10 === 3 && position !== 13) suffix = "RD";
 
     // 2. Update Header Identity & Quick Stats
-    document.getElementById('teamName').innerText = team.name;
-    document.getElementById('teamLogo').innerHTML = team.logo ? 
-        `<img src="${team.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%;">` : 
-        `<span style="font-size:24px;">${team.name.substring(0, 2).toUpperCase()}</span>`;
+    const teamNameEl = document.getElementById('teamName');
+    const teamLogoEl = document.getElementById('teamLogo');
     
-    document.getElementById('pos').innerText = `${position}${suffix}`;
-    document.getElementById('pts').innerText = team.pts || 0;
-    document.getElementById('gd').innerText = team.gd > 0 ? `+${team.gd}` : (team.gd || 0);
-    document.getElementById('played').innerText = team.p || 0;
-    document.getElementById('wins').innerText = team.w || 0;
-    document.getElementById('draws').innerText = team.d || 0;
-    document.getElementById('losses').innerText = team.l || 0;
+    if (teamNameEl) teamNameEl.innerText = team.name;
+    if (teamLogoEl) {
+        teamLogoEl.innerHTML = team.logo ? 
+            `<img src="${team.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">` : 
+            `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; border-radius:50%; font-size:24px; color:var(--accent); font-weight:bold;">${team.name.substring(0, 2).toUpperCase()}</div>`;
+    }
+    
+    // UI mapping for stats
+    const statsMap = {
+        'pos': `${position}${suffix}`,
+        'pts': team.pts || 0,
+        'gd': (team.gd || 0) > 0 ? `+${team.gd}` : (team.gd || 0),
+        'played': team.p || 0,
+        'wins': team.w || 0,
+        'draws': team.d || 0,
+        'losses': team.l || 0
+    };
 
-    // 3. Update Recent Form
-    updateTeamForm(team.id, db);
+    Object.keys(statsMap).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = statsMap[id];
+    });
 
-    // 4. Update Upcoming Fixtures
-    updateTeamFixtures(team.id, db);
+    // 3. Update Recent Form, Fixtures, and Player Stats
+    // These functions rely on the data passed from the Firebase listener
+    if (typeof updateTeamForm === "function") updateTeamForm(team.id, db);
+    if (typeof updateTeamFixtures === "function") updateTeamFixtures(team.id, db);
+    if (typeof updateTeamStats === "function") updateTeamStats(team, db);
 
-    // 5. Update Key Stats & Overviews
-    updateTeamStats(team, db);
-
+    // 4. Lineup Display Logic
     const lineupImg = document.getElementById('teamLineupImage');
     const emptyState = document.getElementById('lineupEmptyState');
     const formationSpan = document.getElementById('formationText');
+    const manualNodes = document.getElementById('manualLineupNodes');
 
-    // Check if lineupImage exists and is not an empty string
     if (team.lineupImage && team.lineupImage.trim() !== "") {
-        // IMAGE EXISTS: Show it
-        lineupImg.src = team.lineupImage;
-        lineupImg.style.display = 'block';
-        emptyState.style.display = 'none';
-        formationSpan.innerText = `[${team.formation || 'FORMATION'}]`;
-
-        const manualNodes = document.getElementById('manualLineupNodes');
-    if (manualNodes) manualNodes.style.display = 'none';
-
+        // IMAGE EXISTS: Show Firebase-stored Lineup Image
+        if (lineupImg) {
+            lineupImg.src = team.lineupImage;
+            lineupImg.style.display = 'block';
+        }
+        if (emptyState) emptyState.style.display = 'none';
+        if (formationSpan) formationSpan.innerText = `[${team.formation || 'FORMATION'}]`;
+        if (manualNodes) manualNodes.style.display = 'none';
     } else {
-        // IMAGE MISSING: Show "Not Added" message
-        lineupImg.style.display = 'none';
-        emptyState.style.display = 'block';
-        formationSpan.innerText = "[NOT SET]";
+        // IMAGE MISSING: Fallback
+        if (lineupImg) lineupImg.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'block';
+        if (formationSpan) formationSpan.innerText = "[NOT SET]";
     }
-
 }
 
-// Helper to calculate clean sheets on the fly
+// Helper to calculate clean sheets on the fly from Firebase fixtures
 function calculateCleanSheets(teamId, db) {
+    if (!db.fixtures) return 0;
     return db.fixtures.filter(f => 
         f.status === 'completed' && 
-        ((f.homeId === teamId && f.awayScore === 0) || (f.awayId === teamId && f.homeScore === 0))
+        ((f.homeId === teamId && parseInt(f.awayScore) === 0) || (f.awayId === teamId && parseInt(f.homeScore) === 0))
     ).length;
 }
 
 function updateTeamForm(teamId, db) {
     const formRow = document.getElementById('formRow');
-    const completedMatches = db.fixtures.filter(f => f.status === 'completed' && (f.homeId === teamId || f.awayId === teamId));
-    const recent = completedMatches.slice(-5); // Get last 5
+    if (!formRow) return;
+
+    // Filter completed fixtures involving this specific team
+    const fixtures = db.fixtures || [];
+    const completedMatches = fixtures.filter(f => 
+        f.status === 'completed' && (f.homeId === teamId || f.awayId === teamId)
+    );
+
+    // Get the 5 most recent matches
+    const recent = completedMatches.slice(-5);
 
     if (recent.length === 0) {
-        formRow.innerHTML = '<span style="color: #888; font-size: 12px;">No matches played</span>';
+        formRow.innerHTML = '<span style="color: #888; font-size: 13px; font-style: italic;">No matches played yet</span>';
         return;
     }
 
     let formHTML = '';
     recent.forEach(f => {
         const isHome = f.homeId === teamId;
-        const won = isHome ? (f.homeScore > f.awayScore) : (f.awayScore > f.homeScore);
-        const draw = f.homeScore === f.awayScore;
+        const homeScore = parseInt(f.homeScore);
+        const awayScore = parseInt(f.awayScore);
+        
+        const won = isHome ? (homeScore > awayScore) : (awayScore > homeScore);
+        const draw = homeScore === awayScore;
+
+        // Apply consistent styling to the badges
+        const badgeBaseStyle = "display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 5px; color: white;";
 
         if (won) {
-            formHTML += `<div class="form-badge w" style="background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 4px;">W</div>`;
+            formHTML += `<div class="form-badge w" style="${badgeBaseStyle} background: #28a745;">W</div>`;
         } else if (draw) {
-            formHTML += `<div class="form-badge d" style="background: #6c757d; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 4px;">D</div>`;
+            formHTML += `<div class="form-badge d" style="${badgeBaseStyle} background: #6c757d;">D</div>`;
         } else {
-            formHTML += `<div class="form-badge l" style="background: #dc3545; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 4px;">L</div>`;
+            formHTML += `<div class="form-badge l" style="${badgeBaseStyle} background: #dc3545;">L</div>`;
         }
     });
+
     formRow.innerHTML = formHTML;
 }
 
 function updateTeamFixtures(teamId, db) {
     // Find the widget containing "UPCOMING FIXTURES"
     const widgets = document.querySelectorAll('.widget');
-    let fixtureWidget = Array.from(widgets).find(w => w.innerHTML.includes('UPCOMING FIXTURES'));
+    let fixtureWidget = Array.from(widgets).find(w => w.innerText.includes('UPCOMING FIXTURES'));
     
     if (!fixtureWidget) return;
 
-    const pendingMatches = db.fixtures.filter(f => f.status === 'pending' && (f.homeId === teamId || f.awayId === teamId)).slice(0, 2); // Get next 2
+    // Filter pending matches from Firebase for this specific team
+    const fixtures = db.fixtures || [];
+    const pendingMatches = fixtures.filter(f => 
+        f.status === 'pending' && (f.homeId === teamId || f.awayId === teamId)
+    ).slice(0, 2); // Get the next 2 scheduled matches
 
-    let html = `<div class="section-title">UPCOMING FIXTURES</div>`;
+    let html = `<div class="section-title" style="margin-bottom: 12px; font-weight: bold; color: var(--accent);">UPCOMING FIXTURES</div>`;
 
     if (pendingMatches.length === 0) {
-        html += `<div style="color:#888; font-size: 13px; padding: 10px 0;">No upcoming fixtures scheduled.</div>`;
+        html += `<div style="color:#888; font-size: 13px; padding: 10px 0; font-style: italic;">No upcoming fixtures scheduled.</div>`;
     } else {
+        const teams = db.teams || [];
+        const currentTeam = teams.find(t => t.id === teamId);
+        
+        if (!currentTeam) return;
+
         pendingMatches.forEach(f => {
             const isHome = f.homeId === teamId;
             const opponentId = isHome ? f.awayId : f.homeId;
-            const opponent = db.teams.find(t => t.id === opponentId);
+            const opponent = teams.find(t => t.id === opponentId);
+            
             const opName = opponent ? opponent.name : 'TBD';
-            const opLogo = opponent && opponent.logo ? opponent.logo : `https://ui-avatars.com/api/?name=${opName}&background=444&color=fff`;
-
-            // Current Team Logo
-            const team = db.teams.find(t => t.id === teamId);
-            const myLogo = team.logo ? team.logo : `https://ui-avatars.com/api/?name=${team.name}&background=444&color=fff`;
+            const opLogo = (opponent && opponent.logo) ? opponent.logo : `https://ui-avatars.com/api/?name=${opName}&background=444&color=fff`;
+            const myLogo = currentTeam.logo ? currentTeam.logo : `https://ui-avatars.com/api/?name=${currentTeam.name}&background=444&color=fff`;
 
             html += `
-            <div class="fixture-card" style="background: var(--bg-panel); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333;">
+            <div class="fixture-card" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #333;">
                 <div style="width: 100%;">
-                    <div class="fixture-date" style="font-size: 11px; color: #aaa; margin-bottom: 8px;">Matchday ${f.matchday} 
-                        <span style="float:right; background: ${isHome ? 'var(--accent-blue, #00e5ff)' : '#444'}; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 9px;">${isHome ? 'HOME' : 'AWAY'}</span>
+                    <div class="fixture-date" style="font-size: 11px; color: #aaa; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <span>Matchday ${f.matchday}</span>
+                        <span style="background: ${isHome ? '#00e5ff' : '#555'}; color: #000; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-size: 9px;">${isHome ? 'HOME' : 'AWAY'}</span>
                     </div>
-                    <div class="fixture-teams" style="display: flex; align-items: center; justify-content: space-between; font-size: 14px; font-weight: bold;">
-                        <img src="${isHome ? myLogo : opLogo}" style="width: 24px; height: 24px; border-radius: 4px;">
-                        <span>${isHome ? team.name : opName}</span> 
-                        <span style="color: #666; font-size: 11px;">VS</span> 
-                        <span>${isHome ? opName : team.name}</span>
-                        <img src="${isHome ? opLogo : myLogo}" style="width: 24px; height: 24px; border-radius: 4px;">
+                    <div class="fixture-teams" style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; font-weight: 600;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                            <img src="${isHome ? myLogo : opLogo}" style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain;">
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${isHome ? currentTeam.name : opName}</span>
+                        </div>
+                        
+                        <span style="color: var(--accent); font-size: 10px; margin: 0 10px;">VS</span> 
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; flex: 1; justify-content: flex-end;">
+                            <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: right;">${isHome ? opName : currentTeam.name}</span>
+                            <img src="${isHome ? opLogo : myLogo}" style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain;">
+                        </div>
                     </div>
                 </div>
             </div>`;
@@ -1528,93 +1658,120 @@ function updateTeamFixtures(teamId, db) {
 }
 
 function updateTeamStats(team, db) {
-    // 1. Clean Sheets Calculation
-    const completedMatches = db.fixtures.filter(f => f.status === 'completed' && (f.homeId === team.id || f.awayId === team.id));
+    if (!team || !db) return;
+
+    // 1. Clean Sheets Calculation from Firebase Fixtures
+    const fixtures = db.fixtures || [];
+    const completedMatches = fixtures.filter(f => f.status === 'completed' && (f.homeId === team.id || f.awayId === team.id));
+    
     let cleanSheets = 0;
     completedMatches.forEach(f => {
-        if (f.homeId === team.id && f.awayScore === 0) cleanSheets++;
-        if (f.awayId === team.id && f.homeScore === 0) cleanSheets++;
+        const homeScore = parseInt(f.homeScore);
+        const awayScore = parseInt(f.awayScore);
+        if (f.homeId === team.id && awayScore === 0) cleanSheets++;
+        if (f.awayId === team.id && homeScore === 0) cleanSheets++;
     });
 
-    // 2. Max values for dynamic stat bars
-    const maxGoals = Math.max(...db.teams.map(t => t.gf)) || 1;
-    const maxConceded = Math.max(...db.teams.map(t => t.ga)) || 1;
+    // 2. Max values for relative stat bar scaling
+    const teams = db.teams || [];
+    const maxGoals = Math.max(...teams.map(t => t.gf || 0)) || 1;
+    const maxConceded = Math.max(...teams.map(t => t.ga || 0)) || 1;
     
-    // 3. Update Stat Bars (Targeting them by their inner text labels)
+    // 3. Update Stat Bars
     const statBars = document.querySelectorAll('.stat-bar-row');
     statBars.forEach(row => {
-        const labelText = row.querySelector('span').innerText;
+        const label = row.querySelector('span');
         const strongTag = row.querySelector('strong');
         const innerBar = row.querySelector('.stat-bar-inner');
 
+        if (!label || !strongTag || !innerBar) return;
+
+        const labelText = label.innerText;
+
         if (labelText.includes("Goals Scored")) {
-            strongTag.innerText = team.gf || 0;
-            innerBar.style.width = `${((team.gf || 0) / maxGoals) * 100}%`;
-            innerBar.style.background = '#00e5ff';
+            const val = team.gf || 0;
+            strongTag.innerText = val;
+            innerBar.style.width = `${(val / maxGoals) * 100}%`;
+            innerBar.style.background = 'var(--accent, #00e5ff)';
         }
-        if (labelText.includes("Goals Conceded")) {
-            strongTag.innerText = team.ga || 0;
-            innerBar.style.width = `${((team.ga || 0) / maxConceded) * 100}%`;
-            innerBar.style.background = '#ff4d4d'; // Red for conceded
+        else if (labelText.includes("Goals Conceded")) {
+            const val = team.ga || 0;
+            strongTag.innerText = val;
+            innerBar.style.width = `${(val / maxConceded) * 100}%`;
+            innerBar.style.background = '#ff4d4d'; 
         }
-        if (labelText.includes("Shots Per Game")) {
-            // Mock stat since shots aren't in your standard DB
-            const mockShots = (team.gf * 1.8 + 5).toFixed(1); 
+        else if (labelText.includes("Shots Per Game")) {
+            // Dynamic mock: more goals usually means more shots
+            const mockShots = ( (team.gf || 0) * 1.5 + 4).toFixed(1); 
             strongTag.innerText = mockShots;
-            innerBar.style.width = `${(mockShots / 25) * 100}%`;
+            innerBar.style.width = `${Math.min((mockShots / 20) * 100, 100)}%`;
         }
-        if (labelText.includes("Clean Sheets")) {
+        else if (labelText.includes("Clean Sheets")) {
             strongTag.innerText = cleanSheets;
-            const maxCS = team.p > 0 ? team.p : 1;
-            innerBar.style.width = `${(cleanSheets / maxCS) * 100}%`;
+            const maxPossibleCS = team.p > 0 ? team.p : 1;
+            innerBar.style.width = `${(cleanSheets / maxPossibleCS) * 100}%`;
+            innerBar.style.background = '#ffd700'; // Gold for clean sheets
         }
     });
 
-    // 4. Update Club Info (Checking if property exists, else using defaults)
-    document.getElementById('manager').innerText = team.manager || team.name;
-    document.getElementById('stadium').innerText = team.stadium || `${team.name} Arena`;
-    document.getElementById('capacity').innerText = team.capacity || "50,000";
-    document.getElementById('founded').innerText = team.founded || new Date().getFullYear();
-    document.getElementById('country').innerText = team.country || "International";
+    // 4. Update Club Info (Fallbacks for empty Firebase fields)
+    const setInfo = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
 
-    // 5. Update Overview Charts
-    const winRate = team.p > 0 ? Math.round((team.w / team.p) * 100) : 0;
-    document.getElementById('winRate').innerText = `${winRate}%`;
-    document.getElementById('winsCount').innerText = team.w || 0;
+    setInfo('manager', team.manager || "Interim Manager");
+    setInfo('stadium', team.stadium || `${team.name} Stadium`);
+    setInfo('capacity', team.capacity || "45,000");
+    setInfo('founded', team.founded || "2024");
+    setInfo('country', team.country || "Nigeria");
+
+    // 5. Update Overview & Win Rate
+    const totalPlayed = team.p || 0;
+    const winRate = totalPlayed > 0 ? Math.round(((team.w || 0) / totalPlayed) * 100) : 0;
     
-    // Fix: Your HTML had id="drawsCount" twice. We'll target them carefully.
-    const chartLegendDivs = document.querySelectorAll('.chart-legend span');
-    if(chartLegendDivs.length >= 3) {
-        chartLegendDivs[0].innerText = team.w || 0;
-        chartLegendDivs[1].innerText = team.d || 0;
-        chartLegendDivs[2].innerText = team.l || 0; // Fixes the duplicate ID issue in HTML
+    setInfo('winRate', `${winRate}%`);
+    setInfo('winsCount', team.w || 0);
+    
+    // Legend correction (handles duplicate IDs in UI)
+    const chartLegendSpans = document.querySelectorAll('.chart-legend span');
+    if(chartLegendSpans.length >= 3) {
+        chartLegendSpans[0].innerText = team.w || 0;
+        chartLegendSpans[1].innerText = team.d || 0;
+        chartLegendSpans[2].innerText = team.l || 0;
     }
 
-    // Update Bottom Mock Stats (Since Poss/Pass accuracy isn't in base DB)
-    document.getElementById('poss').innerText = team.p > 0 ? `${(45 + (team.w * 2)).toFixed(0)}%` : '0%';
-    document.getElementById('shot').innerText = team.p > 0 ? `${(30 + (team.gf * 1.5)).toFixed(0)}%` : '0%';
-    document.getElementById('pass').innerText = team.p > 0 ? `${(75 + (team.w * 1.2)).toFixed(0)}%` : '0%';
+    // 6. Performance Indicators (Scaled Mocks)
+    if (totalPlayed > 0) {
+        setInfo('poss', `${(48 + (team.w * 1.5)).toFixed(0)}%`);
+        setInfo('shot', `${(25 + ((team.gf / totalPlayed) * 10)).toFixed(0)}%`);
+        setInfo('pass', `${(78 + (team.w * 0.8)).toFixed(0)}%`);
+    } else {
+        setInfo('poss', '0%');
+        setInfo('shot', '0%');
+        setInfo('pass', '0%');
+    }
 }
-function loadLeagueLeaders() {
-    // 1. Pull the DB directly from LocalStorage to be safe
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
+
+function loadLeagueLeaders(db) {
     const container = document.getElementById('teamHonorsWidget');
 
-    // Debugging logs
-    console.log("Checking DB for Leaders:", db);
-    if (!container) return console.error("Widget container not found!");
-    if (!db || !db.teams) return console.error("No teams found in database!");
+    // Safety checks
+    if (!container) return;
+    if (!db || !db.teams || db.teams.length === 0) {
+        console.warn("No team data available for League Leaders.");
+        return;
+    }
 
-    // 2. Sort teams by PTS and then GD
+    // 1. Sort teams by PTS and then GD
     const sortedTeams = [...db.teams].sort((a, b) => {
-        if (b.pts !== a.pts) return b.pts - a.pts;
+        if (b.pts !== a.pts) return (b.pts || 0) - (a.pts || 0);
         return (b.gd || 0) - (a.gd || 0);
     });
 
+    // 2. Identify Top 3
     const top3 = sortedTeams.slice(0, 3);
     const cards = container.querySelectorAll('.honor-card');
-
-    console.log("Top 3 Teams Identified:", top3);
 
     cards.forEach((card, index) => {
         const team = top3[index];
@@ -1622,41 +1779,60 @@ function loadLeagueLeaders() {
         const nameDiv = card.querySelector('.honor-name');
         const statDiv = card.querySelector('.honor-stat');
 
-        if (team) {
+        if (team && nameDiv && statDiv && logoWrapper) {
             nameDiv.innerText = team.name;
-            statDiv.innerText = `${team.pts} PTS | ${team.gd || 0} GD`;
+            statDiv.innerText = `${team.pts || 0} PTS | ${(team.gd || 0) > 0 ? '+' + team.gd : (team.gd || 0)} GD`;
             
-            // Injecting the logo image
-            const logoSrc = team.pfp || team.logo || `https://ui-avatars.com/api/?name=${team.name}&background=444&color=fff`;
-            logoWrapper.innerHTML = `<img src="${logoSrc}" style="width: 40px; height: 40px; object-fit: contain; margin-bottom: 5px;">`;
-        } else {
-            nameDiv.innerText = "Empty Slot";
+            // Priority: pfp field -> logo field -> UI Avatar fallback
+            const logoSrc = team.pfp || team.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(team.name)}&background=222&color=00e5ff`;
+            
+            logoWrapper.innerHTML = `
+                <img src="${logoSrc}" 
+                     alt="${team.name}" 
+                     style="width: 45px; height: 45px; object-fit: contain; border-radius: 50%; border: 2px solid rgba(0, 229, 255, 0.3); padding: 2px; background: #111;">
+            `;
+        } else if (nameDiv && statDiv) {
+            nameDiv.innerText = "TBD";
             statDiv.innerText = "0 PTS";
-            logoWrapper.innerHTML = `<div style="height:45px;"></div>`;
+            if (logoWrapper) logoWrapper.innerHTML = `<div style="height:45px; width:45px; background: #222; border-radius: 50%; margin: 0 auto;"></div>`;
         }
     });
 }
 
-// 2. THIS IS THE KEY: Ensure it runs only after the page is fully ready
-window.addEventListener('DOMContentLoaded', () => {
-    loadLeagueLeaders();
-});
+// ==========================================
+// IMAGE POPUP / MODAL LOGIC
+// ==========================================
+
 function openImagePopup() {
     const mainImg = document.getElementById('teamLineupImage');
     const modal = document.getElementById('imageModal');
     const modalImg = document.getElementById('modalImg');
 
-    if (mainImg.src) {
-        modal.style.display = "block";
+    // Ensure there is an actual source and it's not just the placeholder
+    if (mainImg && mainImg.src && !mainImg.src.includes('undefined') && mainImg.style.display !== 'none') {
+        modal.style.display = "flex"; // Use flex if your CSS centers the modal content
         modalImg.src = mainImg.src;
     }
 }
 
 function closeModal() {
-    document.getElementById('imageModal').style.display = "none";
+    const modal = document.getElementById('imageModal');
+    if (modal) modal.style.display = "none";
 }
-document.getElementById('teamLineupImage').onclick = openImagePopup;
 
+// Event Listeners
+const lineupImageElement = document.getElementById('teamLineupImage');
+if (lineupImageElement) {
+    lineupImageElement.onclick = openImagePopup;
+}
+
+// Close modal if user clicks outside the image
+window.onclick = function(event) {
+    const modal = document.getElementById('imageModal');
+    if (event.target == modal) {
+        closeModal();
+    }
+};
     </script>
 </body>
 </html>
