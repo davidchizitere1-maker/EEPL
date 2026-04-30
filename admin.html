@@ -45,7 +45,6 @@
   const analytics = firebase.analytics();
 </script>
 
-
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2><i class="fa-solid fa-lock"></i> EEPL Admin</h2>
@@ -59,6 +58,7 @@
             <li class="nav-item" onclick="switchPane('pane-lineup', this)"><i class="fa-solid fa-upload"></i> Upload Lineup</li>
             <li class="nav-item" onclick="switchPane('pane-system', this)"><i class="fa-solid fa-gear"></i> System</li>
         </ul>
+
     </aside>
 
     <main class="main-content">
@@ -309,11 +309,46 @@
 </section>
 
 <section id="pane-system" class="pane">
+
+    <div class="auth-card">
+        <!-- PANE 1: LOGIN FORM (Shown by default) -->
+        <div id="login-form-container" class="auth-form active">
+            <h2>Admin Login</h2><br>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-regular fa-envelope"></i>
+                    <input id="login-email" type="email" placeholder="Email">
+                </div>
+            </div><br>
+            <div class="input-group">
+                <div class="input-box">
+                    <i class="fa-solid fa-lock"></i>
+                    <input id="login-password" type="password" placeholder="Password">
+                </div>
+            </div><br>
+            <button class="action-btn" onclick="loginUser()">Login</button>
+        </div><br>
+
+        <!-- PANE 2: ADMIN PANEL (Hidden until logged in) -->
+        <div id="admin-panel" class="auth-form" style="display: none;">
+            <h2 style="color: #00e5ff;">Admin Dashboard</h2>
+            <p id="admin-greeting" style="color: #ccc; margin-bottom: 20px;"></p>
+            
+            <div class="admin-controls">
+                <button class="action-btn" style="background: #ff4b2b; margin-top: 10px;" onclick="logoutUser()">
+                    Logout
+                </button><br>
+            </div>
+        </div>
+    </div><br><br>
+    
+    <div>
     <h2>System Reset</h2>
     <p style="color: var(--text-muted); margin-bottom: 20px;"></p>
     <button onclick="clearAllData()" style="background:#ff1a1a; width:100%;">
     🗑️ Reset Entire League
-</button></section></main>
+</button></div>
+</section></main>
 
     <script>
     // --- CLOUD DATA ARCHITECTURE ---
@@ -938,6 +973,100 @@
             }
         });
     }
+// The email that is allowed to edit the database
+const ADMIN_EMAIL = 'davidchizitere1@gmail.com'; 
+
+// Temporary variable to hold the data if you try to save while logged out
+let pendingDataToSave = null; 
+let isEditModeActive = false;
+
+// 1. Unified Auth Listener: Swaps views inside the sidebar automatically
+firebase.auth().onAuthStateChanged((user) => {
+    const loginView = document.getElementById('login-form-container');
+    const adminView = document.getElementById('admin-panel');
+    const greeting = document.getElementById('admin-greeting');
+
+    if (user && user.email === ADMIN_EMAIL) {
+        if(loginView) loginView.style.display = 'none';
+        if(adminView) {
+            adminView.style.display = 'block';
+            greeting.innerText = `Welcome back, David`;
+        }
+        
+        // If there was data waiting to be saved, do it now
+        if (pendingDataToSave) {
+            executeFirebaseWrite(pendingDataToSave);
+            pendingDataToSave = null;
+        }
+    } else {
+        if(loginView) loginView.style.display = 'block';
+        if(adminView) adminView.style.display = 'none';
+        isEditModeActive = false; // Turn off edit mode if logged out
+    }
+});
+
+// 2. The function called by your "Edit/Save" buttons
+function attemptDataUpdate(newData) {
+    const user = firebase.auth().currentUser;
+
+    if (!user || user.email !== ADMIN_EMAIL) {
+        // Not logged in or not admin -> Open the Sidebar
+        pendingDataToSave = newData;
+        alert("Admin login required to save changes.");
+        openLoginSidebar(); 
+        return;
+    }
+
+    // Is Admin -> Write immediately
+    executeFirebaseWrite(newData);
+}
+
+// 3. Updated Login function for the sidebar
+async function loginUser() {
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+
+    try {
+        await firebase.auth().signInWithEmailAndPassword(email, pass);
+        // onAuthStateChanged will handle the UI swap and pending saves
+    } catch (error) {
+        alert("Login failed: " + error.message);
+    }
+}
+
+// 4. Actual Database Write
+function executeFirebaseWrite(data) {
+    firebase.database().ref('league_data').update(data)
+        .then(() => {
+            alert("League data updated successfully!");
+        })
+        .catch((error) => {
+            console.error("Firebase update failed:", error);
+            alert("Update failed. Check your Firebase Rules.");
+        });
+}
+
+// 5. Sidebar Controls
+function openLoginSidebar() {
+    document.getElementById('login-sidebar').classList.add('open');
+    const overlay = document.getElementById('sidebar-overlay');
+    overlay.style.display = 'block';
+    setTimeout(() => overlay.classList.add('active'), 10);
+}
+
+function closeLoginSidebar() {
+    document.getElementById('login-sidebar').classList.remove('open');
+    const overlay = document.getElementById('sidebar-overlay');
+    overlay.classList.remove('active');
+    setTimeout(() => overlay.style.display = 'none', 300);
+}
+
+function logoutUser() {
+    firebase.auth().signOut().then(() => {
+        location.reload(); // Refresh to lock the UI
+    });
+}
+
 </script>
 </body>
 </html>
