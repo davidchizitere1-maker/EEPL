@@ -1833,6 +1833,13 @@ window.onclick = function(event) {
         closeModal();
     }
 };
+// This prevents the user from going back to the login/auth page
+window.history.pushState(null, null, window.location.href);
+window.onpopstate = function () {
+    // When they hit back, instead of going to the auth page, 
+    // you can redirect them to a neutral page or just keep them here
+    window.location.replace('EEPL.html'); 
+};
     </script>
 </body>
 </html>

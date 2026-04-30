@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome to EEPL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script>
+    firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        // User is already signed in, kick them to the dashboard
+        // We use replace here too so they can't "back" into the login screen
+        window.location.replace('EEPL.html');
+    } else {
+        // No user is signed in, stay on this page and show login options
+        console.log("Guest session active.");
+    }
+});</script>
     <style>
         /* Core Styles */
         body {
@@ -263,6 +274,7 @@
     </style>
 </head>
 <body>
+    
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script> 
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
@@ -490,28 +502,27 @@ async function registerUser() {
     clearErrors();
     const fName = document.getElementById('signup-firstname');
     const lName = document.getElementById('signup-lastname');
-    const username = document.getElementById('signup-username'); // Grab the new username field
+    const username = document.getElementById('signup-username');
     const email = document.getElementById('signup-email');
     const pass = document.getElementById('signup-password');
     const terms = document.getElementById('terms');
 
+
     if (!fName.value) return showError(fName, "First name required");
     if (!lName.value) return showError(lName, "Last name required");
-    if (!username.value) return showError(username, "Username required"); // Validate username
     if (!email.value) return showError(email, "Email required");
     if (!pass.value) return showError(pass, "Password required");
     if (!terms.checked) return showError(terms, "Accept our Terms");
 
     try {
         // Firebase Auth: Create User
-        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email.value, username.value, pass.value);
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(email.value, pass.value);
         
-        // Update Firebase profile with the USERNAME instead of the First Name
+        // Update Firebase profile with the First Name
         await userCredential.user.updateProfile({
             displayName: username.value
         });
 
-        // Show the welcome screen with the new username
         showWelcomeScreen(username.value);
     } catch (error) {
         // Handle Firebase specific errors
@@ -537,13 +548,15 @@ async function loginUser() {
 
     try {
         // Firebase Auth: Sign In
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, username.value, pass.value);
+        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
         const user = userCredential.user;
         
     
         const displayName = username.value;
         
         showWelcomeScreen(displayName);
+
+        window.location.replace('EEPL.html');
     } catch (error) {
         // Handle Firebase specific errors
         if (error.code === 'auth/wrong-password') {
