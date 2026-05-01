@@ -659,40 +659,67 @@
         alert("Score synced globally!");
     }
 
-    function undoFixtureStats(fixtureId) {
-        if (!confirm("This removes points and sets match back to pending. Continue?")) return;
+    async function undoFixtureStats(fixtureId) {
+    try {
+        // 1. Get the current state of the fixture
+        const fixtureRef = firebase.database().ref(`league_data/fixtures/${fixtureId}`);
+        const snapshot = await fixtureRef.once('value');
+        const match = snapshot.val();
 
-        const fixture = db.fixtures.find(f => f.id === fixtureId);
-        if (!fixture) return;
-
-        let home = db.teams.find(t => t.id === fixture.homeId);
-        let away = db.teams.find(t => t.id === fixture.awayId);
-
-        if (home && away) {
-            home.p--; away.p--;
-            home.gf -= fixture.homeScore;
-            home.ga -= fixture.awayScore;
-            away.gf -= fixture.awayScore;
-            away.ga -= fixture.homeScore;
-
-            if (fixture.homeScore > fixture.awayScore) {
-                home.w--; home.pts -= 3; away.l--;
-            } else if (fixture.homeScore < fixture.awayScore) {
-                away.w--; away.pts -= 3; home.l--;
-            } else {
-                home.d--; home.pts -= 1; away.d--; away.pts -= 1;
-            }
-
-            home.gd = home.gf - home.ga;
-            away.gd = away.gf - away.ga;
+        if (!match || !match.completed) {
+            console.log("Match is already empty or not completed.");
+            return;
         }
 
-        fixture.status = 'pending';
-        fixture.homeScore = null;
-        fixture.awayScore = null;
+        const { homeTeam, awayTeam, homeScore, awayScore } = match;
 
-        saveAndRefresh();
+        // 2. Define references for both teams
+        const homeRef = firebase.database().ref(`league_data/teams/${homeTeam}`);
+        const awayRef = firebase.database().ref(`league_data/teams/${awayTeam}`);
+
+        // 3. Perform the "Reverse Math"
+        await homeRef.transaction((stats) => {
+            if (stats) {
+                stats.played -= 1;
+                stats.goalsFor -= homeScore;
+                stats.goalsAgainst -= awayScore;
+                stats.gd = stats.goalsFor - stats.goalsAgainst;
+                
+                if (homeScore > awayScore) stats.points -= 3; // Undo Win
+                else if (homeScore === awayScore) stats.points -= 1; // Undo Draw
+            }
+            return stats;
+        });
+
+        await awayRef.transaction((stats) => {
+            if (stats) {
+                stats.played -= 1;
+                stats.goalsFor -= awayScore;
+                stats.goalsAgainst -= homeScore;
+                stats.gd = stats.goalsFor - stats.goalsAgainst;
+
+                if (awayScore > homeScore) stats.points -= 3; // Undo Win
+                else if (homeScore === awayScore) stats.points -= 1; // Undo Draw
+            }
+            return stats;
+        });
+
+        // 4. Reset the Fixture itself
+        await fixtureRef.update({
+            homeScore: null,
+            awayScore: null,
+            completed: false,
+            status: 'Upcoming'
+        });
+
+        alert("Stats successfully reversed!");
+        if (typeof loadLeagueData === "function") loadLeagueData(); // Refresh UI
+
+    } catch (error) {
+        console.error("Undo failed:", error);
+        alert("Error undoing stats: " + error.message);
     }
+}
 
     function updateTableStandings(homeId, awayId, homeScore, awayScore) {
         let home = db.teams.find(t => t.id === homeId);
