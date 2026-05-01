@@ -527,7 +527,7 @@ body {
 .news-ticker {
     background: rgba(0, 0, 0, 0.85); border-bottom: 1px solid var(--accent);
     padding: 12px 0; overflow: hidden; white-space: nowrap;
-    position: sticky; bottom: 0; z-index: 10;
+    position: sticky; top: -20px; z-index: 10;
     margin: -40px -50px 40px -50px; backdrop-filter: blur(5px);
 }
 .ticker-content { display: inline-block; animation: ticker 40s linear infinite; padding-left: 100%; }
@@ -1579,6 +1579,7 @@ These highlights capture the skill and strategy of a competition where every gam
         
         const userName = localStorage.getItem('userName') || 'Manager';
 const dbRef = firebase.database().ref('league_data');
+const motwRef = firebase.database().ref('leagueMOTW');
 
 document.addEventListener('DOMContentLoaded', () => {
     const isLoggedIn = localStorage.getItem('isLoggedIn');
@@ -1656,7 +1657,7 @@ function logout() {
 function loadLeagueData() {
     const seasonStatus = document.getElementById('seasonStatus');
 
-    // Real-time listener for the central league database
+    // 1. LISTEN TO MAIN LEAGUE DATA (Teams, Fixtures, Stats, News)
     dbRef.on('value', (snapshot) => {
         const data = snapshot.val();
         
@@ -1668,7 +1669,7 @@ function loadLeagueData() {
             news: (data && data.news) ? data.news : []
         };
 
-        // 1. ALWAYS update the news ticker
+        // Update the news ticker immediately
         updateNewsTicker(db);
 
         if (db.teams.length === 0) {
@@ -1687,6 +1688,14 @@ function loadLeagueData() {
             calculateLeagueInsights(db);
             populateH2HSelect(db);
             initTeamsPane(db);
+        }
+    });
+
+    // 2. LISTEN TO MATCH OF THE WEEK (Separate node as per Admin script)
+    firebase.database().ref('leagueMOTW').on('value', (snapshot) => {
+        const motwData = snapshot.val();
+        if (motwData && typeof displayMOTW === "function") {
+            displayMOTW(motwData);
         }
     });
 }
@@ -2106,27 +2115,48 @@ function calculateH2H() {
     });
 }
 
-// 3. Update the News Ticker with Firebase news data
+/**
+ * Updates the News Ticker using data from the Admin panel.
+ * Handles the Firebase "Object vs Array" conversion automatically.
+ */
 function updateNewsTicker(db) {
     const tickerContainer = document.getElementById('newsContent');
     if (!tickerContainer) return;
     
-    // Check if there is any news in the Firebase database
-    if (db.news && db.news.length > 0) {
+    // 1. DATA EXTRACTION
+    // Admin uses unique IDs (Date.now()), so db.news will likely be an Object.
+    // Object.values() converts { "1714...": {tag: "X", text: "Y"} } into [{tag: "X", text: "Y"}]
+    const newsEntries = Array.isArray(db.news) 
+        ? db.news 
+        : Object.values(db.news || {});
+
+    // 2. RENDER LOGIC
+    if (newsEntries.length > 0) {
+        // Reverse to show the newest headlines first
+        const displayNews = [...newsEntries].reverse();
+
         let newsHtml = '';
-
-        // Loop through the news items added by the Admin
-        db.news.forEach(item => {
-            newsHtml += `
-                <div class="ticker-item">
-                    <span style="color: var(--accent); font-weight: bold; text-transform: uppercase;">${item.tag}:</span> ${item.text}
-                </div>`;
+        displayNews.forEach(item => {
+            // Safety check for empty or corrupted news items
+            if (item && item.text) {
+                newsHtml += `
+                    <div class="ticker-item">
+                        <span style="color: var(--accent); font-weight: bold; text-transform: uppercase;">
+                            ${item.tag || 'BREAKING'}:
+                        </span> 
+                        ${item.text}
+                    </div>`;
+            }
         });
-
+        
         tickerContainer.innerHTML = newsHtml;
     } else {
-        // Fallback message if news is empty
-        tickerContainer.innerHTML = `<div class="ticker-item"><span>EEPL:</span> Welcome to the season! Waiting for admin updates.</div>`;
+        // 3. FALLBACK STATE
+        tickerContainer.innerHTML = `
+            <div class="ticker-item">
+                <span style="color: var(--accent); font-weight: bold;">EEPL:</span> 
+                Welcome to the season! Stay tuned for live updates.
+            </div>`;
     }
 }
 
