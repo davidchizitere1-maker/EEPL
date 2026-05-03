@@ -270,6 +270,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 
 <script>
   // 2. Your Config (Keep your keys exactly as they are)
@@ -439,89 +440,180 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DATA INITIALIZATION ---
-            const userName = localStorage.getItem('userName') || 'Entity';
-            const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
-            const userBio = localStorage.getItem('userBio') || ''; 
-            const userRegion = localStorage.getItem('userRegion') || '';
+       // --- 1. CORE CONFIGURATION ---
+let originalUserName = localStorage.getItem('userName') || 'Entity';
 
-            document.getElementById('settingsName').value = userName;
-            document.getElementById('settingsPfpDisplay').src = savedPfp;
-            document.getElementById('settingsBio').value = userBio; 
-            document.getElementById('settingsRegion').value = userRegion;
+document.addEventListener('DOMContentLoaded', () => {
+    // A. Initial UI Load (LocalStorage)
+    const userName = localStorage.getItem('userName') || 'Entity';
+    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000`;
+    
+    document.getElementById('settingsName').value = userName;
+    document.getElementById('settingsPfpDisplay').src = savedPfp;
+    document.getElementById('settingsBio').value = localStorage.getItem('userBio') || ''; 
+    document.getElementById('settingsRegion').value = localStorage.getItem('userRegion') || '';
 
-            // --- TAB SWITCHING LOGIC ---
-            const tabs = document.querySelectorAll('.side-link');
-            const sections = document.querySelectorAll('.settings-section');
-
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => {
-                    // Get target section id from data-target attribute
-                    const targetId = tab.getAttribute('data-target');
-                    if (!targetId) return; // If it's a normal link like "Back to Nexus", ignore
-
-                    // Remove 'active' class from all tabs and sections
-                    tabs.forEach(t => t.classList.remove('active'));
-                    sections.forEach(s => s.classList.remove('active'));
-
-                    // Add 'active' class to clicked tab and corresponding section
-                    tab.classList.add('active');
-                    document.getElementById(targetId).classList.add('active');
-                });
+    // B. Auth-Based Firebase Fetch (The Source of Truth)
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            document.getElementById('settingsEmail').value = user.email; // Auto-fill email from Auth
+            
+            firebase.database().ref(`user_profiles/${user.uid}`).once('value').then((snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    if (data.username) {
+                        document.getElementById('settingsName').value = data.username;
+                        localStorage.setItem('userName', data.username);
+                        originalUserName = data.username;
+                    }
+                    if (data.pfp) {
+                        document.getElementById('settingsPfpDisplay').src = data.pfp;
+                        localStorage.setItem('userPfp', data.pfp);
+                    }
+                    if (data.bio) {
+                        document.getElementById('settingsBio').value = data.bio;
+                        localStorage.setItem('userBio', data.bio);
+                    }
+                    if (data.region) {
+                        document.getElementById('settingsRegion').value = data.region;
+                        localStorage.setItem('userRegion', data.region);
+                    }
+                }
             });
+        } else {
+            console.warn("No active session. Redirecting...");
+            window.location.href = 'index.html';
+        }
+    });
+
+    // C. TAB SWITCHING LOGIC
+    const tabs = document.querySelectorAll('.side-link');
+    const sections = document.querySelectorAll('.settings-section');
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetId = tab.getAttribute('data-target');
+            if (!targetId) return; 
+
+            tabs.forEach(t => t.classList.remove('active'));
+            sections.forEach(s => s.classList.remove('active'));
+
+            tab.classList.add('active');
+            const targetElement = document.getElementById(targetId);
+            if(targetElement) targetElement.classList.add('active');
         });
+    });
+});
 
-        // --- PROFILE PICTURE PREVIEW ---
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('settingsPfpDisplay').src = e.target.result;
-                    // Auto-save the PFP immediately
-                    localStorage.setItem('userPfp', e.target.result);
-                };
-                reader.readAsDataURL(input.files[0]);
+// --- 2. PROFILE PICTURE PREVIEW ---
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageData = e.target.result;
+            document.getElementById('settingsPfpDisplay').src = imageData;
+            localStorage.setItem('userPfp', imageData);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// --- 3. SAVE & SYNCHRONIZE DATA ---
+async function saveSettings(e) {
+    e.preventDefault();
+    const user = firebase.auth().currentUser;
+    if (!user) return alert("Log in required.");
+
+    const newName = document.getElementById('settingsName').value.trim();
+    const newBio = document.getElementById('settingsBio').value.trim();
+    const newRegion = document.getElementById('settingsRegion').value.trim();
+    const currentPfp = document.getElementById('settingsPfpDisplay').src;
+
+    const btn = e.target.querySelector('.save-btn');
+    const originalBtnText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> SYNCING...';
+    btn.disabled = true;
+
+    try {
+        // A. Update user_profiles Node
+        const profileUpdates = {
+            username: newName,
+            pfp: currentPfp,
+            bio: newBio,
+            region: newRegion,
+            lastUpdated: firebase.database.ServerValue.TIMESTAMP
+        };
+        await firebase.database().ref(`user_profiles/${user.uid}`).set(profileUpdates);
+
+        // B. Admin Sync (EEPL & MOTW)
+        if (user.email === 'davidchizitere1@gmail.com') {
+            const leagueRef = firebase.database().ref('league_data/teams');
+            const snap = await leagueRef.once('value');
+            const teams = snap.val();
+
+            if (teams) {
+                const updatedTeams = teams.map(team => {
+                    if (team.name.toLowerCase() === originalUserName.toLowerCase()) {
+                        return { ...team, name: newName, pfp: currentPfp, logo: currentPfp, bio: newBio };
+                    }
+                    return team;
+                });
+                await leagueRef.set(updatedTeams);
+            }
+
+            // Sync MOTW
+            const motwRef = firebase.database().ref('leagueMOTW');
+            const motwSnap = await motwRef.once('value');
+            const motw = motwSnap.val();
+            if (motw) {
+                let updated = false;
+                if (motw.homeName === originalUserName) { motw.homeName = newName; motw.homeLogo = currentPfp; updated = true; }
+                else if (motw.awayName === originalUserName) { motw.awayName = newName; motw.awayLogo = currentPfp; updated = true; }
+                if (updated) await motwRef.update(motw);
             }
         }
 
-        // --- SAVE ACCOUNT SETTINGS ---
-        function saveSettings(e) {
-            e.preventDefault();
-            const newName = document.getElementById('settingsName').value;
-            const newBio = document.getElementById('settingsBio').value;
-            const newRegion = document.getElementById('settingsRegion').value;
-            
-            // Save to Local Storage
-            localStorage.setItem('userName', newName);
-            localStorage.setItem('userBio', newBio);
-            localStorage.setItem('userRegion', newRegion);
-            
-            // Visual feedback
-            const btn = e.target.querySelector('.save-btn');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i> SYNC COMPLETE';
-            btn.style.background = '#00e5ff';
-            btn.style.color = '#000';
+        // C. Update Local State
+        localStorage.setItem('userName', newName);
+        localStorage.setItem('userBio', newBio);
+        localStorage.setItem('userRegion', newRegion);
+        localStorage.setItem('userPfp', currentPfp);
+        originalUserName = newName;
 
-            setTimeout(() => {
-                btn.innerHTML = originalText;
-                btn.style.background = 'transparent';
-                btn.style.color = '#00e5ff';
-            }, 2000);
-        }
+        btn.innerHTML = '<i class="fas fa-check"></i> SYNC COMPLETE';
+        btn.style.color = '#00e5ff';
+    } catch (error) {
+        console.error(error);
+        btn.innerHTML = '<i class="fas fa-times"></i> SYNC FAILED';
+    } finally {
+        setTimeout(() => {
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+        }, 2000);
+    }
+}
 
-        // --- DELETE ENTITY SIMULATION ---
-        function deleteEntity() {
-            const confirmInput = document.getElementById('deleteConfirm').value;
-            if(confirmInput === 'ERASE') {
-                alert('Entity successfully removed from the Nexus.');
-                localStorage.clear(); // Clears all saved data
-                window.location.href = 'index.html'; // Redirects out
-            } else {
-                alert('Action aborted. You must type exactly "ERASE" to confirm.');
+// --- 4. DELETE ENTITY ---
+async function deleteEntity() {
+    const user = firebase.auth().currentUser;
+    const confirmInput = document.getElementById('deleteConfirm').value;
+
+    if (confirmInput === 'ERASE') {
+        if (user && confirm("Are you sure? This cannot be undone.")) {
+            try {
+                await firebase.database().ref(`user_profiles/${user.uid}`).remove();
+                localStorage.clear(); 
+                await user.delete();
+                alert('Entity Erased.');
+                window.location.href = 'index.html'; 
+            } catch (error) {
+                alert("Security Check: Log out and back in before deleting.");
             }
         }
-    </script>
+    } else {
+        alert('Type ERASE to confirm.');
+    }
+}
+   </script>
 </body>
 </html>

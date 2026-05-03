@@ -433,10 +433,10 @@
     </style>
 </head>
 <body>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-
+<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
 <script>
   // 2. Your Config (Keep your keys exactly as they are)
   const firebaseConfig = {
@@ -666,33 +666,71 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-    // 1. IDENTITY & LOCAL STORAGE INITIALIZATION
-    const userName = localStorage.getItem('userName') || 'Unknown_Entity';
-    const savedPfp = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000&size=200`;
-    const userBio = localStorage.getItem('userBio') || 'This Entity has not yet initialized a public biography.';
-    
-    // Pull the Master Database
-    const dbString = localStorage.getItem('eepl_db');
-    const db = dbString ? JSON.parse(dbString) : { teams: [], fixtures: [], stats: [], news: [] };
+        const userName = localStorage.getItem('userName') || 'Unknown_Entity';
+const dbRef = firebase.database().ref('league_data');
+let globalDb = { teams: [], fixtures: [], stats: [], news: [] }; // Local buffer for synchronous UI functions
 
-    // Update Basic UI
-    document.getElementById('profileName').innerText = userName;
-    document.getElementById('profilePfp').src = savedPfp;
-    document.getElementById('profileBio').innerText = userBio;
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. IDENTITY INITIALIZATION (Secure UID Fetch)
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user) {
+            // Updated to fetch from the secure UID path established in settings
+            firebase.database().ref(`user_profiles/${user.uid}`).once('value').then((snapshot) => {
+                const profileData = snapshot.val() || {};
+                
+                // Fallback sequence: Firebase -> LocalStorage -> Default Avatar
+                const savedPfp = profileData.pfp || localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000&size=200`;
+                const userBio = profileData.bio || 'This Entity has not yet initialized a public biography.';
+                const currentName = profileData.username || userName;
+
+                document.getElementById('profilePfp').src = savedPfp;
+                document.getElementById('profileBio').innerText = userBio;
+                document.getElementById('profileName').innerText = currentName;
+            });
+        } else {
+            // If not logged in, fallback to local storage or redirect
+            document.getElementById('profileName').innerText = userName;
+            document.getElementById('profilePfp').src = localStorage.getItem('userPfp') || `https://ui-avatars.com/api/?name=${userName}&background=00e5ff&color=000&size=200`;
+        }
+    });
+
     document.getElementById('randID').innerText = Math.floor(1000 + Math.random() * 9000) + "-X";
 
-    // 2. RUN THE CORE FUNCTIONS
+    // 2. RUN STATIC FUNCTIONS
     initRadarChart();
     populateAuditLog();
 
-    // Check if the user exists in the league to populate stats and fixtures
-    if (db.teams.length > 0) {
-        renderRecentFixturesTable(db, userName);
-        loadLeagueLeaders(db);
-    } else {
-        document.getElementById('fixturesBody').innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#555;">No League Data Found</td></tr>`;
-    }
+    // 3. LISTEN TO FIREBASE FOR DYNAMIC DATA
+    dbRef.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        globalDb = {
+            teams: data.teams || [],
+            fixtures: data.fixtures || [],
+            stats: data.stats || [],
+            news: data.news || []
+        };
+
+        if (globalDb.teams.length > 0) {
+            // FIX: Sort teams by Points, then Goal Difference
+            const sortedTeams = [...globalDb.teams].sort((a, b) => {
+                if ((b.pts || 0) !== (a.pts || 0)) return (b.pts || 0) - (a.pts || 0);
+                return (b.gd || 0) - (a.gd || 0);
+            });
+
+            renderRecentFixturesTable(globalDb, userName);
+            updateTop3Widget(sortedTeams); // Now sortedTeams is defined!
+            initRadarChart(globalDb, userName); 
+            populateAuditLog(globalDb);
+            updateNotificationUI(globalDb);
+        } else {
+                const fixturesBody = document.getElementById('fixturesBody');
+                if (fixturesBody) {
+                    fixturesBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#555;">No League Data Found</td></tr>`;
+                }
+            }
+        }
+    });
 });
 
 // ==========================================
@@ -702,9 +740,15 @@ function renderRecentFixturesTable(db, userName) {
     const tableBody = document.getElementById('fixturesBody');
     const statValues = document.querySelectorAll('.stat-value'); 
 
+    // We use the passed userName, ensuring it matches the name stored in league_data/teams
     const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === userName.toLowerCase().trim());
+    
     if (!myTeam) {
-        tableBody.innerHTML = `<tr><td colspan="3">Entity Not Linked</td></tr>`;
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#ff4d4d; padding: 20px;">Entity Not Linked to League</td></tr>`;
+        }
+        // Zero out stats if team not found
+        statValues.forEach(sv => sv.innerText = "0");
         return;
     }
 
@@ -713,230 +757,150 @@ function renderRecentFixturesTable(db, userName) {
     const wins = Number(myTeam.w) || 0;
     const winRate = played > 0 ? Math.round((wins / played) * 100) : 0;
     
-    // New counts for Joined and Friends
-    const joined = Number(myTeam.founded) || 2026; // Default to 2026 if not set
+    // Fallback to 2024 or current if 'founded' is missing
+    const joined = myTeam.founded || '2024'; 
     const friends = Array.isArray(myTeam.friends) ? myTeam.friends.length : 0;
 
+    // Use specific indices to ensure the correct stat box is updated
     if (statValues[0]) statValues[0].innerText = played;
     if (statValues[1]) statValues[1].innerText = winRate + "%";
-    if (statValues[2]) statValues[2].innerText = joined; // Updates 'Joined'
-    if (statValues[3]) statValues[3].innerText = friends;       // Updates 'Friends'
+    if (statValues[2]) statValues[2].innerText = joined; 
+    if (statValues[3]) statValues[3].innerText = friends;       
 
     // --- SECTION 2: FIXTURES TABLE ---
+    // Match by ID is safer than matching by Name for filtering fixtures
+    const myId = String(myTeam.id);
     const allMatches = db.fixtures.filter(f => 
-        f.status === 'completed' && (String(f.homeId) === String(myTeam.id) || String(f.awayId) === String(myTeam.id))
+        f.status === 'completed' && (String(f.homeId) === myId || String(f.awayId) === myId)
     );
 
+    // Get the last 3 matches played
     const lastThree = allMatches.slice(-3).reverse();
 
     if (lastThree.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#555;">No Records Logged</td></tr>`;
+        if (tableBody) {
+            tableBody.innerHTML = `<tr><td colspan="3" style="text-align:center; padding:20px; color:#888;">No Matches Played Yet</td></tr>`;
+        }
         return;
     }
 
     tableBody.innerHTML = ''; 
     lastThree.forEach(match => {
-        const isHome = String(match.homeId) === String(myTeam.id);
-        const opponentTeam = db.teams.find(t => String(t.id) === (isHome ? String(match.awayId) : String(match.homeId)));
+        const isHome = String(match.homeId) === myId;
+        const opponentId = isHome ? String(match.awayId) : String(match.homeId);
+        const opponentTeam = db.teams.find(t => String(t.id) === opponentId);
+        
         const opponentName = opponentTeam ? opponentTeam.name : "Unknown Entity";
-        const opponentLogo = opponentTeam ? `<img src="${opponentTeam.pfp || opponentTeam.logo || `https://ui-avatars.com/api/?name=${opponentName}`}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; margin-left: 20px; margin-right: 30px;">` : '';
+        const opponentImg = opponentTeam ? (opponentTeam.pfp || opponentTeam.logo || `https://ui-avatars.com/api/?name=${opponentName}`) : '';
+        
+        const opponentLogo = `<img src="${opponentImg}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover; margin: 0 15px;">`;
 
         const myScore = isHome ? Number(match.homeScore) : Number(match.awayScore);
         const oppScore = isHome ? Number(match.awayScore) : Number(match.homeScore);
 
-        let resText = "D", resColor = "#ffd700";
+        let resText = "D", resColor = "#ffd700"; // Default Draw
         if (myScore > oppScore) { resText = "W"; resColor = "#00ff41"; }
         else if (myScore < oppScore) { resText = "L"; resColor = "#ff4d4d"; }
 
         const tr = document.createElement('tr');
         tr.style.borderBottom = "1px solid #1a1a1a";
         tr.innerHTML = `
-            <td style="font-family: cambria; font-size: 1.1rem; padding: 15px 0; color: #fff; display: flex; align-items: center;">
-                <span style="color: #00e5ff; font-size: 0.65rem; margin-right: 5px; opacity: 0.5;">VS</span> ${opponentLogo} ${opponentName}
+            <td style="font-family: 'Outfit', sans-serif; font-size: 1rem; padding: 15px 0; color: #fff; display: flex; align-items: center;">
+                <span style="color: #00e5ff; font-size: 0.7rem; margin-right: 5px; opacity: 0.6;">VS</span> 
+                ${opponentLogo} 
+                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;">${opponentName}</span>
             </td>
-            <td style="color: ${resColor}; font-weight: 900; text-align: center;">${resText}</td>
-            <td style="font-family: sans-serif; letter-spacing: 1px; font-size: 0.9rem; text-align: right; padding-right: 10px;">${match.homeScore} - ${match.awayScore}</td>
+            <td style="color: ${resColor}; font-weight: 900; text-align: center; font-size: 1.1rem;">${resText}</td>
+            <td style="font-family: monospace; letter-spacing: 1px; font-size: 1rem; text-align: right; padding-right: 10px; color: #aaa;">
+                <span style="${isHome ? 'color:#fff; font-weight:bold;' : ''}">${match.homeScore}</span> - <span style="${!isHome ? 'color:#fff; font-weight:bold;' : ''}">${match.awayScore}</span>
+            </td>
         `;
         tableBody.appendChild(tr);
     });
 }
 
-// ==========================================
-// LEAGUE LEADERS WIDGET
-// ==========================================
-function loadLeagueLeaders(db) {
-    const container = document.getElementById('teamHonorsWidget');
-    if (!container) return;
+function updateTop3Widget(sortedTeams) {
+    const widgetContainer = document.getElementById('teamHonorsWidget');
+    if (!widgetContainer) return;
 
-    // Sort by Points, then Goal Difference
-    const sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || (b.gd || 0) - (a.gd || 0));
-    const cards = container.querySelectorAll('.honor-card');
+    const top3 = sortedTeams.slice(0, 3);
+    const cards = widgetContainer.querySelectorAll('.honor-card');
 
-    cards.forEach((card, i) => {
-        const team = sortedTeams[i];
+    cards.forEach((card, index) => {
+        const team = top3[index];
+        const nameDiv = card.querySelector('.honor-name');
+        const statDiv = card.querySelector('.honor-stat');
+        const logoWrapper = card.querySelector('.honor-logo-wrapper');
+
         if (team) {
-            card.querySelector('.honor-name').innerText = team.name;
-            card.querySelector('.honor-stat').innerText = `${team.pts} PTS | ${team.gd || 0} GD`;
-            const logoWrapper = card.querySelector('.honor-logo-wrapper');
-            const logoSrc = team.pfp || team.logo || `https://ui-avatars.com/api/?name=${team.name}&background=444&color=fff`;
-            logoWrapper.innerHTML = `<img src="${logoSrc}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;">`;
-        }
-    });
-}
-
-// ==========================================
-// CHART & VISUAL EFFECTS
-// ==========================================
-function initRadarChart() {
-    const canvas = document.getElementById('tacticalRadar');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-        type: 'radar',
-        data: {
-            labels: ['Pace', 'Shooting', 'Passing', 'Dribbling', 'Defending', 'Physical'],
-            datasets: [{
-                label: 'Entity Attributes',
-                data: [85, 78, 82, 88, 65, 70],
-                backgroundColor: 'rgba(0, 229, 255, 0.2)',
-                borderColor: '#00e5ff',
-                pointBackgroundColor: '#fff',
-                borderWidth: 2
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                r: {
-                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                    pointLabels: { color: '#888', font: { size: 10 } },
-                    ticks: { display: false }
-                }
-            },
-            plugins: { legend: { display: false } }
-        }
-    });
-}
-
-function populateAuditLog() {
-    const auditLog = document.getElementById('auditLog');
-    if (!auditLog) return;
-    const logs = [
-        { time: '10:24', type: 'SYSTEM', msg: 'Data synchronization successful.', class: 'success' },
-        { time: '09:15', type: 'MATCH', msg: 'Admin updated league database.', class: '' },
-        { time: '08:00', type: 'AUTH', msg: 'Entity credentials verified.', class: 'success' }
-    ];
-    auditLog.innerHTML = '';
-    logs.forEach(log => {
-        const li = document.createElement('li');
-        if(log.class) li.classList.add(log.class);
-        li.innerHTML = `<span class="time">[${log.time}]</span> <span class="type">${log.type}:</span> ${log.msg}`;
-        auditLog.appendChild(li);
-    });
-}
-
-// Web Share API
-async function shareEntityProfile(event) {
-    event.preventDefault();
-    const entityName = document.getElementById('profileName').innerText;
-    try {
-        if (navigator.share) {
-            await navigator.share({
-                title: `EEPL Dossier: ${entityName}`,
-                url: window.location.href
-            });
+            if (nameDiv) nameDiv.innerText = team.name;
+            if (statDiv) statDiv.innerText = `${team.pts || 0} PTS | ${(team.gd || 0) > 0 ? '+' + team.gd : (team.gd || 0)} GD`;
+            if (logoWrapper) {
+                const logoUrl = team.logo || team.pfp || `https://ui-avatars.com/api/?name=${encodeURIComponent(team.name)}`;
+                logoWrapper.innerHTML = `<img src="${logoUrl}" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover;">`;
+            }
         } else {
-            await navigator.clipboard.writeText(window.location.href);
-            alert("Nexus Link copied to clipboard.");
+            if (nameDiv) nameDiv.innerText = "TBD";
+            if (statDiv) statDiv.innerText = "0 PTS";
         }
-    } catch (err) { console.log("Share failed", err); }
+    });
 }
 
-function loadTeamProfile(teamId, db) {
-    
-    const team = db.teams.find(t => t.id === teamId);
-    if (!team) return;
+// ==========================================
+// FRIEND MODAL & FIREBASE REQUESTS
+// ==========================================
+let foundFriendBuffer = null; 
 
-    // 1. Calculate Position
-    const leagueStandings = [...db.teams].sort((a, b) => b.pts - a.pts || b.gd - a.gd);
-    const position = leagueStandings.findIndex(t => t.id === teamId) + 1;
-    let suffix = "TH";
-    if (position % 10 === 1 && position !== 11) suffix = "ST";
-    else if (position % 10 === 2 && position !== 12) suffix = "ND";
-    else if (position % 10 === 3 && position !== 13) suffix = "RD";
-
-    // 2. Update Header Identity & Quick Stats
-    document.getElementById('teamName').innerText = team.name;
-    document.getElementById('teamLogo').innerHTML = team.logo ? 
-        `<img src="${team.logo}" style="width:100%; height:100%; object-fit:contain; border-radius:50%;">` : 
-        `<span style="font-size:24px;">${team.name.substring(0, 2).toUpperCase()}</span>`;
-    
-    document.getElementById('pos').innerText = `${position}${suffix}`;
-    document.getElementById('pts').innerText = team.pts || 0;
-    document.getElementById('gd').innerText = team.gd > 0 ? `+${team.gd}` : (team.gd || 0);
-    document.getElementById('played').innerText = team.p || 0;
-    document.getElementById('wins').innerText = team.w || 0;
-    document.getElementById('draws').innerText = team.d || 0;
-    document.getElementById('losses').innerText = team.l || 0;
-
-    // 3. Update Recent Form
-    updateTeamForm(team.id, db);
-
-    // 4. Update Upcoming Fixtures
-    updateTeamFixtures(team.id, db);
-
-    // 5. Update Key Stats & Overviews
-    updateTeamStats(team, db);
-
-    const lineupImg = document.getElementById('teamLineupImage');
-    const emptyState = document.getElementById('lineupEmptyState');
-    const formationSpan = document.getElementById('formationText');
-
-    // Check if lineupImage exists and is not an empty string
-    if (team.lineupImage && team.lineupImage.trim() !== "") {
-        // IMAGE EXISTS: Show it
-        lineupImg.src = team.lineupImage;
-        lineupImg.style.display = 'block';
-        emptyState.style.display = 'none';
-        formationSpan.innerText = `[${team.formation || 'FORMATION'}]`;
-
-        const manualNodes = document.getElementById('manualLineupNodes');
-    if (manualNodes) manualNodes.style.display = 'none';
-
-    } else {
-        // IMAGE MISSING: Show "Not Added" message
-        lineupImg.style.display = 'none';
-        emptyState.style.display = 'block';
-        formationSpan.innerText = "[NOT SET]";
-    }
-}
-
-// Friend Modal Functions
 function openFriendModal(e) {
-    e.preventDefault();
-    document.getElementById('friendModal').style.display = 'flex';
+    if (e) e.preventDefault();
+    const modal = document.getElementById('friendModal');
+    if (modal) modal.style.display = 'flex';
 }
 
 function closeFriendModal() {
-    document.getElementById('friendModal').style.display = 'none';
-    document.getElementById('modalStatus').innerText = '';
+    const modal = document.getElementById('friendModal');
+    const resultCard = document.getElementById('searchResultCard');
+    const input = document.getElementById('modalSearchInput');
+    const status = document.getElementById('modalStatus');
+
+    if (modal) modal.style.display = 'none';
+    if (resultCard) resultCard.style.display = 'none';
+    if (input) input.value = '';
+    if (status) status.innerText = '';
+    
+    foundFriendBuffer = null;
+    
+    // Reset button state to original visibility
+    const btn = document.getElementById('sendReqBtn');
+    if (btn) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> SEND REQUEST';
+    }
 }
 
-let foundFriendBuffer = null; 
-
 function searchForFriend() {
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
     const queryInput = document.getElementById('modalSearchInput');
     const query = queryInput.value.trim().toLowerCase();
     const resultCard = document.getElementById('searchResultCard');
     const status = document.getElementById('modalStatus');
+    
+    
+    // Use the name currently displayed on the profile to identify 'self'
+    const myCurrentName = document.getElementById('profileName').innerText.toLowerCase().trim();
 
     if (!query) return;
 
-    // Find the team using a strict trim and lowerCase comparison
-    const target = db.teams.find(t => t.name.toLowerCase().trim() === query);
+    // 1. Prevent searching for self
+    if (query === myCurrentName) {
+        resultCard.style.display = "none";
+        status.style.color = "#00e5ff";
+        status.innerText = "Scanning self... (You cannot add yourself).";
+        return;
+    }
+
+    // 2. Find target in globalDb buffer
+    const target = globalDb.teams.find(t => t.name.toLowerCase().trim() === query);
 
     if (!target) {
         resultCard.style.display = "none";
@@ -945,180 +909,393 @@ function searchForFriend() {
         return;
     }
 
-    // Populate Card
+    // 3. Populate and Show Result
     foundFriendBuffer = target;
     document.getElementById('resName').innerText = target.name;
-    document.getElementById('resFounded').innerText = "EST. " + (target.founded || "2023");
-    document.getElementById('resLogo').src = target.pfp || target.logo || `https://ui-avatars.com/api/?name=${target.name}`;
+    document.getElementById('resFounded').innerText = "EST. " + (target.founded || "2024");
     
-    // Show card and clear error messages
+    // Consistent fallback for logos
+    const targetLogo = target.pfp || target.logo || `https://ui-avatars.com/api/?name=${target.name}&background=00e5ff&color=000`;
+    document.getElementById('resLogo').src = targetLogo;
+    
     status.innerText = "";
     resultCard.style.display = "flex";
 }
 
-function executeSendRequest() {
-    console.log("--- Sending Request Process Started ---");
-    
-    if (!foundFriendBuffer) {
-        console.error("No friend selected in the buffer!");
-        return;
-    }
+async function executeSendRequest() {
+    if (!foundFriendBuffer) return;
 
-    const rawDb = localStorage.getItem('eepl_db');
-    if (!rawDb) return;
-    const db = JSON.parse(rawDb);
     const status = document.getElementById('modalStatus');
+    const currentName = document.getElementById('profileName').innerText; // Get live name from UI
     
-    // 1. Identify YOU (The Sender)
-    // We try global userName, then LocalStorage, then the 'David' fallback
-    const myCurrentName = (typeof userName !== 'undefined' && userName) 
-                          || localStorage.getItem('currentUser') 
-                          || "David"; 
-
-    console.log("Sender Name Identified as:", myCurrentName);
-
-    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === myCurrentName.toLowerCase().trim());
+    // Find my team in the local buffer
+    const myTeam = globalDb.teams.find(t => t.name.toLowerCase().trim() === currentName.toLowerCase().trim());
 
     if (!myTeam) {
         status.style.color = "#ff4d4d";
-        status.innerText = "Error: Your profile ('" + myCurrentName + "') wasn't found in the DB.";
-        console.error("Could not find sender profile in db.teams");
+        status.innerText = "Error: Your profile isn't linked to a league team.";
         return;
     }
 
-    // 2. Identify the TARGET (The Receiver)
-    const targetInDb = db.teams.find(t => String(t.id) === String(foundFriendBuffer.id));
-
-    if (!targetInDb) {
+    // Find the target team's index in the global array
+    const targetIndex = globalDb.teams.findIndex(t => String(t.id) === String(foundFriendBuffer.id));
+    if (targetIndex === -1) {
         status.innerText = "Error: Target entity lost.";
         return;
     }
 
-    // 3. Security Checks
-    if (String(targetInDb.id) === String(myTeam.id)) {
-        status.innerText = "Cannot connect to yourself.";
+    // Double check it's not a self-request
+    if (String(globalDb.teams[targetIndex].id) === String(myTeam.id)) {
+        status.style.color = "#ffd700";
+        status.innerText = "You cannot connect to yourself.";
         return;
     }
 
-    // 4. Initialize and Push
-    if (!targetInDb.requests) targetInDb.requests = [];
-
-    const alreadySent = targetInDb.requests.some(r => String(r.fromId) === String(myTeam.id));
+    // Check if request already exists
+    const targetRequests = globalDb.teams[targetIndex].requests || [];
+    const alreadySent = Object.values(targetRequests).some(r => String(r.fromId) === String(myTeam.id));
+    
     if (alreadySent) {
         status.style.color = "#ffd700";
         status.innerText = "Request already pending.";
         return;
     }
 
-    // Add the data
-    targetInDb.requests.push({
+    const requestData = {
         fromId: String(myTeam.id),
         fromName: myTeam.name,
-        fromLogo: myTeam.pfp || myTeam.logo || "",
-        time: new Date().getTime()
-    });
+        fromLogo: myTeam.pfp || myTeam.logo || `https://ui-avatars.com/api/?name=${myTeam.name}`,
+        time: firebase.database.ServerValue.TIMESTAMP
+    };
 
-    // 5. Final Save
+    // PUSH TO FIREBASE
+    // We update ONLY the specific team's request node instead of the whole team list
+    // This is safer and more likely to pass security rules
     try {
-        localStorage.setItem('eepl_db', JSON.stringify(db));
-        console.log("Save Successful!");
+        await firebase.database().ref(`league_data/teams/${targetIndex}/requests`).push(requestData);
         
         status.style.color = "#00ff41";
-        status.innerText = "Request Dispatched to " + targetInDb.name + "!";
+        status.innerText = "Request Dispatched to " + globalDb.teams[targetIndex].name + "!";
         
-        // Visual feedback on button
         const btn = document.getElementById('sendReqBtn');
-        btn.disabled = true;
-        btn.style.background = "#444";
-        btn.innerText = "SENT";
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            btn.innerText = "SENT";
+        }
 
         setTimeout(closeFriendModal, 2000);
-    } catch (e) {
-        console.error("Save failed:", e);
-        status.innerText = "Storage Error. Try again.";
+    } catch (err) {
+        console.error("Request Failed:", err);
+        status.style.color = "#ff4d4d";
+        status.innerText = "Sync Denied: Admin restricts team edits.";
     }
 }
-function closeFriendModal() {
-    document.getElementById('friendModal').style.display = 'none';
-    document.getElementById('searchResultCard').style.display = 'none';
-    document.getElementById('modalSearchInput').value = '';
-    document.getElementById('modalStatus').innerText = '';
-    foundFriendBuffer = null;
-}
-function updateNotificationUI() {
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
-    const myName = (typeof userName !== 'undefined' && userName) || localStorage.getItem('currentUser');
-    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === myName.toLowerCase().trim());
+
+// ==========================================
+// NOTIFICATIONS & ACCEPTING REQUESTS
+// ==========================================
+function updateNotificationUI(db) {
+    if (!db) db = globalDb;
+    
+    // Get the name from the UI to ensure we match the current session
+    const currentName = document.getElementById('profileName').innerText;
+    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === currentName.toLowerCase().trim());
 
     const bellCount = document.getElementById('notifCount');
     const notifList = document.getElementById('notifList');
 
-    if (!myTeam || !myTeam.requests || myTeam.requests.length === 0) {
-        bellCount.style.display = 'none';
-        notifList.innerHTML = `<div style="padding: 30px; text-align: center; color: #555; font-size: 0.8rem;">No new activity.</div>`;
+    // Convert requests object/array to a standard array for processing
+    let requestsArray = [];
+    if (myTeam && myTeam.requests) {
+        // If Firebase stored it as an object (via .push), convert to array
+        requestsArray = Object.keys(myTeam.requests).map(key => ({
+            ...myTeam.requests[key],
+            firebaseKey: key // Store the key so we can delete it specifically later
+        }));
+    }
+
+    if (!myTeam || requestsArray.length === 0) {
+        if(bellCount) bellCount.style.display = 'none';
+        if(notifList) notifList.innerHTML = `<div style="padding: 30px; text-align: center; color: #555; font-size: 0.8rem;">No new activity.</div>`;
         return;
     }
 
-    // Show Red Dot
-    bellCount.innerText = myTeam.requests.length;
-    bellCount.style.display = 'block';
+    if(bellCount) {
+        bellCount.innerText = requestsArray.length;
+        bellCount.style.display = 'block';
+    }
 
-    // Clear and build list
-    notifList.innerHTML = '';
-    myTeam.requests.forEach((req, index) => {
-        const item = document.createElement('div');
-        item.style.cssText = "padding: 15px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 12px;";
-        
-        const logo = req.fromLogo || `https://ui-avatars.com/api/?name=${req.fromName}&background=333&color=fff`;
-        
-        item.innerHTML = `
-            <img src="${logo}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #222;">
-            <div style="flex: 1;">
-                <p style="margin: 0; color: #fff; font-size: 0.85rem; font-weight: bold;">${req.fromName}</p>
-                <p style="margin: 0; color: #888; font-size: 0.7rem;">Wants to connect</p>
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <button onclick="respondToRequest(true, '${req.fromId}')" style="background:#00ff41; border:none; padding:4px 10px; border-radius:4px; font-size:0.65rem; font-weight:900; cursor:pointer;">ACCEPT</button>
-                    <button onclick="respondToRequest(false, '${req.fromId}')" style="background:#333; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.65rem; font-weight:900; cursor:pointer;">DECLINE</button>
+    if(notifList) {
+        notifList.innerHTML = '';
+        requestsArray.forEach((req) => {
+            const item = document.createElement('div');
+            item.style.cssText = "padding: 15px; border-bottom: 1px solid #1a1a1a; display: flex; align-items: center; gap: 12px;";
+            
+            const logo = req.fromLogo || `https://ui-avatars.com/api/?name=${req.fromName}&background=00e5ff&color=000`;
+            
+            // We pass req.firebaseKey to the response function for easier deletion
+            item.innerHTML = `
+                <img src="${logo}" style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid #222; object-fit: cover;">
+                <div style="flex: 1;">
+                    <p style="margin: 0; color: #fff; font-size: 0.85rem; font-weight: bold;">${req.fromName}</p>
+                    <p style="margin: 0; color: #888; font-size: 0.7rem;">Wants to connect</p>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <button onclick="respondToRequest(true, '${req.fromId}', '${req.firebaseKey}')" style="background:#00ff41; color:#000; border:none; padding:4px 10px; border-radius:4px; font-size:0.65rem; font-weight:900; cursor:pointer;">ACCEPT</button>
+                        <button onclick="respondToRequest(false, '${req.fromId}', '${req.firebaseKey}')" style="background:#333; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.65rem; font-weight:900; cursor:pointer;">DECLINE</button>
+                    </div>
                 </div>
-            </div>
-        `;
-        notifList.appendChild(item);
-    });
+            `;
+            notifList.appendChild(item);
+        });
+    }
 }
 
 function toggleNotifDropdown() {
     const dd = document.getElementById('notifDropdown');
-    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-    if (dd.style.display === 'block') updateNotificationUI();
+    
+    // Safety check to prevent errors if the element is missing from the DOM
+    if (!dd) return;
+
+    const isHidden = dd.style.display === 'none' || dd.style.display === '';
+    
+    if (isHidden) {
+        dd.style.display = 'block';
+        // Refresh the notifications list whenever the dropdown is opened
+        updateNotificationUI(globalDb);
+    } else {
+        dd.style.display = 'none';
+    }
 }
 
-// Updated respond function to handle specific ID
-function respondToRequest(isAccepted, senderId) {
-    const db = JSON.parse(localStorage.getItem('eepl_db'));
-    const myName = (typeof userName !== 'undefined' && userName) || localStorage.getItem('currentUser');
-    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === myName.toLowerCase().trim());
-    const senderTeam = db.teams.find(t => String(t.id) === String(senderId));
+async function respondToRequest(isAccepted, senderId, firebaseKey) {
+    const currentName = document.getElementById('profileName').innerText;
+    const myTeamIndex = globalDb.teams.findIndex(t => t.name.toLowerCase().trim() === currentName.toLowerCase().trim());
+    const senderTeamIndex = globalDb.teams.findIndex(t => String(t.id) === String(senderId));
 
-    if (isAccepted && myTeam && senderTeam) {
-        if (!myTeam.friends) myTeam.friends = [];
-        if (!myTeam.friends.includes(senderTeam.id)) myTeam.friends.push(senderTeam.id);
-        
-        if (!senderTeam.friends) senderTeam.friends = [];
-        if (!senderTeam.friends.includes(myTeam.id)) senderTeam.friends.push(myTeam.id);
+    if (myTeamIndex === -1) {
+        console.error("Your team was not found in the database.");
+        return;
     }
 
-    // Remove this specific request
-    myTeam.requests = myTeam.requests.filter(r => String(r.fromId) !== String(senderId));
+    try {
+        const updates = {};
 
-    localStorage.setItem('eepl_db', JSON.stringify(db));
-    updateNotificationUI(); // Refresh the list
-    
-    // Refresh stats if the function exists
-    if (typeof renderRecentFixturesTable === "function") renderRecentFixturesTable(db, myName);
+        if (isAccepted && senderTeamIndex !== -1) {
+            const myTeam = globalDb.teams[myTeamIndex];
+            const senderTeam = globalDb.teams[senderTeamIndex];
+
+            // 1. Prepare My Friends Update
+            const myFriends = Array.isArray(myTeam.friends) ? [...myTeam.friends] : [];
+            if (!myFriends.includes(senderTeam.id)) {
+                myFriends.push(senderTeam.id);
+                updates[`league_data/teams/${myTeamIndex}/friends`] = myFriends;
+            }
+
+            // 2. Prepare Sender's Friends Update
+            const senderFriends = Array.isArray(senderTeam.friends) ? [...senderTeam.friends] : [];
+            if (!senderFriends.includes(myTeam.id)) {
+                senderFriends.push(myTeam.id);
+                updates[`league_data/teams/${senderTeamIndex}/friends`] = senderFriends;
+            }
+        }
+
+        // 3. Remove the specific request using the Firebase Key
+        // Path: league_data/teams/myIndex/requests/firebaseKey
+        updates[`league_data/teams/${myTeamIndex}/requests/${firebaseKey}`] = null;
+
+        // 4. EXECUTE MULTI-PATH UPDATE
+        // This is much faster and more secure than setting the whole array
+        await firebase.database().ref().update(updates);
+        
+        console.log(isAccepted ? "Connection established!" : "Request dismissed.");
+        
+        // Note: The UI will auto-refresh via the dbRef.on('value') listener in DOMContentLoaded
+        
+    } catch (err) {
+        console.error("Transaction failed:", err);
+        alert("Sync Error: You might not have permission to update the league list.");
+    }
 }
 
-// Check for notifications on page load
-window.addEventListener('load', updateNotificationUI);
+function initRadarChart(db, userName) {
+    const canvas = document.getElementById('tacticalRadar');
+    if (!canvas || typeof Chart === 'undefined' || !db) return;
+
+    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === userName.toLowerCase().trim());
+    
+    // Default: Small circle at the center (Initial state)
+    let stats = [5, 5, 5, 5, 5, 5]; 
+
+    // Only calculate growth if the team exists AND has played at least one match
+    if (myTeam && (Number(myTeam.p) > 0)) {
+        const gf = Number(myTeam.gf) || 0;
+        const ga = Number(myTeam.ga) || 0;
+        const played = Number(myTeam.p) || 0;
+        const wins = Number(myTeam.w) || 0;
+
+        stats = [
+            Math.min(99, 60 + (played * 2)),           // Pace
+            Math.min(99, 40 + (gf * 1.5)),            // Shooting
+            Math.min(99, 40 + (wins * 3)),            // Passing
+            Math.min(99, 60 + (played / 2)),          // Dribbling
+            Math.max(15, 90 - (ga * 1.5)),            // Defending
+            Math.min(99, 50 + (played))               // Physical
+        ];
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (window.myRadarChart) window.myRadarChart.destroy();
+
+    window.myRadarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['PAC', 'SHO', 'PAS', 'DRI', 'DEF', 'PHY'],
+            datasets: [{
+                label: 'Entity Attributes',
+                data: stats,
+                backgroundColor: 'rgba(0, 229, 255, 0.2)',
+                borderColor: '#00e5ff',
+                pointBackgroundColor: '#00e5ff',
+                pointRadius: 2, // Keeps the circle points clean
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            // Add a slight animation for the "growing" effect
+            animation: {
+                duration: 1500,
+                easing: 'easeOutQuart'
+            },
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    pointLabels: { 
+                        color: '#555', 
+                        font: { family: 'Outfit', size: 10, weight: 'bold' } 
+                    },
+                    ticks: { display: false },
+                    suggestedMin: 0,
+                    suggestedMax: 100
+                }
+            },
+            plugins: { 
+                legend: { display: false },
+                tooltip: { enabled: true } 
+            }
+        }
+    });
+}
+
+function populateAuditLog(db) {
+    const auditLog = document.getElementById('auditLog');
+    if (!auditLog || !db) return;
+
+    // Helper function for consistent [HH:MM] formatting
+    const formatLogTime = (timestamp) => {
+        const date = timestamp ? new Date(timestamp) : new Date();
+        // If date is invalid, fallback to current time
+        const finalDate = isNaN(date.getTime()) ? new Date() : date;
+        return `${String(finalDate.getHours()).padStart(2, '0')}:${String(finalDate.getMinutes()).padStart(2, '0')}`;
+    };
+
+    const logs = [];
+
+    // 1. SYSTEM LOG: Current Session Start
+    // Uses the actual time the page was loaded/synced
+    logs.push({ 
+        time: formatLogTime(), 
+        type: 'SYSTEM', 
+        msg: 'Neural link established. Sync active.', 
+        class: 'success' 
+    });
+
+    // 2. NEWS/BROADCAST LOGS: Real data from Firebase
+    if (db.news && Array.isArray(db.news)) {
+        // Sort by date to ensure the most recent news is truly "latest"
+        const sortedNews = [...db.news].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        
+        // Take the 3 most recent items
+        sortedNews.slice(0, 3).forEach(item => {
+            logs.push({
+                time: formatLogTime(item.timestamp || item.date),
+                type: 'NEWS',
+                msg: item.title || item.message,
+                class: ''
+            });
+        });
+    }
+
+    // 3. DATA LOG: Actual DB Sync Check
+    // We check the most recent fixture or team update to see when the DB was last "touched"
+    let lastUpdate = Date.now() - 500000; // Fallback to ~8 mins ago
+    if (db.fixtures && db.fixtures.length > 0) {
+        // Find the most recent completed match timestamp
+        const recentMatch = db.fixtures.filter(f => f.timestamp).sort((a,b) => b.timestamp - a.timestamp)[0];
+        if (recentMatch) lastUpdate = recentMatch.timestamp;
+    }
+
+    logs.push({ 
+        time: formatLogTime(lastUpdate), 
+        type: 'DATA', 
+        msg: 'EEPL global database synchronized.', 
+        class: '' 
+    });
+
+    // Final Rendering
+    auditLog.innerHTML = '';
+    
+    // Sort all gathered logs by time before displaying so the sequence is logical
+    logs.sort((a, b) => a.time.localeCompare(b.time));
+
+    logs.forEach(log => {
+        const li = document.createElement('li');
+        if(log.class) li.classList.add(log.class);
+        li.innerHTML = `<span class="time">[${log.time}]</span> <span class="type">${log.type}:</span> ${log.msg}`;
+        auditLog.appendChild(li);
+    });
+}
+
+async function shareEntityProfile(event) {
+    if (event) event.preventDefault();
+    
+    const entityName = document.getElementById('profileName').innerText;
+    const shareBtn = event.currentTarget; // Capture the button for feedback
+    const originalContent = shareBtn.innerHTML;
+
+    const shareData = {
+        title: `EEPL Dossier: ${entityName}`,
+        text: `View the official EEPL profile for ${entityName}. One World. Infinite Entities.`,
+        url: window.location.href
+    };
+
+    try {
+        if (navigator.share) {
+            // Mobile / Supported Browser native share
+            await navigator.share(shareData);
+        } else {
+            // Desktop / Clipboard Fallback
+            await navigator.clipboard.writeText(window.location.href);
+            
+            // Visual feedback on the button
+            shareBtn.innerHTML = '<i class="fas fa-link"></i> LINK COPIED';
+            shareBtn.style.color = '#00ff41';
+            
+            setTimeout(() => {
+                shareBtn.innerHTML = originalContent;
+                shareBtn.style.color = '';
+            }, 2000);
+        }
+    } catch (err) {
+        // Handle case where user cancels the share or browser blocks it
+        if (err.name !== 'AbortError') {
+            console.error("Share failed:", err);
+        }
+    }
+}
 
 
 </script>
