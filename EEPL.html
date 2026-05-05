@@ -621,7 +621,13 @@ tr:last-child td { border-bottom: none; }
         overflow-y: auto;
         height: auto;
     }
-    
+    #achievementBadges div {
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+}
+#achievementBadges div[style*="opacity: 1"] {
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+    transform: scale(1.05);
+}
     /* Transform sidebar into a horizontal sticky top-nav */
     .sidebar {
         width: 100%;
@@ -1042,7 +1048,13 @@ tr:last-child td { border-bottom: none; }
         <p id="h2hSummary" style="text-align: center; margin-top: 15px; font-size: 0.9rem; font-style: italic; color: var(--accent);"></p>
     </div>
 </div>
-               <div class="card" style="background: linear-gradient(135deg, #050505 0%, #1a1a1a 100%); border: 1px solid #333; position: relative; overflow: hidden; border-top: 3px solid #e74c3c;">
+<div class="card">
+<div class="card" style="border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow);">
+                    <h3>Next Match</h3>
+                    <div class="big-data" style="font-size: 1.5rem; color: #fff;" id="myNextMatch">vs TBD</div>
+                    <p style="color: var(--accent); margin-top: 10px;" id="myNextMatchTime"><i class="fa-regular fa-clock"></i> Pending Schedule</p>
+                </div></div>
+               <div class="card" style="background: linear-gradient(135deg, #050505 0%, #1a1a1a 100%); border: 1px solid #333; position: relative; overflow: hidden;">
     <div style="position: left; top: 15px; right: 15px; display: flex; align-items: center; gap: 8px;">
         <span style="width: 8px; height: 8px; background: #e74c3c; border-radius: 50%; display: flex; animation: pulse 2.5s infinite;"></span>
         <span style="font-size: 0.7rem; font-weight: 900; color: #e74c3c; text-transform: uppercase; letter-spacing: 1px;">Match of the Week</span>
@@ -1078,12 +1090,64 @@ tr:last-child td { border-bottom: none; }
         </p>
     </div>
 </div>
+    
+<div class="card" id="achievementSpotlightCard" style="display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden;">
+    
+    <!-- Background Glow Effect -->
+    <div id="spotlightGlow" style="position: absolute; width: 150px; height: 150px; background: var(--accent); filter: blur(80px); opacity: 0.1; z-index: 1;"></div>
 
-<div class="card" style="border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow);">
-                    <h3>Next Match</h3>
-                    <div class="big-data" style="font-size: 1.5rem; color: #fff;" id="myNextMatch">vs TBD</div>
-                    <p style="color: var(--accent); margin-top: 10px;" id="myNextMatchTime"><i class="fa-regular fa-clock"></i> Pending Schedule</p>
-                </div>
+    <div style="z-index: 2; text-align: center; width: 100%;">
+        <h3 style="margin: 0 0 15px 0; align-items: left; font-size: 0.9rem; letter-spacing: 2px; color: var(--text-muted); text-transform: uppercase;">Achievements</h3>
+        
+        <!-- Trophy Container: This is where the magic happens -->
+        <div id="trophyDisplay" style="margin: 20px 0; transition: all 0.5s ease-in-out;">
+            <!-- Default State: Looking for achievements -->
+            <i class="fa-solid fa-circle-nodes" style="font-size: 3.5rem; color: #333; animation: pulse 2s infinite;"></i>
+        </div>
+
+        <!-- Achievement Info -->
+        <div id="achievementInfo">
+            <h2 id="achievementTitle" style="margin: 5px 0; font-size: 1.4rem; color: #fff; text-shadow: 0 0 15px rgba(255,255,255,0.2);">Analyzing Performance...</h2>
+            <p id="achievementDesc" style="margin: 0; font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Your data is being processed.</p>
+        </div>
+    </div>
+
+    <!-- Progress Pill (Subtle) -->
+    <div style="margin-top: 20px; z-index: 2;">
+        <span id="rankBadge" style="font-size: 0.6rem; padding: 4px 12px; border-radius: 50px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted);">
+            ENTITY STATUS: ACTIVE
+        </span>
+    </div>
+</div>
+
+<style>
+    /* Flashy Animations for the Trophy */
+    @keyframes trophyShine {
+        0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,255,255,0)); }
+        50% { transform: scale(1.1); filter: drop-shadow(0 0 20px var(--accent)); }
+        100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,255,255,0)); }
+    }
+
+    @keyframes pulse {
+        0% { opacity: 0.3; }
+        50% { opacity: 0.6; }
+        100% { opacity: 0.3; }
+    }
+
+    .shining-trophy {
+        animation: trophyShine 3s infinite ease-in-out;
+    }
+
+    /* Transition class for when the achievement changes */
+    .fade-in-up {
+        animation: fadeInUp 0.6s forwards;
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
 
 <style>
 @keyframes pulse {
@@ -1092,7 +1156,6 @@ tr:last-child td { border-bottom: none; }
     100% { transform: scale(1); opacity: 1; }
 }
 </style> 
-
         </div>
         </section>
 
@@ -1408,11 +1471,6 @@ tr:last-child td { border-bottom: none; }
         </p>
     </div>
 
-    <div style="margin-top: 30px; text-align: center; border-top: 1px solid #333; padding-top: 20px;">
-        <p style="font-size: 0.85rem; color: #000;">
-            Need a formal appeal? <a href="https://wa.me/2347079692230" style="color: var(--accent); text-decoration: none;">Contact the Admin Desk</a>
-        </p>
-    </div>
 <section>
     <div class="pane-header">
         <h1>About Elite Pro League</h1>
@@ -1453,6 +1511,16 @@ tr:last-child td { border-bottom: none; }
             <h4 style="margin-bottom: 10px; font-size: 1.1rem; color: #fff;">Zero-Tolerance Policy</h4>
             <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">Toxicity, exploitation of game mechanics, and unsportsmanlike conduct are strictly prohibited. We maintain a professional atmosphere suitable only for elite competitors.</p>
         </div>
+        <div class="card" style="border-left: 3px solid #3ce745; background: #161616; padding: 20px; border-radius: 0 8px 8px 0;">
+    <!-- Icon changed to Gamepad -->
+    <i class="fa-solid fa-gamepad fa-2x" style="color: #3ce745; margin-bottom: 15px;"></i>
+    
+    <h4 style="margin-bottom: 10px; font-size: 1.1rem; color: #fff; font-weight: 600;">Best Experience</h4>
+    
+    <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.6;">
+        The EEPL is one of the best organizers of esports leagues, ranging from football to all eSports that are at your reach. To experience our premium services, kindly follow the rules and comply with our Terms and Conditions.
+    </p>
+</div>
     </div>
 
     <h3 style="margin-bottom: 20px; font-size: 1.4rem; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px;">Interactive Community Hub</h3>
@@ -1493,6 +1561,25 @@ tr:last-child td { border-bottom: none; }
                 </div>
             </div>
         </div>
+        <div class="card" style="cursor: pointer; transition: all 0.3s ease; border: 1px solid #333; background: #1a1a1a; padding: 20px; border-radius: 12px;" 
+     onmouseover="this.style.borderColor='var(--accent)'; this.style.transform='translateY(-5px)'; this.style.boxShadow='0 8px 20px rgba(0, 229, 255, 0.2)';" 
+     onmouseout="this.style.borderColor='#333'; this.style.transform='translateY(0)'; this.style.boxShadow='none';" 
+     onclick="window.open('https://wa.me/2347079692230', '_blank')">
+    
+    <div style="display: flex; align-items: center; gap: 15px;">
+        <!-- Icon Container: Changed background to match cyan accent (var(--accent)) -->
+        <div style="background: rgba(0, 229, 255, 0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(0, 229, 255, 0.3); display: flex; align-items: center; justify-content: center;">
+            <!-- Corrected Class: fa-brands fa-whatsapp -->
+            <i class="fa-brands fa-whatsapp fa-2x" style="color: var(--accent);"></i>
+        </div>
+        
+        <div>
+            <h4 style="color: #fff; font-size: 1.05rem; font-weight: 600; margin: 0;">Admin Desk</h4>
+            <p style="font-size: 0.8rem; color: #888; margin-top: 4px; line-height: 1.2;">Report significant issues.</p>
+        </div>
+    </div>
+</div>
+        
     </div>
 
     <h3 style="margin-bottom: 20px; font-size: 1.4rem; color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px;">League Highlights & Sights</h3>
@@ -1688,6 +1775,7 @@ function loadLeagueData() {
             calculateLeagueInsights(db);
             populateH2HSelect(db);
             initTeamsPane(db);
+            updateAchievementSpotlight(db, userName);
         }
     });
 
@@ -2669,6 +2757,128 @@ window.onpopstate = function () {
     // you can redirect them to a neutral page or just keep them here
     window.location.replace('EEPL.html'); 
 };
+function calculateH2H() {
+    const opponentName = document.getElementById('h2hOpponentSelect').value;
+    const resultDiv = document.getElementById('h2hResult');
+    if (!opponentName) return;
+
+    // Filter fixtures involving both current user and selected opponent
+    const matches = globalDb.fixtures.filter(f => 
+        (f.home.toLowerCase() === userName.toLowerCase() && f.away.toLowerCase() === opponentName.toLowerCase()) ||
+        (f.away.toLowerCase() === userName.toLowerCase() && f.home.toLowerCase() === opponentName.toLowerCase())
+    );
+
+    let wins = 0, draws = 0, losses = 0;
+
+    matches.forEach(m => {
+        if (m.homeScore === m.awayScore) draws++;
+        else {
+            const userIsHome = m.home.toLowerCase() === userName.toLowerCase();
+            const userWon = userIsHome ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
+            userWon ? wins++ : losses++;
+        }
+    });
+
+    document.getElementById('h2hWins').innerText = wins;
+    document.getElementById('h2hDraws').innerText = draws;
+    document.getElementById('h2hLosses').innerText = losses;
+    document.getElementById('h2hSummary').innerText = wins > losses ? "You dominate this rivalry." : "Tough opponent detected.";
+    
+    resultDiv.style.display = 'block';
+}
+ 
+ function updateAchievementSpotlight(db, userName) {
+    const display = document.getElementById('trophyDisplay');
+    const title = document.getElementById('achievementTitle');
+    const desc = document.getElementById('achievementDesc');
+    const glow = document.getElementById('spotlightGlow');
+    const card = document.getElementById('achievementSpotlightCard');
+
+    if (!display || !db || !db.teams || !db.stats) return;
+
+    // 1. DATA CALCULATION
+    const uName = userName.toLowerCase().trim();
+    const myStats = db.stats.find(s => s.name.toLowerCase().trim() === uName);
+    const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === uName);
+    
+    // Calculate Rank
+    const sortedTeams = [...db.teams].sort((a, b) => (b.pts || 0) - (a.pts || 0) || (b.gd || 0) - (a.gd || 0));
+    const myRank = sortedTeams.findIndex(t => t.name.toLowerCase().trim() === uName) + 1;
+
+    // Calculate Form (Unbeaten check)
+    const myFixtures = (db.fixtures || []).filter(f => 
+        f.status === 'completed' && (f.homeId === uName || f.awayId === uName)
+    ).slice(-5);
+    
+    const isUnbeaten = myFixtures.length >= 3 && myFixtures.every(f => {
+        const isHome = f.homeId === uName;
+        const myScore = isHome ? f.homeScore : f.awayScore;
+        const oppScore = isHome ? f.awayScore : f.homeScore;
+        return myScore >= oppScore;
+    });
+
+    // 2. THE HIERARCHY LOGIC
+    let spotlight = {
+        icon: 'fa-solid fa-circle-nodes',
+        title: 'Rising Entity',
+        desc: 'Compete in more matches to unlock trophies.',
+        color: '#555'
+    };
+
+    // Rank 1 check
+    if (myRank === 1 && myTeam && (myTeam.pts || 0) > 0) {
+        spotlight = {
+            icon: 'fa-solid fa-crown',
+            title: 'League Leader',
+            desc: 'Currently sitting at the throne of the EEPL.',
+            color: '#ff00ff'
+        };
+    } 
+    // Unbeaten check
+    else if (isUnbeaten) {
+        spotlight = {
+            icon: 'fa-solid fa-fire-glow',
+            title: 'Unstoppable Form',
+            desc: 'You haven\'t tasted defeat in your recent matches.',
+            color: '#00e5ff'
+        };
+    } 
+    // Top Scorer check
+    else if (myStats && (myStats.goals || 0) > 0 && myStats.goals === Math.max(...db.stats.map(s => s.goals || 0))) {
+        spotlight = {
+            icon: 'fa-solid fa-bolt',
+            title: 'Golden Boot',
+            desc: 'The most clinical finisher in the league right now.',
+            color: '#ffd700'
+        };
+    } 
+    // Fair Play check
+    else if (myStats && (myStats.rc || 0) === 0 && (myStats.yc || 0) <= 1 && myFixtures.length > 0) {
+        spotlight = {
+            icon: 'fa-solid fa-handshake-angle',
+            title: 'The Professional',
+            desc: 'Maintained elite discipline and tactical focus.',
+            color: '#3ce745'
+        };
+    }
+
+    // 3. EXECUTE UI UPDATE
+    display.style.opacity = '0';
+    
+    setTimeout(() => {
+        display.innerHTML = `<i class="${spotlight.icon} shining-trophy" style="font-size: 4rem; color: ${spotlight.color};"></i>`;
+        title.innerText = spotlight.title;
+        desc.innerText = spotlight.desc;
+        
+        // Dynamic Styles
+        if (glow) glow.style.background = spotlight.color;
+        if (card) card.style.borderLeftColor = spotlight.color;
+        if (title) title.style.color = spotlight.color;
+
+        display.style.opacity = '1';
+        display.classList.add('fade-in-up');
+    }, 300);
+}
     </script>
 </body>
 </html>
