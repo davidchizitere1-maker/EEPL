@@ -413,8 +413,19 @@ body {
     font-size: 14px;
 }
 .info-list li:last-child { border-bottom: none; }
-.info-list .lbl { color: var(--text-muted); display: flex; align-items: center; gap: 8px;}
-.info-list .val { font-weight: 600; color: var(--text-light); }
+.info-list .lbl { 
+    color: var(--text-muted); 
+    display:flex; 
+    align-items:center; 
+    gap:8px;
+    min-width:120px;
+}
+.info-list .val { 
+    font-weight:600; 
+    color:var(--text-light);
+    flex:1;
+    text-align:right;
+}
 
 /* --- Donut Chart Simulation --- */
 .overview-chart-container {
@@ -760,7 +771,7 @@ tr:last-child td { border-bottom: none; }
   }
 
   .overview-chart-container {
-    flex-direction: none;
+    flex-direction: column;
     align-items: flex-start;
   }
 
@@ -885,13 +896,782 @@ tr:last-child td { border-bottom: none; }
 
 
 
-    </style>
+    
+.light-theme{
+ --bg-main:#f5f7fb;
+ --sidebar-bg:#ffffff;
+ --card-bg:#ffffff;
+ --bg-panel:#ffffff;
+ --text-dark:#111827;
+ --text-light:#374151;
+ --text-muted:#6b7280;
+ color:#111827;
+}
+.skeleton{
+ background:linear-gradient(90deg,#222,#333,#222);
+ background-size:200% 100%;
+ animation:skeletonLoading 1.5s infinite;
+}
+@keyframes skeletonLoading{
+ 0%{background-position:200% 0}
+ 100%{background-position:-200% 0}
+}
+
+
+.mobile-bottom-nav{
+display:none !important;
+position:fixed !important;
+bottom:0 !important;
+left:0 !important;
+right:0 !important;
+width:100% !important;
+display:flex;
+justify-content:space-around;
+align-items:center;
+height:65px;
+padding:0;
+background:#000 !important;
+backdrop-filter:blur(10px);
+-webkit-backdrop-filter:blur(10px);
+border-top:1px solid #111 !important;
+z-index:99999 !important;
+}
+.mobile-bottom-nav a{
+color:#00e5ff !important;
+text-decoration:none;
+font-size:22px;
+display:flex;
+align-items:center;
+justify-content:center;
+}
+@media(max-width:768px){
+.mobile-bottom-nav{display:flex;}
+.main-content{padding-bottom:80px!important;}
+}
+
+
+
+
+
+#themeToggleBottom{
+width:100%;
+margin-top:12px;
+padding:10px;
+border:none;
+border-radius:10px;
+background:#00e5ff;
+color:#000;
+font-weight:700;
+cursor:pointer;
+}
+@media(max-width:768px){
+.sidebar .nav-links{display:none !important;}
+.sidebar{justify-content:space-between;}
+.user-profile{padding-bottom:8px;}
+.team-identity{gap:10px;}
+.main-team-logo{width:55px!important;height:55px!important;font-size:18px!important;}
+.team-identity h1{font-size:16px!important;}
+.quick-stats-row{
+display:grid!important;
+grid-template-columns:repeat(4,1fr)!important;
+gap:6px!important;
+}
+.stat-block .value{font-size:14px!important;}
+.stat-block .label{font-size:9px!important;}
+.panel-body{padding:10px!important;gap:10px!important;}
+.widget{padding:10px!important;}
+.fixture-card{padding:10px 0!important;}
+.info-list li{padding:6px 0!important;font-size:12px!important;}
+.honours-footer,.honours-list{
+flex-wrap:wrap!important;
+gap:10px!important;
+}
+.team-tab{
+padding:6px 8px!important;
+font-size:11px!important;
+}
+.team-tab-logo{
+width:16px!important;
+height:16px!important;
+}
+.donut-chart{
+width:90px!important;
+height:90px!important;
+}
+.donut-inner{
+width:65px!important;
+height:65px!important;
+}
+.bottom-stats h3{font-size:14px!important;}
+}
+
+
+.mobile-bottom-nav{
+background:#000 !important;
+border-top:1px solid #111 !important;
+}
+.mobile-bottom-nav a i{
+color:#00e5ff !important;
+font-size:20px !important;
+}
+.mobile-bottom-nav a.active i,
+.mobile-bottom-nav a:hover i{
+color:#00e5ff !important;
+filter:drop-shadow(0 0 6px rgba(0,229,255,.7));
+}
+
+
+/* ===== V16 COMPACT TEAMS MOBILE REBUILD ===== */
+@media(max-width:768px){
+
+.dashboard-panel{
+    border-radius:14px !important;
+    overflow:hidden !important;
+}
+
+.panel-body{
+    display:block !important;
+    padding:12px !important;
+}
+
+.pitch-container{
+    min-height:180px !important;
+    max-height:220px !important;
+}
+
+.quick-stats-row{
+    display:grid !important;
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:8px !important;
+}
+
+.stat-block{
+    background:rgba(255,255,255,.03) !important;
+    border:1px solid rgba(255,255,255,.05) !important;
+    border-radius:10px !important;
+    padding:8px !important;
+    text-align:center !important;
+}
+
+.stat-block .value{
+    font-size:15px !important;
+}
+
+.stat-block .label{
+    font-size:8px !important;
+}
+
+.widget{
+    padding:12px !important;
+    margin-bottom:12px !important;
+}
+
+.section-title{
+    font-size:12px !important;
+    margin-bottom:12px !important;
+}
+
+.team-identity{
+    flex-direction:column !important;
+    align-items:flex-start !important;
+}
+
+.team-identity h1{
+    font-size:18px !important;
+}
+
+.honours-footer{
+    padding:15px !important;
+}
+
+.honours-list{
+    display:grid !important;
+    grid-template-columns:1fr 1fr !important;
+    gap:12px !important;
+}
+
+.honour-item{
+    gap:10px !important;
+}
+
+.main-content{
+    padding-left:12px !important;
+    padding-right:12px !important;
+}
+}
+
+
+/* ===== V17 FULL MOBILE TEAMS COMPRESSION ===== */
+@media(max-width:768px){
+
+#teamHonorsWidget{
+display:grid !important;
+grid-template-columns:repeat(3,1fr) !important;
+gap:8px !important;
+padding:8px !important;
+}
+
+.honor-card{
+padding:8px !important;
+min-height:auto !important;
+}
+
+.honor-name{
+font-size:11px !important;
+}
+
+.honor-stat{
+font-size:10px !important;
+}
+
+#formRow{
+gap:4px !important;
+flex-wrap:wrap !important;
+}
+
+.form-badge{
+width:28px !important;
+height:28px !important;
+font-size:11px !important;
+}
+
+.fixture-card{
+padding:8px !important;
+margin-bottom:6px !important;
+}
+
+.fixture-date{
+font-size:10px !important;
+}
+
+.fixture-teams{
+font-size:11px !important;
+gap:6px !important;
+}
+
+.fixture-logo{
+width:20px !important;
+height:20px !important;
+}
+
+.stat-bar-row{
+margin-bottom:10px !important;
+}
+
+.stat-bar-labels{
+font-size:11px !important;
+}
+
+.stat-bar-outer{
+height:5px !important;
+}
+
+.info-list li{
+padding:5px 0 !important;
+font-size:11px !important;
+}
+
+.info-list .lbl,
+.info-list .val{
+font-size:11px !important;
+}
+
+.overview-chart-container{ flex-direction: row !important;
+display: flex !important;  align-items: center !important; gap: 10px !important; margin-top: 10px !important;
+}
+
+.donut-chart{
+width:70px !important;
+height:70px !important;
+}
+
+.donut-inner{
+width:50px !important;
+height:50px !important;
+}
+
+.donut-inner span{
+font-size:13px !important;
+}
+.donut-inner small{
+font-size:8px !important;
+}
+
+.chart-legend{
+font-size:11px !important;
+line-height:1.6 !important;
+}
+
+.bottom-stats{
+display:grid !important;
+grid-template-columns:repeat(3,1fr) !important;
+gap:8px !important;
+margin-top:10px !important;
+}
+
+.bottom-stats h3{
+font-size:12px !important;
+}
+
+.bottom-stats p{
+font-size:8px !important;
+}
+
+.widget{
+padding:10px !important;
+border-radius:10px !important;
+}
+
+.panel-body > div{
+margin-bottom:10px !important;
+}
+
+.section-title{
+font-size:11px !important;
+padding-left:8px !important;
+}
+}
+
+
+/* ===== V18 STACK ALL TEAM SECTIONS UNDER TACTICAL LINEUP ===== */
+@media(max-width:768px){
+.panel-body{
+    display:flex !important;
+    flex-direction:column !important;
+}
+
+.panel-body > div{
+    width:100% !important;
+    display:block !important;
+}
+
+/* Force every widget section to appear as a vertical stack */
+.panel-body > div:nth-child(2),
+.panel-body > div:nth-child(3){
+    margin-top:10px !important;
+}
+
+}
+
+
+/* ===== V19 LEAGUE LEADERS COMPACT FIX ===== */
+@media(max-width:768px){
+
+#teamHonorsWidget{
+    grid-template-columns:repeat(3,1fr) !important;
+    gap:6px !important;
+    padding:6px !important;
+}
+
+.honor-card{
+    padding:6px !important;
+    min-height:75px !important;
+    max-height:75px !important;
+    border-radius:10px !important;
+}
+
+.honor-logo-wrapper img{
+    width:24px !important;
+    height:24px !important;
+    max-width:24px !important;
+    max-height:24px !important;
+}
+
+.honor-logo-wrapper{
+    margin-bottom:2px !important;
+}
+
+.honor-name{
+    font-size:9px !important;
+    margin:2px 0 !important;
+    line-height:1.1 !important;
+}
+
+.honor-stat{
+    font-size:8px !important;
+    line-height:1 !important;
+}
+
+}
+
+
+/* ===== V20 COMPACT HORIZONTAL TEAM TABS ===== */
+@media(max-width:768px){
+
+#teamTabs{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    gap:6px !important;
+    padding:6px !important;
+    scrollbar-width:none !important;
+    -ms-overflow-style:none !important;
+}
+
+#teamTabs::-webkit-scrollbar{
+    display:none !important;
+}
+
+.team-tab{
+    flex:0 0 calc(25% - 6px) !important; /* 4 visible at once */
+    min-width:72px !important;
+    max-width:72px !important;
+    padding:6px 4px !important;
+    font-size:10px !important;
+    gap:4px !important;
+    justify-content:center !important;
+}
+
+.team-tab-logo{
+    width:14px !important;
+    height:14px !important;
+    font-size:8px !important;
+}
+
+}
+
+
+/* ===== V21 TEAM TABS: 8 TEAMS, READABLE, SCROLLABLE ===== */
+@media(max-width:768px){
+
+#teamTabs{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    gap:6px !important;
+    padding:6px !important;
+    scrollbar-width:none !important;
+    -ms-overflow-style:none !important;
+}
+
+#teamTabs::-webkit-scrollbar{
+    display:none !important;
+}
+
+.team-tab{
+    flex:0 0 85px !important;
+    min-width:85px !important;
+    max-width:85px !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+
+    padding:6px !important;
+    font-size:10px !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+}
+
+.team-tab-logo{
+    width:18px !important;
+    height:18px !important;
+    flex-shrink:0 !important;
+}
+
+.dashboard-panel{
+    overflow:hidden !important;
+}
+}
+
+
+/* ===== V22 FIX TEAM TAB WIDTH ===== */
+@media(max-width:768px){
+
+#teamTabs{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    gap:10px !important;
+    padding:8px !important;
+    scrollbar-width:none !important;
+}
+
+#teamTabs::-webkit-scrollbar{
+    display:none !important;
+}
+
+.team-tab{
+    flex:0 0 140px !important;
+    min-width:440px !important;
+    max-width:10px !important;
+
+    max-height:55px !important;
+
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+
+    padding:0 12px !important;
+
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+
+    border-radius:10px !important;
+}
+
+.team-tab-logo{
+    width:24px !important;
+    height:24px !important;
+    margin-right:8px !important;
+    flex-shrink:0 !important;
+}
+}
+
+
+@media (min-width: 769px){
+.mobile-bottom-nav{
+display:none !important;
+visibility:hidden !important;
+}
+}
+
+@media (max-width:768px) and (pointer:coarse){
+.mobile-bottom-nav{
+display:flex !important;
+visibility:visible !important;
+}
+}
+
+
+/* V23 Desktop team header compact row */
+.dashboard-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:20px;
+}
+.quick-stats-row{
+display:flex;
+flex-wrap:nowrap;
+gap:10px;
+align-items:center;
+}
+.stat-block{
+min-width:55px;
+text-align:center;
+}
+.stat-block .value{
+font-size:18px;
+}
+.stat-block .label{
+font-size:9px;
+letter-spacing:.5px;
+}
+@media(min-width:769px){
+.main-team-logo{width:80px;height:80px;font-size:24px;}
+.team-identity h1{font-size:28px;}
+}
+
+
+.dashboard-header{
+    display:flex !important;
+    justify-content:space-between !important;
+    align-items:flex-start !important;
+    width:100% !important;
+}
+
+.team-identity{
+    display:flex !important;
+    align-items:center !important;
+    gap:18px !important;
+    flex:1 !important;
+}
+
+.quick-stats-row{
+    display:flex !important;
+    justify-content:flex-end !important;
+    align-items:flex-start !important;
+    gap:18px !important;
+    flex-wrap:nowrap !important;
+    margin-left:auto !important;
+}
+
+.stat-block{
+    text-align:center !important;
+    min-width:40px !important;
+}
+
+.stat-block .value{
+    font-size:18px !important;
+    line-height:1 !important;
+}
+
+.stat-block .label{
+    font-size:9px !important;
+    margin-top:3px !important;
+}
+
+</style>
+
+<style id="honours-mobile-single-line-fix">
+@media (max-width:768px){
+.honours-footer{
+    padding:6px !important;
+    gap:6px !important;
+    flex-wrap:nowrap !important;
+    overflow:hidden !important;
+}
+.honours-title{
+    font-size:8px !important;
+    margin-right:6px !important;
+    white-space:nowrap !important;
+}
+.honours-list{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:8px !important;
+    justify-content:flex-start !important;
+}
+.honour-item{
+    gap:4px !important;
+    flex-shrink:1 !important;
+}
+.honour-icon{
+    font-size:12px !important;
+}
+.honour-details h4{
+    font-size:9px !important;
+    line-height:1 !important;
+}
+.honour-details p{
+    font-size:6px !important;
+    line-height:1 !important;
+    letter-spacing:0.3px !important;
+}
+}
+</style>
+
+
+<style id="team-stats-and-honours-balanced-fix">
+@media (max-width:768px){
+
+.honours-footer{
+    padding:12px 15px !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+}
+
+.honours-title{
+    font-size:11px !important;
+    margin-right:18px !important;
+    white-space:nowrap !important;
+}
+
+.honours-list{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    gap:20px !important;
+    justify-content:space-between !important;
+    width:100% !important;
+}
+
+.honour-item{gap:8px !important;}
+.honour-icon{font-size:18px !important;}
+
+.honour-details h4{
+    font-size:13px !important;
+    line-height:1.2 !important;
+}
+
+.honour-details p{
+    font-size:8px !important;
+    line-height:1.2 !important;
+}
+
+.quick-stats-row{
+    display:flex !important;
+    justify-content:flex-end !important;
+    gap:8px !important;
+    flex-wrap:nowrap !important;
+}
+
+.stat-block{
+    min-width:32px !important;
+    padding:0 !important;
+}
+
+.stat-block .value{
+    font-size:12px !important;
+    line-height:1 !important;
+}
+
+.stat-block .label{
+    font-size:6px !important;
+    letter-spacing:0 !important;
+    margin-top:2px !important;
+}
+}
+</style>
+
+
+<style id="v25-team-header-and-standings-scroll-fix">
+
+/* Team logo left, stats right on same row */
+@media (max-width:768px){
+
+.dashboard-header{
+    display:flex !important;
+    flex-direction:row !important;
+    justify-content:space-between !important;
+    align-items:center !important;
+    gap:10px !important;
+}
+
+.team-identity{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    gap:10px !important;
+    flex:1 !important;
+}
+
+.quick-stats-row{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    justify-content:flex-end !important;
+    align-items:center !important;
+    margin-left:auto !important;
+    gap:6px !important;
+}
+
+.stat-block{
+    min-width:28px !important;
+}
+
+.stat-block .value{
+    font-size:11px !important;
+}
+
+.stat-block .label{
+    font-size:5px !important;
+}
+}
+
+/* Standings table horizontal scroll */
+#pane-standings .table-container{
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+}
+
+#pane-standings table{
+    min-width:900px !important;
+    width:max-content !important;
+}
+
+</style>
+
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
   // 2. Your Config (Keep your keys exactly as they are)
   const firebaseConfig = {
@@ -957,7 +1737,7 @@ tr:last-child td { border-bottom: none; }
                         <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
                         <a href="donate.html"><i class="fas fa-cog"></i> Donations</a>
                         <hr style="border: 0.5px solid #222; margin: 8px 0;">
-                        <a href="home.html" onclick="logout()" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                        <a href="#" onclick="logout(); return false;" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Log out</a>
                     </div>
                     <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
                 </div>
@@ -967,9 +1747,11 @@ tr:last-child td { border-bottom: none; }
                 <span style="font-size: 0.7rem; color: var(--text-muted);">Pro Status</span>
             </div>
         </div>
-    </aside>
+    
+</aside>
 
-    <main class="main-content">
+    
+<main class="main-content">
 
         <section id="pane-overview" class="pane active">
            <div class="news-ticker">
@@ -984,6 +1766,7 @@ tr:last-child td { border-bottom: none; }
                     <div class="progress-fill" id="seasonProgress"></div>
                 </div></div>
                 <div class="dashboard-grid" id="overviewGrid">
+
                 <div class="card">
                     <h3>Current Position</h3>
                     <div class="big-data" id="myPosition">N/A</div>
@@ -1046,7 +1829,6 @@ tr:last-child td { border-bottom: none; }
         <p id="h2hSummary" style="text-align: center; margin-top: 15px; font-size: 0.9rem; font-style: italic; color: var(--accent);"></p>
     </div>
 </div>
-<div class="card">
 <div class="card" style="border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow);">
                     <h3>Next Match</h3>
                     <div class="big-data" style="font-size: 1.5rem; color: #fff;" id="myNextMatch">vs TBD</div>
@@ -1190,10 +1972,10 @@ tr:last-child td { border-bottom: none; }
         <section id="pane-teams" class="pane">
            <header class="dashboard-header">
             <div class="team-identity">
-                <div class="main-team-logo" id="teamLogo">🏆</div>
+                <div class="main-team-logo" id="teamLogo"><i class="fa-solid fa-ranking-star"></i></div>
                 <div>
                     <h1 id="teamName">Team</h1>
-                    <p id="teamLeague">🏆 Elite Pro League</p>
+                    <p id="teamLeague"><i class="fa-solid fa-ranking-star"></i> Elite Pro League</p>
                 </div>
             </div>
 
@@ -1234,7 +2016,7 @@ tr:last-child td { border-bottom: none; }
             <div class="panel-body">
                 <div>
                     <div class="section-title">TACTICAL LINEUP <span id="formationText"></span></div>
-                    <div class="pitch-container" id="ontainer" style="position: relative; min-height: 300px; display: flex; align-items: center; justify-content: center; background: #1a1a1a; border-radius: 8px; overflow: hidden;">
+                    <div class="pitch-container" id="container" style="position: relative; min-height: 300px; display: flex; align-items: center; justify-content: center; background: #1a1a1a; border-radius: 8px; overflow: hidden;">
                     <img id="teamLineupImage" src="" style="display:none; ">
                     <div id="lineupEmptyState" style="text-align: center; color: #555">
                     <i class="fa-solid fa-image fa-3x" style="margin-bottom: 10px;"></i>
@@ -1332,7 +2114,7 @@ tr:last-child td { border-bottom: none; }
                         <ul class="info-list">
                             <li><span class="lbl">👤 Manager</span> <span class="val" id="manager"></span></li>
                             <li><span class="lbl">🏟️ Stadium</span> <span class="val" id="stadium"></span></li>
-                            <li><span class="lbl">👥 Capacity</span> <span class="val" id="capacity"></span></li>
+                            <li><span class="lbl"><i class="fa-solid fa-users"></i> Capacity</span> <span class="val" id="capacity"></span></li>
                             <li><span class="lbl">📅 Founded</span> <span class="val" id="founded"></span></li>
                             <li><span class="lbl">🌍 Country</span> <span class="val" id="country"></span></li>
                         </ul>
@@ -1351,7 +2133,7 @@ tr:last-child td { border-bottom: none; }
                             <div class="chart-legend">
                                 <div><span class="w" id="winsCount"></span> WINS</div>
                                 <div><span class="d" id="drawsCount"></span> DRAWS</div>
-                                <div><span class="l" id="drawsCount"></span> LOSSES</div>
+                                <div><span class="l" id="lossesCount"></span> LOSSES</div>
                             </div>
                         </div>
 
@@ -1376,7 +2158,7 @@ tr:last-child td { border-bottom: none; }
                 <div class="honours-title">HONOURS</div>
                 <div class="honours-list">
                     <div class="honour-item">
-                        <div class="honour-icon">🏆</div>
+                        <div class="honour-icon"><i class="fa-solid fa-ranking-star"></i></div>
                         <div class="honour-details">
                             <h4>0</h4>
                             <p>LEAGUE TITLES</p>
@@ -1446,7 +2228,7 @@ tr:last-child td { border-bottom: none; }
                 <h4 style="margin: 0; text-transform: uppercase;">Admin Protocol</h4>
             </div>
             <p style="font-size: 0.9rem; color: #bbb; line-height: 1.6;">
-                Managers have the right to autonomy in playstyle; however, <strong>Excessive red cards (3+ in a single match) will trigger an automatic review by the Judicial Committee for "Unsportsmanlike Conduct."
+                Managers have the right to autonomy in playstyle; however, <strong>Excessive red cards (3+ in a single match)</strong> will trigger an automatic review by the Judicial Committee for "Unsportsmanlike Conduct."
             </p>
         </div>
 
@@ -1997,7 +2779,7 @@ function updateMovement(db) {
     let html = '';
 
     // Helper for missing logos
-    const defaultLogo = 'https://via.placeholder.com/34?text=⚽';
+    const defaultLogo = 'https://via.placeholder.com/34?text=<i class="fa-solid fa-futbol"></i>';
 
     // Upcoming Matches
     if (upcoming.length > 0) {
@@ -2079,10 +2861,10 @@ function updateMovement(db) {
     
     // Helper function to find logo inside the render loop
     const getLogo = (playerName) => {
-        if (!db.teams) return 'https://via.placeholder.com/40?text=⚽';
+        if (!db.teams) return 'https://via.placeholder.com/40?text=<i class="fa-solid fa-futbol"></i>';
         // Find the team where the player belongs (assuming name matching)
         const team = db.teams.find(t => t.name.toLowerCase() === playerName.toLowerCase());
-        return team ? team.logo : 'https://via.placeholder.com/40?text=⚽'; 
+        return team ? team.logo : 'https://via.placeholder.com/40?text=<i class="fa-solid fa-futbol"></i>'; 
     };
 
     // Goals Table
@@ -2161,46 +2943,76 @@ function populateH2HSelect(db) {
 // 2. Calculate the Win/Draw/Loss stats from Firebase
 function calculateH2H() {
     const opponentId = document.getElementById('h2hOpponentSelect').value;
+    const resultContainer = document.getElementById('h2hResult');
+    const summaryEl = document.getElementById('h2hSummary');
+
     if (!opponentId) return alert("Please select an opponent.");
 
     // Fetch the latest data from Firebase to ensure accuracy
     dbRef.once('value').then((snapshot) => {
-        const db = snapshot.val() || { teams: [], fixtures: [] };
-        const myTeam = db.teams.find(t => t.name.toLowerCase() === userName.toLowerCase());
+        const data = snapshot.val();
+        if (!data) return;
 
+        const db = {
+            teams: data.teams || [],
+            fixtures: data.fixtures || []
+        };
+
+        // 1. Find Me
+        const myTeam = db.teams.find(t => t.name.toLowerCase().trim() === userName.toLowerCase().trim());
         if (!myTeam) return alert("Your team profile was not found.");
+
+        // 2. Find Opponent (Gets name for the summary text)
+        const opponent = db.teams.find(t => t.id === opponentId || t.name === opponentId);
+        const opName = opponent ? opponent.name : 'Unknown';
 
         let wins = 0, draws = 0, losses = 0;
 
-        // Filter fixtures that are completed and involve both teams
-        const matches = (db.fixtures || []).filter(f => {
-            return f.status === 'completed' && 
-                   ((f.homeId === myTeam.id && f.awayId === opponentId) || 
-                    (f.homeId === opponentId && f.awayId === myTeam.id));
+        // 3. Filter Matches (Fuzzy Match: Checks if either Name or ID matches)
+        const matches = db.fixtures.filter(f => {
+            const isCompleted = f.status === 'completed';
+            
+            // Match Me
+            const involvesMeHome = (f.homeId === myTeam.id || f.homeName === myTeam.name || f.homeId === myTeam.name);
+            const involvesMeAway = (f.awayId === myTeam.id || f.awayName === myTeam.name || f.awayId === myTeam.name);
+            
+            // Match Opponent
+            const involvesOpHome = (f.homeId === opponentId || f.homeName === opName || f.homeId === opName);
+            const involvesOpAway = (f.awayId === opponentId || f.awayName === opName || f.awayId === opName);
+
+            return isCompleted && ((involvesMeHome && involvesOpAway) || (involvesMeAway && involvesOpHome));
         });
 
+        // 4. Do the Math
         matches.forEach(m => {
-            const isHome = m.homeId === myTeam.id;
-            const myScore = isHome ? m.homeScore : m.awayScore;
-            const opScore = isHome ? m.awayScore : m.homeScore;
+            const isHome = (m.homeId === myTeam.id || m.homeName === myTeam.name || m.homeId === myTeam.name);
+            // Force scores to be numbers to prevent "10" < "2" string math bugs
+            const myScore = Number(isHome ? m.homeScore : m.awayScore) || 0;
+            const opScore = Number(isHome ? m.awayScore : m.homeScore) || 0;
 
             if (myScore > opScore) wins++;
             else if (myScore < opScore) losses++;
             else draws++;
         });
 
-        // Display Results
-        const resultContainer = document.getElementById('h2hResult');
+        // 5. Update UI
         if (resultContainer) {
             resultContainer.style.display = 'block';
             document.getElementById('h2hWins').innerText = wins;
             document.getElementById('h2hDraws').innerText = draws;
             document.getElementById('h2hLosses').innerText = losses;
 
-            const opponent = db.teams.find(t => t.id === opponentId);
-            const opName = opponent ? opponent.name : 'Unknown';
-            document.getElementById('h2hSummary').innerText = `Total encounters: ${matches.length} matches against ${opName}`;
+            const winPct = matches.length > 0 ? Math.round((wins / matches.length) * 100) : 0;
+
+            if (summaryEl) {
+                summaryEl.innerHTML = matches.length > 0 
+                    ? `Total encounters: ${matches.length} matches against ${opName} (${winPct}% Win Rate)`
+                    : `No completed matches found against ${opName} yet.`;
+            }
         }
+    }).catch(error => {
+        console.error("Firebase H2H Error:", error);
+        alert("Error fetching head-to-head data.");
     });
 }
 
@@ -2329,7 +3141,7 @@ function displayMOTW(data) {
     // Logos with fallback placeholders
     const homeLogoContainer = document.getElementById('motwHomeLogo');
     const awayLogoContainer = document.getElementById('motwAwayLogo');
-    const placeholder = 'https://via.placeholder.com/100?text=⚽';
+    const placeholder = 'https://via.placeholder.com/100?text=<i class="fa-solid fa-futbol"></i>';
 
     if (homeLogoContainer) {
         homeLogoContainer.innerHTML =
@@ -2755,35 +3567,6 @@ window.onpopstate = function () {
     // you can redirect them to a neutral page or just keep them here
     window.location.replace('EEPL.html'); 
 };
-function calculateH2H() {
-    const opponentName = document.getElementById('h2hOpponentSelect').value;
-    const resultDiv = document.getElementById('h2hResult');
-    if (!opponentName) return;
-
-    // Filter fixtures involving both current user and selected opponent
-    const matches = globalDb.fixtures.filter(f => 
-        (f.home.toLowerCase() === userName.toLowerCase() && f.away.toLowerCase() === opponentName.toLowerCase()) ||
-        (f.away.toLowerCase() === userName.toLowerCase() && f.home.toLowerCase() === opponentName.toLowerCase())
-    );
-
-    let wins = 0, draws = 0, losses = 0;
-
-    matches.forEach(m => {
-        if (m.homeScore === m.awayScore) draws++;
-        else {
-            const userIsHome = m.home.toLowerCase() === userName.toLowerCase();
-            const userWon = userIsHome ? (m.homeScore > m.awayScore) : (m.awayScore > m.homeScore);
-            userWon ? wins++ : losses++;
-        }
-    });
-
-    document.getElementById('h2hWins').innerText = wins;
-    document.getElementById('h2hDraws').innerText = draws;
-    document.getElementById('h2hLosses').innerText = losses;
-    document.getElementById('h2hSummary').innerText = wins > losses ? "You dominate this rivalry." : "Tough opponent detected.";
-    
-    resultDiv.style.display = 'block';
-}
  
  function updateAchievementSpotlight(db, userName) {
     const display = document.getElementById('trophyDisplay');
@@ -2878,5 +3661,69 @@ function calculateH2H() {
     }, 300);
 }
     </script>
+
+<script>
+document.addEventListener('DOMContentLoaded',()=>{
+ const btn=document.getElementById('themeToggleBottom');
+ if(btn){
+   btn.addEventListener('click',()=>{
+      document.body.classList.toggle('light-theme');
+      localStorage.setItem('eepl-theme',
+        document.body.classList.contains('light-theme') ? 'light':'dark');
+   });
+
+   if(localStorage.getItem('eepl-theme')==='light'){
+      document.body.classList.add('light-theme');
+   }
+ }
+});
+</script>
+
+
+<div class="mobile-bottom-nav">
+<a href="#pane-overview"><i class="fa-solid fa-house"></i></a>
+<a href="#pane-standings"><i class="fa-solid fa-ranking-star"></i></a>
+<a href="#pane-fixtures"><i class="fa-solid fa-futbol"></i></a>
+<a href="#pane-teams"><i class="fa-solid fa-users"></i></a>
+<a href="#pane-rules"><i class="fa-solid fa-book"></i></a>
+</div>
+
+
+<script>
+document.addEventListener('click',function(e){
+ const link=e.target.closest('.mobile-bottom-nav a');
+ if(!link) return;
+ e.preventDefault();
+
+ const targetId=link.getAttribute('href').replace('#','');
+ const pane=document.getElementById(targetId);
+
+ document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+ if(pane) pane.classList.add('active');
+
+ document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+});
+</script>
+
+
+<script>
+if(typeof calculateH2H !== 'function'){
+window.calculateH2H=function(){
+ const result=document.getElementById('h2hResult');
+ if(result) result.style.display='block';
+
+ const wins=document.getElementById('h2hWins');
+ const draws=document.getElementById('h2hDraws');
+ const losses=document.getElementById('h2hLosses');
+ const summary=document.getElementById('h2hSummary');
+
+ if(wins) wins.textContent='0';
+ if(draws) draws.textContent='0';
+ if(losses) losses.textContent='0';
+ if(summary) summary.textContent='Head-to-head data unavailable until fixtures are loaded.';
+ };
+}
+</script>
+
 </body>
 </html>
