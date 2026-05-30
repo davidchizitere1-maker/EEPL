@@ -1,3 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EEPL | League Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+    --accent: #00d4e8;
+    --accent-glow: rgba(0, 212, 232, 0.25);
+    --accent-blue: #00d4e8;
+    --accent-blue-hover: #00abbe;
+    
+    --bg-main: #070a10;
+    --sidebar-bg: rgba(10, 13, 20, 0.98);
+    --card-bg: rgba(16, 20, 30, 0.85);
+    --bg-panel: rgba(13, 17, 26, 0.95);
+    
+    --text-dark: #f0f4ff;
+    --text-light: #c8d0e0;
+    --text-muted: #6b7a99;
+    --text-panel-muted: #4a5568;
+    
+    --border-light: rgba(255, 255, 255, 0.07);
+    --border-dark: rgba(255, 255, 255, 0.035); 
+    
+    --pitch-green: #3b823e;
+    --pitch-light: #449647;
+    --color-win: #00e096;
+    --color-draw: #f6a11a;
+    --color-loss: #ff4d6d;
+    
+    --success: #00e096;
+    --danger: #ff4d6d;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --font-display: 'Barlow Condensed', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+} 
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: var(--font-body);
+}  
+
 body { 
     background: var(--bg-main);
     background-image: 
@@ -13,3 +67,845 @@ body {
     overflow: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+/* --- Custom Scrollbar --- */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+/* --- Sidebar Styles --- */
+.sidebar {
+    width: 260px;
+    background-color: var(--sidebar-bg);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-light);
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.4);
+    z-index: 20;
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
+}
+
+.sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 36px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.sidebar-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+.sidebar-header h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--text-dark);
+    text-transform: uppercase;
+}
+
+.nav-links { list-style: none; flex: 1; }
+
+.nav-section-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-panel-muted);
+    padding: 4px 14px 10px;
+    margin-top: 8px;
+}
+
+.nav-item {
+    padding: 11px 16px;
+    margin-bottom: 3px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    position: relative;
+} 
+
+.nav-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.9rem;
+    transition: color 0.25s;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--text-light);
+    transform: translateX(3px);
+} 
+
+.nav-item.active {
+    background: linear-gradient(90deg, rgba(0, 212, 232, 0.12), transparent);
+    color: var(--accent);
+    font-weight: 600;
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
+}
+
+/* --- User Profile & Dropdown --- */
+.user-profile {
+    display: flex;
+    align-items: center;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-light);
+    position: relative;
+    gap: 11px;
+}
+
+.pfp-container { position: relative; flex-shrink: 0; }
+
+.nav-pfp { 
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    object-fit: cover;
+    border: 2px solid var(--border-light);
+    transition: all 0.25s ease;
+    display: block;
+}
+
+.nav-pfp:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 14px var(--accent-glow);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    bottom: 62px;
+    left: 0;
+    background: linear-gradient(160deg, rgba(14,18,28,0.99), rgba(10,13,20,0.99));
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    min-width: 230px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,212,232,0.05);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+    overflow: hidden; 
+    transition: background-color 0.3s ease;
+}
+
+.dropdown-content.show { display: block; animation: fadeIn 0.18s ease-out; }
+
+.user-info-header {
+    display: flex;
+    align-items: center; 
+    gap: 11px; 
+    padding: 16px 18px; 
+    background: rgba(0, 0, 0, 0.3); 
+    border-bottom: 1px solid var(--border-light);
+}
+
+#dropdownPfpDisplay {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1.5px solid var(--border-light);
+}
+
+.user-details { display: flex; flex-direction: column; gap: 2px; }
+.user-details .name { font-size: 0.875rem; font-weight: 600; color: var(--text-dark); }
+
+.profile-menu-links { display: flex; flex-direction: column; padding: 6px 0; }
+
+.profile-menu-links a {
+    color: var(--text-light);
+    text-decoration: none;
+    padding: 10px 18px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.2s;
+    color: var(--text-muted);
+}
+
+.profile-menu-links a i { width: 14px; text-align: center; }
+
+.profile-menu-links a:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+    color: var(--accent);
+    padding-left: 22px;
+}
+
+/* --- Theme Toggle Button --- */
+.theme-toggle-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-light);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text-light);
+    transition: all 0.25s ease;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* --- Main Content Area --- */
+.main-content {
+    flex: 1;
+    padding: 36px 44px;
+    overflow-y: auto;
+    position: relative;
+    background: linear-gradient(180deg, rgba(0,212,232,0.02) 0%, transparent 300px);
+    transition: background-color 0.3s ease;
+}
+
+.pane { display: none; color: var(--text-dark); }
+.pane.active { display: block; animation: slideUp 0.4s ease; }
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pane-header { margin-bottom: 36px; }
+.pane-header h1 {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    margin-bottom: 6px;
+    color: var(--text-dark);
+    letter-spacing: 1px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+/* --- Top Stats Header --- */
+.dashboard-header { 
+    display: flex;  
+    align-items: center; 
+    justify-content: space-between;  
+    margin-bottom: 36px; 
+} 
+
+.team-identity { display: flex; align-items: center; gap: 22px; } 
+
+.main-team-logo { 
+    width: 96px; 
+    height: 96px; 
+    border-radius: 50%; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center;  
+    color: var(--bg-main); 
+    font-size: 28px; 
+    font-weight: 800;
+    border: 2px solid var(--border-light);
+    box-shadow: 0 0 0 4px rgba(0,212,232,0.08), 0 8px 24px rgba(0,0,0,0.4);
+}  
+
+.team-identity h1 { 
+    font-family: var(--font-display);
+    font-size: 32px; 
+    margin: 0; 
+    letter-spacing: 2px; 
+    text-transform: uppercase; 
+    font-weight: 800;
+    line-height: 1;
+}   
+
+.team-identity p { 
+    font-size: 13px; 
+    color: var(--text-muted); 
+    margin-top: 8px; 
+    display: flex; 
+    align-items: center; 
+    gap: 7px; 
+} 
+
+.quick-stats-row { display: flex; gap: 6px; } 
+
+.stat-block { 
+    text-align: center; 
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    min-width: 54px;
+    transition: background-color 0.3s ease;
+}
+
+.stat-block .value { 
+    display: block; 
+    font-family: var(--font-display);
+    font-size: 22px; 
+    font-weight: 700; 
+    color: var(--text-dark);
+    line-height: 1;
+} 
+
+.stat-block .label { 
+    display: block; 
+    font-size: 12px; 
+    color: var(--text-muted); 
+    text-transform: uppercase; 
+    letter-spacing: 1.5px; 
+    margin-top: 6px; 
+}
+
+/* --- White/Dark Dashboard Panel --- */
+.dashboard-panel {
+    background: linear-gradient(160deg, rgba(16,20,30,0.95), rgba(10,13,20,0.98));
+    border-radius: var(--radius-lg);
+    color: var(--text-dark);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--border-light);
+    border: none;
+    overflow: hidden;
+    transition: background-color 0.3s ease;
+}
+
+.panel-body {
+    padding: 30px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 28px;
+} 
+
+.section-title {
+    letter-spacing: 2px;
+    border-left: 3px solid var(--accent-blue);
+    padding-left: 12px;
+    margin-bottom: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+} 
+
+.section-title span { color: var(--text-panel-muted); font-weight: 500; font-size: 11px; }
+
+/* --- Tactical Pitch --- */
+.pitch-container {
+    background: rgba(15, 20, 30, 0.8) !important;
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+    aspect-ratio: 18/9;
+    position: relative;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.5);
+}
+
+#teamLineupImage { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+    display: block;
+    transition: transform 0.5s ease;
+}
+
+.pitch-container:hover #teamLineupImage { transform: scale(1.02); }
+
+/* --- Widgets (Form, Fixtures, Stats) --- */
+.widget {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 20px;
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    transition: transform 0.25s, box-shadow 0.25s, background-color 0.3s ease;
+}
+
+.widget:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.form-badge {
+    width: 36px; height: 36px;
+    border-radius: 7px; 
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 14px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+} 
+
+.form-badge.w { background: var(--color-win); color: #003d22; }
+.form-badge.d { background: var(--color-draw); color: #3d2800; }
+.form-badge.l { background: var(--color-loss); color: #fff; }
+
+.fixture-card { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-dark);
+} 
+
+.fixture-card:last-child { border-bottom: none; padding-bottom: 0; } 
+
+.fixture-date { 
+    font-size: 12px; 
+    color: var(--text-muted); 
+    text-align: center; 
+    margin-bottom: 8px;
+} 
+
+.fixture-teams { 
+    display: flex; align-items: center; justify-content: center; 
+    gap: 15px; font-weight: 600; font-size: 15px; 
+} 
+
+.fixture-logo { 
+    width: 30px; height: 30px; 
+    background: #fff; border-radius: 50%; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+} 
+
+/* ===== LIGHT THEME ===== */
+html.light-theme {
+    --accent: #0099bb;
+    --accent-glow: rgba(0, 153, 187, 0.2);
+    --accent-blue: #0099bb;
+    --accent-blue-hover: #007a99;
+    
+    --bg-main: #f5f7fa;
+    --sidebar-bg: #ffffff;
+    --card-bg: #ffffff;
+    --bg-panel: #f8f9fb;
+    
+    --text-dark: #1a1a2e;
+    --text-light: #2d3748;
+    --text-muted: #718096;
+    --text-panel-muted: #a0aec0;
+    
+    --border-light: rgba(0, 0, 0, 0.1);
+    --border-dark: rgba(0, 0, 0, 0.05);
+    
+    --pitch-green: #22863a;
+    --pitch-light: #28a745;
+    --color-win: #1e7e34;
+    --color-draw: #d18f00;
+    --color-loss: #cb2431;
+    
+    --success: #1e7e34;
+    --danger: #cb2431;
+}
+
+html.light-theme body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #eef2f7 100%);
+    background-attachment: fixed;
+}
+
+html.light-theme .sidebar {
+    box-shadow: 2px 0 15px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme .sidebar-header {
+    border-bottom-color: var(--border-light);
+}
+
+html.light-theme .sidebar-header img {
+    background-color: #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+html.light-theme .nav-item:hover {
+    background-color: #f0f0f0;
+}
+
+html.light-theme .nav-item.active {
+    background: linear-gradient(90deg, rgba(0, 153, 187, 0.08), transparent);
+    border-left-color: var(--accent);
+}
+
+html.light-theme .user-profile {
+    border-top-color: var(--border-light);
+}
+
+html.light-theme .nav-pfp {
+    border-color: var(--border-light);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.05);
+}
+
+html.light-theme .nav-pfp:hover {
+    box-shadow: 0 0 12px rgba(0, 153, 187, 0.2);
+}
+
+html.light-theme .dropdown-content {
+    background: linear-gradient(160deg, #ffffff, #f8f9fb);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+html.light-theme .user-info-header {
+    background: #f8f9fb;
+}
+
+html.light-theme .profile-menu-links a:hover {
+    background-color: #f0f0f0;
+    color: var(--accent);
+}
+
+html.light-theme .main-content {
+    background: linear-gradient(180deg, rgba(0, 153, 187, 0.02) 0%, transparent 300px);
+}
+
+html.light-theme .dashboard-panel {
+    background: linear-gradient(160deg, #ffffff, #f8f9fb);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme .stat-block {
+    background: #f8f9fb;
+}
+
+html.light-theme .widget {
+    background: #f8f9fb;
+    border-color: var(--border-light);
+}
+
+html.light-theme .widget:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme .honours-footer {
+    background: #f8f9fb;
+}
+
+html.light-theme .card {
+    background: linear-gradient(160deg, #ffffff, #f8f9fb);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme .card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+html.light-theme .table-container {
+    background: linear-gradient(160deg, #ffffff, #f8f9fb);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+html.light-theme th {
+    background: #f0f0f0;
+}
+
+html.light-theme .fixture-list .fixture-card {
+    background: linear-gradient(135deg, #ffffff, #f8f9fb);
+    border-color: var(--border-light);
+}
+
+html.light-theme .theme-toggle-btn {
+    background: #f0f0f0;
+    border-color: var(--border-light);
+    color: var(--text-dark);
+}
+
+html.light-theme .theme-toggle-btn:hover {
+    background-color: #e8e8e8;
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+html.light-theme .honor-card {
+    background: #f8f9fb;
+    border-color: var(--border-light);
+}
+
+html.light-theme .honor-card:hover {
+    border-color: var(--accent);
+    background: rgba(0, 153, 187, 0.03);
+}
+
+html.light-theme .team-tab {
+    background: #f0f0f0;
+}
+
+html.light-theme .team-tab.active {
+    background: rgba(0, 153, 187, 0.1);
+    border-color: rgba(0, 153, 187, 0.3);
+}
+
+html.light-theme ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+html.light-theme ::-webkit-scrollbar-thumb:hover {
+    background: var(--accent);
+}
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <img src="path-to-logo.png" alt="Logo">
+            <h2>EEPL</h2>
+        </div>
+
+        <ul class="nav-links">
+            <li class="nav-section-label">Main</li>
+            <li class="nav-item active">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </li>
+            <li class="nav-item">
+                <i class="fas fa-users"></i>
+                Teams
+            </li>
+            <li class="nav-item">
+                <i class="fas fa-chart-line"></i>
+                Statistics
+            </li>
+            <li class="nav-item">
+                <i class="fas fa-calendar"></i>
+                Schedule
+            </li>
+        </ul>
+
+        <button class="theme-toggle-btn" id="themeToggle" title="Toggle theme">
+            <i class="fas fa-moon"></i> Theme
+        </button>
+
+        <div class="user-profile">
+            <div class="pfp-container">
+                <img src="path-to-pfp.png" alt="Profile" class="nav-pfp" id="userPfp">
+                <div class="dropdown-content" id="profileDropdown">
+                    <div class="user-info-header">
+                        <img src="path-to-pfp.png" alt="Profile" id="dropdownPfpDisplay">
+                        <div class="user-details">
+                            <span class="name">User Name</span>
+                        </div>
+                    </div>
+                    <div class="profile-menu-links">
+                        <a href="#">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                        <a href="#">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                        <a href="#">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Dashboard Pane -->
+        <div class="pane active" id="dashboardPane">
+            <div class="pane-header">
+                <h1>Dashboard</h1>
+            </div>
+
+            <!-- Team Header -->
+            <div class="dashboard-header">
+                <div class="team-identity">
+                    <div class="main-team-logo">⚽</div>
+                    <div>
+                        <h1>Team Name</h1>
+                        <p><i class="fas fa-map-marker-alt"></i> City, Country</p>
+                        <div class="quick-stats-row">
+                            <div class="stat-block">
+                                <span class="value">1st</span>
+                                <span class="label">Position</span>
+                            </div>
+                            <div class="stat-block">
+                                <span class="value">45</span>
+                                <span class="label">Points</span>
+                            </div>
+                            <div class="stat-block">
+                                <span class="value">15</span>
+                                <span class="label">Wins</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Dashboard Panel -->
+            <div class="dashboard-panel">
+                <div class="panel-body">
+                    <!-- Left: Pitch & Stats -->
+                    <div>
+                        <div class="section-title">Tactical Lineup</div>
+                        <div class="pitch-container">
+                            <img id="teamLineupImage" src="path-to-pitch.png" alt="Team Lineup">
+                        </div>
+                    </div>
+
+                    <!-- Middle: Form & Fixtures -->
+                    <div>
+                        <div class="section-title">Recent Form</div>
+                        <div class="widget">
+                            <div class="form-row">
+                                <div class="form-badge w">W</div>
+                                <div class="form-badge d">D</div>
+                                <div class="form-badge w">W</div>
+                                <div class="form-badge l">L</div>
+                                <div class="form-badge w">W</div>
+                            </div>
+                        </div>
+                        <div class="section-title">Next Fixtures</div>
+                        <div class="widget">
+                            <div class="fixture-card">
+                                <div class="fixture-date">Next Match</div>
+                                <div class="fixture-teams">
+                                    <span>Team A</span>
+                                    <span class="vs">vs</span>
+                                    <span>Team B</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Stats -->
+                    <div>
+                        <div class="section-title">Key Stats</div>
+                        <ul class="info-list">
+                            <li>
+                                <span class="lbl">Goals For</span>
+                                <span class="val">45</span>
+                            </li>
+                            <li>
+                                <span class="lbl">Goals Against</span>
+                                <span class="val">18</span>
+                            </li>
+                            <li>
+                                <span class="lbl">Goal Difference</span>
+                                <span class="val">+27</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Honours -->
+                <div class="honours-footer">
+                    <div class="honours-title">Honours</div>
+                    <div class="honours-list">
+                        <div class="honour-item">
+                            <div class="honour-icon">🏆</div>
+                            <div class="honour-details">
+                                <h4>2</h4>
+                                <p>Trophies</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme Toggle Implementation
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+
+        // Check for saved theme preference or system preference
+        const initializeTheme = () => {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme) {
+                if (savedTheme === 'light') {
+                    html.classList.add('light-theme');
+                    updateThemeToggleIcon(true);
+                } else {
+                    html.classList.remove('light-theme');
+                    updateThemeToggleIcon(false);
+                }
+            } else if (!prefersDark) {
+                html.classList.add('light-theme');
+                updateThemeToggleIcon(true);
+            }
+        };
+
+        const updateThemeToggleIcon = (isLight) => {
+            if (themeToggle) {
+                if (isLight) {
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i> Theme';
+                } else {
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i> Theme';
+                }
+            }
+        };
+
+        // Toggle theme on button click
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const isLight = html.classList.toggle('light-theme');
+                localStorage.setItem('theme', isLight ? 'light' : 'dark');
+                updateThemeToggleIcon(isLight);
+            });
+        }
+
+        // Initialize theme on page load
+        initializeTheme();
+
+        // Profile dropdown toggle (existing functionality)
+        const userPfp = document.getElementById('userPfp');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        if (userPfp) {
+            userPfp.addEventListener('click', () => {
+                profileDropdown.classList.toggle('show');
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (profileDropdown && !e.target.closest('.user-profile')) {
+                profileDropdown.classList.remove('show');
+            }
+        });
+
+        // Navigation item click handler
+        const navItems = document.querySelectorAll('.nav-item');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>
