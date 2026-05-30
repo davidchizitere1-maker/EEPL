@@ -1806,8 +1806,80 @@ width:100% !important;
 }
 </style>
 
+
+<style>
+#bg-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.4s ease;
+}
+body:not(.light-theme) #bg-overlay { display: block; }
+</style>
+
+<style>
+/* Force dashboard panel text to stay white in both themes */
+.dashboard-panel,
+.dashboard-panel *,
+.table-container,
+.table-container *{
+    color:#ffffff !important;
+}
+
+.dashboard-panel .section-title,
+.dashboard-panel .label,
+.dashboard-panel .lbl,
+.dashboard-panel .honour-details p,
+.dashboard-panel .stat-block .label{
+    color:rgba(255,255,255,0.75) !important;
+}
+
+/* Better 1024px responsiveness */
+@media (max-width:1024px){
+    .dashboard-panel{
+        width:100% !important;
+        overflow:hidden !important;
+    }
+
+    .panel-body{
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        gap:16px !important;
+        padding:16px !important;
+    }
+
+    .dashboard-header{
+        width:100% !important;
+        display:flex !important;
+        justify-content:space-between !important;
+        align-items:flex-start !important;
+        gap:12px !important;
+        flex-wrap:wrap !important;
+    }
+
+    .quick-stats-row{
+        width:100% !important;
+        justify-content:space-between !important;
+        flex-wrap:wrap !important;
+    }
+
+    .table-container{
+        width:100% !important;
+        overflow-x:auto !important;
+    }
+
+    table{
+        width:100% !important;
+    }
+}
+</style>
 </head>
 <body>
+<div id='bg-overlay'></div>
+
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -1990,7 +2062,7 @@ width:100% !important;
             <div id="motwHomeLogo" style="width: 60px; height: 60px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fa-solid fa-shield-halved" style="color: #666;"></i>
             </div>
-            <span id="motwHomeName" style="font-weight: bold; font-size: 0.9rem; display: block;">TBD</span>
+            <span id="motwHomeName" style="font-weight: bold; color:#fff; font-size: 0.9rem; display: block;">TBD</span>
         </div>
 
         <div style="text-align: center;">
@@ -2003,7 +2075,7 @@ width:100% !important;
             <div id="motwAwayLogo" style="width: 60px; height: 60px; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
                 <i class="fa-solid fa-shield-halved" style="color: #666;"></i>
             </div>
-            <span id="motwAwayName" style="font-weight: bold; font-size: 0.9rem; display: block;">TBD</span>
+            <span id="motwAwayName" style="font-weight: bold; color:#fff; font-size: 0.9rem; display: block;">TBD</span>
         </div>
     </div>
 
