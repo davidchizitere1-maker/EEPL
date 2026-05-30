@@ -271,7 +271,13 @@
             .form-row { flex-direction: column; gap: 0; }
             h1 { font-size: 2rem; }
         }
-    </style>
+    
+.social-divider{display:flex;align-items:center;margin:20px 0;color:#888}
+.social-divider:before,.social-divider:after{content:'';flex:1;height:1px;background:#333}
+.social-divider span{padding:0 12px;font-size:.8rem}
+.social-btn{width:100%;padding:12px;border-radius:30px;border:1px solid #444;background:#111;color:#fff;margin:8px 0;cursor:pointer}
+
+</style>
 </head>
 <body>
     
@@ -380,7 +386,7 @@
             <div class="input-group">
                 <div class="input-box">
                     <i class="fa-regular fa-id-badge"></i>
-                    <input id="signup-username" type="text" placeholder="Team Name">
+                    <input id="login-teamname" type="text" placeholder="Team Name">
                 </div>
             </div>
 
@@ -400,7 +406,11 @@
                 <label><input type="checkbox"> Remember Me</label>
                 <a href="reset.html">Forgot Password?</a>
             </div>
-            <button class="action-btn" onclick="loginUser()">Login</button>
+            
+<button class="action-btn" onclick="loginUser()">Login</button>
+
+
+
             <p class="toggle-text">Don't have an account? <span onclick="showAuth('signup')">Register</span></p>
         </div>
 
@@ -446,7 +456,14 @@
                     <input type="checkbox" id="terms"> I agree to Terms & Conditions
                 </label>
             </div>
-            <button class="action-btn" onclick="registerUser()">Register</button>
+            <div class="social-divider"><span>OR CONTINUE WITH</span></div>
+
+<button class="social-btn" onclick="signInWithGoogle()"><i class="fab fa-google"></i> Continue with Google</button>
+<button class="social-btn" onclick="signInWithMicrosoft()"><i class="fab fa-microsoft"></i> Continue with Microsoft</button>
+<button class="social-btn" onclick="signInWithFacebook()"><i class="fab fa-facebook"></i> Continue with Facebook</button>
+<button class="social-btn" onclick="signInWithApple()"><i class="fab fa-apple"></i> Continue with Apple</button>
+<button class="social-btn" onclick="guestLogin()"><i class="fas fa-user-secret"></i> Continue as Guest</button>
+<button class="action-btn" onclick="registerUser()">Register</button>
             <p class="toggle-text">Have an account? <span onclick="showAuth('login')">Login</span></p>
         </div>
     </div>
@@ -526,86 +543,6 @@ async function registerUser() {
         showWelcomeScreen(username.value);
     } catch (error) {
         // Handle Firebase specific errors
-        if (error.code === 'auth/email-already-in-use') {
-            showError(email, "Email already in use.");
-        } else if (error.code === 'auth/weak-password') {
-            showError(pass, "Password is too weak.");
-        } else {
-            showError(email, error.message);
-        }
-    }
-}
-
-async function loginUser() {
-    clearErrors();
-    const email = document.getElementById('login-email');
-    const pass = document.getElementById('login-password');
-    const username = document.getElementById('signup-username');
-
-    if (!email.value) return showError(email, "Enter your email");
-    if (!pass.value) return showError(pass, "Enter your password");
-    if (!username.value) return showError(username, "Enter your Team Name");
-
-    try {
-        // Firebase Auth: Sign In
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
-        const user = userCredential.user;
-        
-    
-        const displayName = username.value;
-        
-        showWelcomeScreen(displayName);
-
-        window.location.replace('EEPL.html');
-    } catch (error) {
-        // Handle Firebase specific errors
-        if (error.code === 'auth/wrong-password') {
-            showError(pass, "Incorrect Password");
-        } else if (error.code === 'auth/user-not-found') {
-            showError(email, "No account found with this email.");
-        } else {
-            showError(email, "Login failed: " + error.message);
-        }
-    }
-}
-
-function showWelcomeScreen(name) {
-    const authCard = document.querySelector('.auth-card');
-    authCard.innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h2 style="color: #00e5ff; font-size: 1.5rem">Welcome to EEPL, ${name}!</h2>
-            <p style="letter-spacing: 2px; font-size: 1.2rem;">You now have access to the league hub.</p>
-            <div class="loader"></div>
-        </div>
-    `;
-    localStorage.setItem('isLoggedIn', 'true');
-    localStorage.setItem('userName', name);
-    setTimeout(() => { 
-        window.location.href = 'EEPL.html'; 
-    }, 2500);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const observerOptions = {
-        threshold: 0.1
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('show');
-                observer.unobserve(entry.target);
-            }
-        });
-    }, observerOptions);
-
-    const cards = document.querySelectorAll('.exp-card');
-    cards.forEach((card, index) => {
-        card.style.transitionDelay = `${(index % 3) * 0.15}s`; 
-        observer.observe(card);
-    });
-});
-</script>
-</body>
+        if (error.code ===/body>
 </html>
 
