@@ -5,45 +5,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EEPL | League Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root { 
-    --accent: #00e5ff;
-    --accent-glow: rgba(0, 229, 255, 0.4);
-    --accent-blue: #00e5ff;
-    --accent-blue-hover: #00b8cc;
+    --accent: #00d4e8;
+    --accent-glow: rgba(0, 212, 232, 0.25);
+    --accent-blue: #00d4e8;
+    --accent-blue-hover: #00abbe;
     
-    --bg-main: #0a0e17; /* Deeper, richer background */
-    --sidebar-bg: rgba(15, 20, 30, 0.95);
-    --card-bg: rgba(26, 31, 43, 0.7);
-    --bg-panel: rgba(22, 27, 34, 0.85);
+    --bg-main: #070a10;
+    --sidebar-bg: rgba(10, 13, 20, 0.98);
+    --card-bg: rgba(16, 20, 30, 0.85);
+    --bg-panel: rgba(13, 17, 26, 0.95);
     
-    --text-dark: #ffffff;
-    --text-light: #e2e8f0;
-    --text-muted: #94a3b8;
-    --text-panel-muted: #64748b;
+    --text-dark: #f0f4ff;
+    --text-light: #c8d0e0;
+    --text-muted: #6b7a99;
+    --text-panel-muted: #4a5568;
     
-    --border-light: rgba(255, 255, 255, 0.08);
-    --border-dark: rgba(255, 255, 255, 0.04); 
+    --border-light: rgba(255, 255, 255, 0.07);
+    --border-dark: rgba(255, 255, 255, 0.035); 
     
     --pitch-green: #3b823e;
     --pitch-light: #449647;
-    --color-win: #10b981; /* Modern Tailwind emerald */
-    --color-draw: #f59e0b; /* Modern Tailwind amber */
-    --color-loss: #ef4444; /* Modern Tailwind red */
+    --color-win: #00e096;
+    --color-draw: #f6a11a;
+    --color-loss: #ff4d6d;
     
-    --success: #10b981;
-    --danger: #ef4444;
+    --success: #00e096;
+    --danger: #ff4d6d;
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+
+    --font-display: 'Barlow Condensed', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
 } 
 
 * { 
     box-sizing: border-box; 
     margin: 0; 
     padding: 0; 
-    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; /* Modernized font stack */
+    font-family: var(--font-body);
 }  
 
 body { 
-    background: linear-gradient(rgba(10, 14, 23, 0.85), rgba(10, 14, 23, 0.95)), url('imagee.png');
+    background: var(--bg-main);
+    background-image: 
+        radial-gradient(ellipse 80% 60% at 50% -20%, rgba(0, 212, 232, 0.06) 0%, transparent 70%),
+        url('imagee.png');
     background-size: cover; 
     background-position: center; 
     background-attachment: fixed; 
@@ -51,173 +64,224 @@ body {
     display: flex; 
     height: 100vh; 
     overflow: hidden; 
-    backdrop-filter: blur(5px);
 }
 
 /* --- Custom Scrollbar --- */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
 /* --- Sidebar Styles --- */
 .sidebar {
-    width: 280px; /* Slightly wider for better breathing room */
+    width: 260px;
     background-color: var(--sidebar-bg);
-    padding: 24px;
+    padding: 28px 20px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-light);
-    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.4);
     z-index: 20;
+    position: relative;
+}
+
+.sidebar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.6;
 }
 
 .sidebar-header {
     display: flex;
     align-items: center;
-    gap: 15px;
-    margin-bottom: 40px;
+    gap: 13px;
+    margin-bottom: 36px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--border-light);
 }
 
 .sidebar-header img {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
     background-color: #ffffff;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+}
+
+.sidebar-header h2 {
+    font-family: var(--font-display);
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--text-dark);
+    text-transform: uppercase;
 }
 
 .nav-links { list-style: none; flex: 1; }
 
+.nav-section-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-panel-muted);
+    padding: 4px 14px 10px;
+    margin-top: 8px;
+}
+
 .nav-item {
-    padding: 14px 18px;
-    margin-bottom: 8px;
-    border-radius: 8px;
+    padding: 11px 16px;
+    margin-bottom: 3px;
+    border-radius: var(--radius-sm);
     cursor: pointer;
     color: var(--text-muted);
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 11px;
+    font-size: 0.875rem;
     font-weight: 500;
+    position: relative;
 } 
 
+.nav-item i {
+    width: 18px;
+    text-align: center;
+    font-size: 0.9rem;
+    transition: color 0.25s;
+}
+
 .nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.04);
     color: var(--text-light);
-    transform: translateX(4px);
+    transform: translateX(3px);
 } 
 
 .nav-item.active {
-    background-color: rgba(0, 229, 255, 0.1);
+    background: linear-gradient(90deg, rgba(0, 212, 232, 0.12), transparent);
     color: var(--accent);
     font-weight: 600;
-    border-left: 3px solid var(--accent);
+    border-left: 2px solid var(--accent);
+    padding-left: 14px;
 }
 
 /* --- User Profile & Dropdown --- */
 .user-profile {
     display: flex;
     align-items: center;
-    padding-top: 20px;
+    padding-top: 18px;
     border-top: 1px solid var(--border-light);
     position: relative;
+    gap: 11px;
 }
 
-.pfp-container { position: relative; }
+.pfp-container { position: relative; flex-shrink: 0; }
 
 .nav-pfp { 
-    width: 44px;
-    height: 44px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     cursor: pointer;
     object-fit: cover;
-    border: 2px solid transparent;
-    transition: all 0.3s ease;
+    border: 2px solid var(--border-light);
+    transition: all 0.25s ease;
+    display: block;
 }
 
 .nav-pfp:hover {
     border-color: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
+    box-shadow: 0 0 14px var(--accent-glow);
 }
 
 .dropdown-content {
     display: none;
     position: absolute;
-    bottom: 70px;
+    bottom: 62px;
     left: 0;
-    background-color: var(--sidebar-bg);
+    background: linear-gradient(160deg, rgba(14,18,28,0.99), rgba(10,13,20,0.99));
     border: 1px solid var(--border-light);
-    border-radius: 12px;
-    min-width: 240px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-    backdrop-filter: blur(10px);
+    border-radius: var(--radius-md);
+    min-width: 230px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,212,232,0.05);
+    backdrop-filter: blur(20px);
     z-index: 100;
     overflow: hidden; 
 }
 
-.dropdown-content.show { display: block; animation: fadeIn 0.2s ease-out; }
+.dropdown-content.show { display: block; animation: fadeIn 0.18s ease-out; }
 
 .user-info-header {
     display: flex;
     align-items: center; 
-    gap: 12px; 
-    padding: 18px; 
-    background-color: rgba(0, 0, 0, 0.4); 
+    gap: 11px; 
+    padding: 16px 18px; 
+    background: rgba(0, 0, 0, 0.3); 
     border-bottom: 1px solid var(--border-light);
 }
 
 #dropdownPfpDisplay {
-    width: 40px;
-    height: 40px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     object-fit: cover;
+    border: 1.5px solid var(--border-light);
 }
 
-.user-details { display: flex; flex-direction: column; }
+.user-details { display: flex; flex-direction: column; gap: 2px; }
+.user-details .name { font-size: 0.875rem; font-weight: 600; color: var(--text-dark); }
 
-.profile-menu-links { display: flex; flex-direction: column; padding: 8px 0; }
+.profile-menu-links { display: flex; flex-direction: column; padding: 6px 0; }
 
 .profile-menu-links a {
     color: var(--text-light);
     text-decoration: none;
-    padding: 12px 18px;
-    font-size: 0.9rem;
+    padding: 10px 18px;
+    font-size: 0.85rem;
     display: flex;
     align-items: center;
     gap: 10px;
     transition: all 0.2s;
+    color: var(--text-muted);
 }
 
+.profile-menu-links a i { width: 14px; text-align: center; }
+
 .profile-menu-links a:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    padding-left: 22px;
+    background-color: rgba(255, 255, 255, 0.04);
     color: var(--accent);
+    padding-left: 22px;
 }
 
 /* --- Main Content Area --- */
 .main-content {
     flex: 1;
-    padding: 40px 50px;
+    padding: 36px 44px;
     overflow-y: auto;
     position: relative;
+    background: linear-gradient(180deg, rgba(0,212,232,0.02) 0%, transparent 300px);
 }
 
-.pane { display: none; color: #ffffff; }
-.pane.active { display: block; animation: slideUp 0.5s ease; }
+.pane { display: none; color: var(--text-dark); }
+.pane.active { display: block; animation: slideUp 0.4s ease; }
 
 @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.pane-header { margin-bottom: 40px; }
+.pane-header { margin-bottom: 36px; }
 .pane-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 8px;
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    margin-bottom: 6px;
     color: var(--text-dark);
-    letter-spacing: -0.5px;
-    font-weight: 700;
+    letter-spacing: 1px;
+    font-weight: 800;
+    line-height: 1;
+    text-transform: uppercase;
 }
 
 /* --- Top Stats Header --- */
@@ -225,48 +289,61 @@ body {
     display: flex;  
     align-items: center; 
     justify-content: space-between;  
-    margin-bottom: 40px; 
+    margin-bottom: 36px; 
 } 
 
-.team-identity { display: flex; align-items: center; gap: 25px; } 
+.team-identity { display: flex; align-items: center; gap: 22px; } 
 
 .main-team-logo { 
-    width: 110px; 
-    height: 110px; 
+    width: 96px; 
+    height: 96px; 
     border-radius: 50%; 
     display: flex; 
     align-items: center; 
     justify-content: center;  
     color: var(--bg-main); 
-    font-size: 32px; 
+    font-size: 28px; 
     font-weight: 800;
+    border: 2px solid var(--border-light);
+    box-shadow: 0 0 0 4px rgba(0,212,232,0.08), 0 8px 24px rgba(0,0,0,0.4);
 }  
 
 .team-identity h1 { 
-    font-size: 36px; 
+    font-family: var(--font-display);
+    font-size: 32px; 
     margin: 0; 
-    letter-spacing: -0.5px; 
+    letter-spacing: 2px; 
     text-transform: uppercase; 
     font-weight: 800;
+    line-height: 1;
 }   
 
 .team-identity p { 
-    font-size: 15px; 
+    font-size: 13px; 
     color: var(--text-muted); 
     margin-top: 8px; 
     display: flex; 
     align-items: center; 
-    gap: 8px; 
+    gap: 7px; 
 } 
 
-.quick-stats-row { display: flex; gap: 40px; } 
+.quick-stats-row { display: flex; gap: 6px; } 
 
-.stat-block { text-align: right; }
+.stat-block { 
+    text-align: center; 
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    min-width: 54px;
+}
 .stat-block .value { 
     display: block; 
-    font-size: 28px; 
-    font-weight: 800; 
+    font-family: var(--font-display);
+    font-size: 22px; 
+    font-weight: 700; 
     color: var(--text-dark);
+    line-height: 1;
 } 
 .stat-block .label { 
     display: block; 
@@ -279,39 +356,38 @@ body {
 
 /* --- White/Dark Dashboard Panel --- */
 .dashboard-panel {
-    background-color: var(--bg-panel);
-    border-radius: 20px;
+    background: linear-gradient(160deg, rgba(16,20,30,0.95), rgba(10,13,20,0.98));
+    border-radius: var(--radius-lg);
     color: var(--text-dark);
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-    border: 1px solid var(--border-light);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px var(--border-light);
+    border: none;
     overflow: hidden;
-    backdrop-filter: blur(10px);
 }
 
 .panel-body {
-    padding: 35px;
+    padding: 30px;
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr; /* Adjusted ratio for better desktop view */
-    gap: 35px;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 28px;
 } 
 
 .section-title {
     letter-spacing: 2px;
-    border-left: 4px solid var(--accent-blue);
-    padding-left: 14px;
-    margin-bottom: 25px;
-    font-size: 14px;
+    border-left: 3px solid var(--accent-blue);
+    padding-left: 12px;
+    margin-bottom: 20px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
-    color: var(--text-dark);
+    color: var(--text-muted);
     display: flex;
     justify-content: space-between;
     align-items: center;
 } 
 
-.section-title span { color: var(--text-panel-muted); font-weight: 500; font-size: 12px; }
+.section-title span { color: var(--text-panel-muted); font-weight: 500; font-size: 11px; }
 
 /* --- Tactical Pitch --- */
 .pitch-container {
@@ -335,32 +411,34 @@ body {
 
 /* --- Widgets (Form, Fixtures, Stats) --- */
 .widget {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 25px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 20px;
     border: 1px solid var(--border-light);
-    border-radius: 16px;
-    margin-bottom: 25px;
-    transition: transform 0.3s, box-shadow 0.3s;
+    border-radius: var(--radius-md);
+    margin-bottom: 20px;
+    transition: transform 0.25s, box-shadow 0.25s;
 }
 
 .widget:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
 }
 
-.form-row { display: flex; gap: 10px; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 .form-badge {
-    width: 38px; height: 38px;
-    border-radius: 8px; 
+    width: 36px; height: 36px;
+    border-radius: 7px; 
     color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 15px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    font-family: var(--font-display);
+    font-weight: 800; font-size: 14px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
 } 
-.form-badge.w { background: var(--color-win); }
-.form-badge.d { background: var(--color-draw); }
-.form-badge.l { background: var(--color-loss); }
+.form-badge.w { background: var(--color-win); color: #003d22; }
+.form-badge.d { background: var(--color-draw); color: #3d2800; }
+.form-badge.l { background: var(--color-loss); color: #fff; }
 
 .fixture-card { 
     display: flex; 
@@ -387,21 +465,21 @@ body {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 } 
 
-.stat-bar-row { margin-bottom: 20px; }
+.stat-bar-row { margin-bottom: 18px; }
 .stat-bar-labels { 
     display: flex; justify-content: space-between; 
-    font-size: 13px; margin-bottom: 8px; font-weight: 500;
+    font-size: 12px; margin-bottom: 7px; font-weight: 500;
     color: var(--text-light);
 }
 .stat-bar-outer { 
-    width: 100%; height: 8px; 
-    background: var(--border-dark); 
-    border-radius: 4px; overflow: hidden; 
+    width: 100%; height: 5px; 
+    background: rgba(255,255,255,0.05); 
+    border-radius: 3px; overflow: hidden; 
 }
 .stat-bar-inner { 
-    height: 100%; background: var(--accent); 
-    border-radius: 4px; 
-    box-shadow: 0 0 10px var(--accent-glow);
+    height: 100%; background: linear-gradient(90deg, var(--accent-blue-hover), var(--accent)); 
+    border-radius: 3px; 
+    box-shadow: 0 0 8px var(--accent-glow);
 }
 
 /* --- Right Column (Info List) --- */
@@ -462,60 +540,63 @@ body {
 
 /* --- Footer Honours --- */
 .honours-footer {
-    background-color: rgba(11, 21, 40, 0.9);
-    padding: 25px 40px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 22px 30px;
     display: flex;
     align-items: center;
     border-top: 1px solid var(--border-light);
 }
 .honours-title {
-    font-size: 15px; font-weight: 800; text-transform: uppercase;
-    color: var(--text-dark); margin-right: 50px;
-    letter-spacing: 1.5px;
+    font-family: var(--font-display);
+    font-size: 13px; font-weight: 800; text-transform: uppercase;
+    color: var(--text-muted); margin-right: 44px;
+    letter-spacing: 2px;
 }
 .honours-list { display: flex; flex: 1; justify-content: space-between; }
-.honour-item { display: flex; align-items: center; gap: 15px; }
-.honour-icon { font-size: 28px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.4)); }
-.honour-details h4 { margin: 0; font-size: 20px; color: var(--text-dark); font-weight: 700; }
-.honour-details p { margin: 0; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
+.honour-item { display: flex; align-items: center; gap: 13px; }
+.honour-icon { font-size: 26px; filter: drop-shadow(0 0 8px rgba(255,215,0,0.3)); }
+.honour-details h4 { margin: 0; font-family: var(--font-display); font-size: 22px; color: var(--text-dark); font-weight: 800; line-height: 1; }
+.honour-details p { margin: 4px 0 0; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;}
 
 /* --- Teams Pane specifics --- */
 .team-tab {
-    display: flex; align-items: center; gap: 12px; 
-    padding: 12px 20px; background: rgba(255,255,255,0.05);
-    border-radius: 8px; cursor: pointer; transition: 0.3s;
+    display: flex; align-items: center; gap: 10px; 
+    padding: 10px 18px; background: rgba(255,255,255,0.03);
+    border-radius: var(--radius-sm); cursor: pointer; transition: 0.25s;
+    font-size: 0.85rem;
 }
-.team-tab:hover { background: rgba(255,255,255,0.1); }
-.team-tab.active { background: var(--accent); color: #000; font-weight: 600; box-shadow: 0 4px 15px var(--accent-glow);}
+.team-tab:hover { background: rgba(255,255,255,0.07); color: var(--text-light); }
+.team-tab.active { background: rgba(0, 212, 232, 0.12); color: var(--accent); font-weight: 600; border: 1px solid rgba(0,212,232,0.25); box-shadow: 0 2px 14px var(--accent-glow);}
 .team-tab-logo {
-    width: 30px; height: 30px; border-radius: 50%;
-    background: white; color: #000;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(255,255,255,0.08); color: var(--text-light);
     display: flex; align-items: center; justify-content: center;
-    font-weight: bold;
+    font-weight: bold; font-size: 0.75rem; flex-shrink: 0; overflow: hidden;
 }
 .team-honors-container {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px; padding: 25px; margin-top: 20px;
+    gap: 16px; padding: 20px; margin-top: 16px;
 }
 .honor-card {
-    background: rgba(0,0,0,0.2); border: 1px solid var(--border-light);
-    border-radius: 16px; padding: 20px; text-align: center;
-    transition: all 0.3s ease;
+    background: rgba(255,255,255,0.02); border: 1px solid var(--border-light);
+    border-radius: var(--radius-md); padding: 18px; text-align: center;
+    transition: all 0.25s ease;
 }
 .honor-card:hover {
-    border-color: var(--accent); background: rgba(0, 229, 255, 0.08);
-    transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border-color: rgba(0, 212, 232, 0.3); background: rgba(0, 212, 232, 0.05);
+    transform: translateY(-4px); box-shadow: 0 10px 24px rgba(0,0,0,0.3);
 }
 .honor-label {
+    font-family: var(--font-display);
     font-size: 11px; color: var(--accent); text-transform: uppercase;
-    letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 600;
+    letter-spacing: 1.5px; margin-bottom: 8px; font-weight: 700;
 }
 .honor-name {
-    font-size: 16px; font-weight: 700; white-space: nowrap;
-    overflow: hidden; text-overflow: ellipsis; color: var(--text-dark); margin-bottom: 5px;
+    font-size: 15px; font-weight: 700; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; color: var(--text-dark); margin-bottom: 4px;
 }
-.honor-stat { font-size: 13px; color: var(--text-muted); }
-.honor-logo-wrapper img { display: block; margin: 0 auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+.honor-stat { font-size: 12px; color: var(--text-muted); }
+.honor-logo-wrapper img { display: block; margin: 0 auto; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.4)); }
 
 /* --- Trend Indicators & Progress --- */
 .trend-up { color: var(--success); font-size: 0.8rem; }
@@ -523,8 +604,8 @@ body {
 .trend-steady { color: var(--text-muted); font-size: 0.8rem; }
 
 .season-progress-container {
-    background: var(--border-dark); height: 10px; border-radius: 5px;
-    margin: 20px 0; overflow: hidden; box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+    background: rgba(255,255,255,0.04); height: 6px; border-radius: 3px;
+    margin: 16px 0; overflow: hidden;
 }
 .progress-fill {
     background: linear-gradient(90deg, var(--accent-blue-hover), var(--accent));
@@ -534,58 +615,74 @@ body {
 
 /* --- Breaking News Ticker --- */
 .news-ticker {
-    background: rgba(0, 0, 0, 0.85); border-bottom: 1px solid var(--accent);
-    padding: 12px 0; overflow: hidden; white-space: nowrap;
-    position: sticky; top: -20px; z-index: 10;
-    margin: -40px -50px 40px -50px; backdrop-filter: blur(5px);
+    background: rgba(0, 0, 0, 0.7);
+    border-bottom: 1px solid rgba(0, 212, 232, 0.2);
+    padding: 10px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    position: sticky;
+    top: -20px;
+    z-index: 10;
+    margin: -36px -44px 36px -44px;
+    backdrop-filter: blur(10px);
 }
 .ticker-content { display: inline-block; animation: ticker 40s linear infinite; padding-left: 100%; }
 .ticker-content:hover { animation-play-state: paused; }
-.ticker-item { display: inline-block; padding: 0 40px; font-size: 0.9rem; color: var(--text-light); }
-.ticker-item span { color: var(--accent); font-weight: 700; margin-right: 8px; text-transform: uppercase; letter-spacing: 1px;}
+.ticker-item { display: inline-block; padding: 0 36px; font-size: 0.8rem; color: var(--text-muted); letter-spacing: 0.3px; }
+.ticker-item span { color: var(--accent); font-weight: 700; margin-right: 8px; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font-display); }
 @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
 /* --- Dashboard Grid & Cards (General) --- */
 .dashboard-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px; margin-bottom: 40px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px; margin-bottom: 36px;
 }
 .card {
-    background-color: var(--card-bg); padding: 30px;
-    border-radius: 16px; border: 1px solid var(--border-light);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2); transition: transform 0.3s;
+    background: linear-gradient(160deg, rgba(18,22,34,0.9), rgba(12,16,24,0.95));
+    padding: 26px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-light);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transition: transform 0.25s, box-shadow 0.25s;
+    position: relative;
+    overflow: hidden;
 }
-.card:hover { transform: translateY(-4px); }
-.big-data { font-size: 3rem; font-weight: 800; color: var(--accent); margin-top: 15px; letter-spacing: -1px; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 14px 36px rgba(0,0,0,0.35); }
+.card h3 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); margin-bottom: 4px; }
+.big-data { font-family: var(--font-display); font-size: 3.4rem; font-weight: 900; color: var(--accent); margin-top: 10px; letter-spacing: -1px; line-height: 1; }
 
 /* --- Tables --- */
 .table-container {
-    background-color: var(--card-bg); border-radius: 16px;
+    background: linear-gradient(160deg, rgba(14,18,28,0.9), rgba(10,13,20,0.95));
+    border-radius: var(--radius-md);
     border: 1px solid var(--border-light); overflow: hidden;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
 }
 table { width: 100%; border-collapse: collapse; text-align: left; }
-th, td { padding: 18px 25px; border-bottom: 1px solid var(--border-dark); }
+th, td { padding: 15px 22px; border-bottom: 1px solid var(--border-dark); }
 th {
     color: var(--text-muted); font-weight: 700;
-    background-color: rgba(0, 0, 0, 0.4); text-transform: uppercase;
-    font-size: 0.8rem; letter-spacing: 1.5px;
+    background: rgba(0, 0, 0, 0.3); text-transform: uppercase;
+    font-size: 0.7rem; letter-spacing: 1.5px;
 }
-tr:hover td { background-color: rgba(255,255,255,0.02); }
+tr:hover td { background-color: rgba(0, 212, 232, 0.025); }
 tr:last-child td { border-bottom: none; }
 .rank { color: var(--text-muted); font-weight: 700; }
-.pts { color: var(--accent); font-weight: 800; font-size: 1.1rem; }
+.pts { font-family: var(--font-display); color: var(--accent); font-weight: 800; font-size: 1.1rem; }
 
 /* --- Fixtures list override --- */
-.fixture-list { display: flex; flex-direction: column; gap: 18px; }
+.fixture-list { display: flex; flex-direction: column; gap: 14px; }
 .fixture-list .fixture-card {
-    background-color: var(--card-bg); padding: 20px 25px;
-    border-radius: 12px; border: 1px solid var(--border-light);
+    background: linear-gradient(135deg, rgba(16,20,30,0.9), rgba(12,16,24,0.95));
+    padding: 18px 22px;
+    border-radius: var(--radius-md); border: 1px solid var(--border-light);
     display: flex; justify-content: space-between; align-items: center;
+    transition: border-color 0.2s, transform 0.2s;
 }
-.matchup { font-size: 1.2rem; font-weight: 700; color: var(--text-dark); }
-.matchup .vs { color: var(--accent); margin: 0 18px; font-size: 0.95rem; font-style: italic;}
-.match-time { text-align: right; color: var(--text-muted); font-size: 0.95rem; line-height: 1.5; }
+.fixture-list .fixture-card:hover { border-color: rgba(0,212,232,0.2); transform: translateX(3px); }
+.matchup { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--text-dark); letter-spacing: 0.5px; }
+.matchup .vs { color: var(--accent); margin: 0 16px; font-size: 0.85rem; font-weight: 600; }
+.match-time { text-align: right; color: var(--text-muted); font-size: 0.85rem; line-height: 1.6; }
 
 .empty-state {
     padding: 50px; text-align: center; color: var(--text-muted);
@@ -898,19 +995,22 @@ tr:last-child td { border-bottom: none; }
 
     
 .light-theme{
- --bg-main:#f5f7fb;
+ --bg-main:#f0f2f8;
  --sidebar-bg:#ffffff;
  --card-bg:#ffffff;
- --bg-panel:#ffffff;
- --text-dark:#111827;
- --text-light:#374151;
- --text-muted:#6b7280;
- color:#111827;
+ --bg-panel:#f8f9fc;
+ --text-dark:#0f1520;
+ --text-light:#2d3748;
+ --text-muted:#718096;
+ --border-light:rgba(0,0,0,0.08);
+ --border-dark:rgba(0,0,0,0.04);
+ color:#0f1520;
 }
 .skeleton{
- background:linear-gradient(90deg,#222,#333,#222);
+ background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08), rgba(255,255,255,0.03));
  background-size:200% 100%;
  animation:skeletonLoading 1.5s infinite;
+ border-radius:6px;
 }
 @keyframes skeletonLoading{
  0%{background-position:200% 0}
@@ -928,24 +1028,32 @@ width:100% !important;
 display:flex;
 justify-content:space-around;
 align-items:center;
-height:65px;
+height:62px;
 padding:0;
-background:#000 !important;
-backdrop-filter:blur(10px);
--webkit-backdrop-filter:blur(10px);
-border-top:1px solid #111 !important;
+background:rgba(7,10,16,0.97) !important;
+backdrop-filter:blur(20px);
+-webkit-backdrop-filter:blur(20px);
+border-top:1px solid rgba(0,212,232,0.1) !important;
 z-index:99999 !important;
 }
 .mobile-bottom-nav a{
-color:#00e5ff !important;
+color:var(--text-muted) !important;
 text-decoration:none;
-font-size:22px;
+font-size:20px;
 display:flex;
 align-items:center;
 justify-content:center;
+width:48px;height:48px;
+border-radius:12px;
+transition:all 0.2s;
+}
+.mobile-bottom-nav a:hover,
+.mobile-bottom-nav a.active{
+color:var(--accent) !important;
+background:rgba(0,212,232,0.08);
 }
 @media(max-width:768px){
-.mobile-bottom-nav{display:flex;}
+.mobile-bottom-nav{display:flex !important;}
 .main-content{padding-bottom:80px!important;}
 }
 
@@ -954,15 +1062,37 @@ justify-content:center;
 
 
 #themeToggleBottom{
-width:100%;
-margin-top:12px;
-padding:10px;
-border:none;
-border-radius:10px;
-background:#00e5ff;
-color:#000;
-font-weight:700;
-cursor:pointer;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-light);
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    position: relative;
+}
+#themeToggleBottom::before {
+    content: '\f0eb'; /* fa-lightbulb */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+}
+#themeToggleBottom:hover{
+    background: rgba(0,212,232,0.1);
+    border-color: rgba(0,212,232,0.3);
+    color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow);
+}
+.light-theme #themeToggleBottom {
+    color: #f6a11a;
+    border-color: rgba(246,161,26,0.3);
+    background: rgba(246,161,26,0.08);
 }
 @media(max-width:768px){
 .sidebar .nav-links{display:none !important;}
@@ -1003,21 +1133,6 @@ width:65px!important;
 height:65px!important;
 }
 .bottom-stats h3{font-size:14px!important;}
-}
-
-
-.mobile-bottom-nav{
-background:#000 !important;
-border-top:1px solid #111 !important;
-}
-.mobile-bottom-nav a i{
-color:#00e5ff !important;
-font-size:20px !important;
-}
-.mobile-bottom-nav a.active i,
-.mobile-bottom-nav a:hover i{
-color:#00e5ff !important;
-filter:drop-shadow(0 0 6px rgba(0,229,255,.7));
 }
 
 
@@ -1666,6 +1781,31 @@ letter-spacing:.5px;
 
 </style>
 
+
+<style id="standings-tabs-v27">
+.standings-tabs{display:flex;gap:8px;margin-bottom:15px;padding:6px;background:#000;border:1px solid #333;border-radius:14px}
+.standings-tabs button{flex:1;border:none;background:transparent;color:#fff;padding:12px;border-radius:10px;font-weight:700;cursor:pointer}
+.standings-tabs button.active{background:#ffffff;color:#000000}
+@media(max-width:768px){
+.standings-short table{min-width:100%!important;width:100%!important}
+.standings-form table{min-width:100%!important;width:100%!important}
+}
+</style>
+
+<style id="v28-form-row-fix">
+.standings-form td{
+white-space:nowrap !important;
+}
+.standings-form td .form-badge{
+display:inline-flex !important;
+margin-right:6px !important;
+vertical-align:middle !important;
+}
+.standings-form table{
+width:100% !important;
+}
+</style>
+
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1696,10 +1836,11 @@ letter-spacing:.5px;
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <img src="logoo.png" alt="EEPL" onerror="this.src='https://via.placeholder.com/40x40/000000/00e5ff?text=EEPL'">
+            <img src="logoo.png" alt="EEPL" onerror="this.src='https://via.placeholder.com/40x40/000000/00d4e8?text=E'">
             <h2>EEPL</h2>
         </div>
        <ul class="nav-links" id="navLinks">
+            <div class="nav-section-label">Navigation</div>
             <li class="nav-item active" onclick="switchPane('pane-overview', this)">
                 <i class="fa-solid fa-house"></i> Overview
             </li>
@@ -1712,15 +1853,16 @@ letter-spacing:.5px;
             <li class="nav-item" onclick="switchPane('pane-stats', this)">
                 <i class="fa-solid fa-chart-simple"></i> Player Stats
             </li>
+            <div class="nav-section-label" style="margin-top:10px;">Club</div>
             <li class="nav-item" onclick="switchPane('pane-teams', this)">
-                <i class="fa-solid fa-scroll"></i> Teams
+                <i class="fa-solid fa-users"></i> My Team
             </li>
             <li class="nav-item" onclick="switchPane('pane-rules', this)">
-                <i class="fa-solid fa-scroll"></i> League Rules
+                <i class="fa-solid fa-book"></i> League Hub
             </li>
         </ul>
 
-        <div class="user-profile">
+        <div class="user-profile" style="margin-top:14px;">
             <div class="pfp-container">
                 <img src="" id="navPfpDisplay" class="nav-pfp" onclick="toggleUserMenu(event)">
                 
@@ -1729,23 +1871,24 @@ letter-spacing:.5px;
                         <img src="" id="dropdownPfpDisplay">
                         <div class="user-details">
                             <span class="name" id="dropdownName">Player</span>
-                            <span class="rank" style="font-size: 10px; color: var(--accent);">Authorized Entity</span>
+                            <span style="font-size: 10px; color: var(--accent); letter-spacing: 0.5px;">Authorized Entity</span>
                         </div>
                     </div>
                     <div class="profile-menu-links">
                         <a href="profile.html"><i class="fas fa-user-circle"></i> View Profile</a>
                         <a href="#" onclick="triggerPfpUpload()"><i class="fas fa-camera"></i> Change Avatar</a>
-                        <a href="donate.html"><i class="fas fa-cog"></i> Donations</a>
-                        <hr style="border: 0.5px solid #222; margin: 8px 0;">
-                        <a href="#" onclick="logout(); return false;" style="color: #ff4d4d;"><i class="fas fa-sign-out-alt"></i> Log out</a>
+                        <a href="donate.html"><i class="fas fa-heart"></i> Donations</a>
+                        <hr style="border: 0.5px solid rgba(255,255,255,0.06); margin: 6px 0;">
+                        <a href="#" onclick="logout(); return false;" style="color: var(--danger) !important;"><i class="fas fa-sign-out-alt"></i> Log out</a>
                     </div>
                     <input type="file" id="pfpInput" style="display:none" accept="image/*" onchange="updatePfp(this)">
                 </div>
             </div>
-            <div class="user-text" style="flex: 1; margin-left: 10px;">
-                <span id="displayUsername" style="display: block; font-weight: bold; font-size: 0.85rem;">Manager</span>
-                <span style="font-size: 0.7rem; color: var(--text-muted);">Pro Status</span>
+            <div class="user-text" style="flex: 1;">
+                <span id="displayUsername" style="display: block; font-weight: 600; font-size: 0.85rem; color: var(--text-dark);">Manager</span>
+                <span style="font-size: 0.7rem; color: var(--accent); letter-spacing: 0.5px;">Pro Status</span>
             </div>
+            <button id="themeToggleBottom" title="Toggle Theme"></button>
         </div>
     
 </aside>
@@ -1758,7 +1901,7 @@ letter-spacing:.5px;
     <div class="ticker-content" id="newsContent">
         <div class="ticker-item"><span>LOADING:</span> Fetching latest league news...</div></div></div>
             <div class="pane-header">
-                <h1>Welcome, <span id="welcomeName" style="color: #00e5ff; -webkit-text-stroke: 0.01px rgb(17, 161, 172);">Manager</span></h1>
+                <h1>Welcome, <span id="welcomeName" style="color: var(--accent);">Manager</span></h1>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <p id="seasonStatus">Loading season data...</p>
                     <span id="matchdayCounter" style="background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; font-size: 0.8rem;">Matchday: --</span>
@@ -1941,8 +2084,8 @@ letter-spacing:.5px;
 
         <section id="pane-standings" class="pane">
             <div class="pane-header">
-                <h1><img src="logoo.png" style="height: 90px; width: auto; vertical-align: middle; margin-right: 10px;">Elite Pro League Standings</h1>
-                <p style="font-family: cursive;"> THE NEW ERA OF FOOTBALL...</p>
+                <h1><img src="logoo.png" style="height: 72px; width: auto; vertical-align: middle; margin-right: 12px; opacity:0.95;">Elite Pro League Standings</h1>
+                <p style="color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 6px;">The New Era of Football</p>
             </div>
             
             <div id="standingsContent">
@@ -2643,95 +2786,65 @@ function loadLeagueData() {
 let previousRanks = JSON.parse(localStorage.getItem("eepl_prevRanks")) || {};
 let movementState = JSON.parse(localStorage.getItem("eepl_movement")) || {};
 
+
+window.standingsView='full';
+function setStandingsView(v){window.standingsView=v;if(window.lastLeagueDb)renderStandings(window.lastLeagueDb);}
+
 function renderStandings(db) {
-    if (!db.teams || db.teams.length === 0) return;
+window.lastLeagueDb=db;
+if (!db.teams || db.teams.length === 0) return;
+let sortedTeams=[...db.teams].sort((a,b)=>b.pts-a.pts||((b.gd||0)-(a.gd||0)));
+let view=window.standingsView||'full';
 
-    let sortedTeams = [...db.teams].sort((a, b) => b.pts - a.pts || (b.gd || 0) - (a.gd || 0));
+let html=`<div class="standings-tabs">
+<button class="${view==='short'?'active':''}" onclick="setStandingsView('short')">Short</button>
+<button class="${view==='full'?'active':''}" onclick="setStandingsView('full')">Full</button>
+<button class="${view==='form'?'active':''}" onclick="setStandingsView('form')">Form</button>
+</div><div class="table-container standings-${view}"><table><thead><tr>`;
 
-    let html = `
-    <div class="table-container">
-        <table>
-            <thead>
-                <tr>
-                    <th>Pos</th>
-                    <th>Team</th>
-                    <th>P</th><th>W</th><th>D</th><th>L</th>
-                    <th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th></th>
-                </tr>
-            </thead>
-            <tbody>`;
+if(view==='short'){
+html+=`<th>Pos</th><th>Team</th><th>P</th><th>W</th><th>GD</th><th>Pts</th><th></th>`;
+}else if(view==='form'){
+html+=`<th>Pos</th><th>Team</th><th>Form</th><th></th>`;
+}else{
+html+=`<th>Pos</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>Pts</th><th></th>`;
+}
+html+=`</tr></thead><tbody>`;
 
-    let newRanks = {}; 
+sortedTeams.forEach((t,index)=>{
+let pos=index+1;
+let prev=previousRanks[t.id];
+let arrow=movementState[t.id]||`<span style="color:#aaa;font-weight:900;">—</span>`;
+if(prev!==undefined){if(pos<prev)arrow=`<span style="color:#00ff88;font-weight:900;">▲</span>`;else if(pos>prev)arrow=`<span style="color:#ff4d4d;font-weight:900;">▼</span>`;}
+let rowStyle="";
+if(pos<=3) rowStyle='background:rgba(0,229,255,.08);border-left:4px solid #00e5ff;';
+if(pos>sortedTeams.length-3 && sortedTeams.length>5) rowStyle='background:rgba(255,0,85,.08);border-left:4px solid #ff0055;';
+if(t.name.toLowerCase()===userName.toLowerCase()) rowStyle+='font-weight:bold;color:var(--accent);';
+let logo=t.logo||`https://ui-avatars.com/api/?name=${t.name}`;
 
-    sortedTeams.forEach((t, index) => {
-        let pos = index + 1;
+html+=`<tr style="${rowStyle}"><td>${pos}</td><td style="display:flex;align-items:center;gap:12px"><img src="${logo}" style="width:40px;height:40px;border-radius:50%"><span>${t.name}</span></td>`;
 
-        // MOVEMENT LOGIC
-        let prev = previousRanks[t.id];
-        let arrow = movementState[t.id] || `<span style="color:#aaa;font-weight:900;">—</span>`;
-        let arrowColor = "#888";
-
-        if (prev !== undefined) {
-            if (pos < prev) {
-                arrow = `<span style="color:#00ff88; font-weight:900;">▲</span>`;
-            } else if (pos > prev) {
-                arrow = `<span style="color:#ff4d4d; font-weight:900;">▼</span>`;
-            }
-        }
-
-        // Store NEW position for next render calculation
-        newRanks[t.id] = pos;
-
-        // TOP 3 STYLE
-        let rowStyle = "";
-        if (pos <= 3) {
-            rowStyle = `background: rgba(0, 229, 255, 0.08); border-left: 4px solid #00e5ff;`;
-        }
-
-        // BOTTOM 3 STYLE
-        if (pos > sortedTeams.length - 3 && sortedTeams.length > 5) {
-            rowStyle = `background: rgba(255, 0, 85, 0.08); border-left: 4px solid #ff0055;`;
-        }
-
-        // USER HIGHLIGHT
-        let isMe = t.name.toLowerCase() === userName.toLowerCase();
-        if (isMe) {
-            rowStyle += `font-weight:bold; color:var(--accent);`;
-        }
-
-        let logoUrl = t.logo || `https://ui-avatars.com/api/?name=${t.name}`;
-
-        html += `
-        <tr style="${rowStyle}">
-            <td class="rank">${pos}</td>
-            <td class="team-name" style="font-size: 16px; display: flex; align-items: center; gap: 15px; padding: 10px 5px;">
-                <img src="${logoUrl}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
-                <span style="font-weight: 600; color: #fff;">${t.name}</span>
-            </td>
-            <td>${t.p || 0}</td>
-            <td>${t.w || 0}</td>
-            <td>${t.d || 0}</td>
-            <td>${t.l || 0}</td>
-            <td>${t.gf || 0}</td>
-            <td>${t.ga || 0}</td>
-            <td>${(t.gd || 0) > 0 ? '+' + t.gd : (t.gd || 0)}</td>
-            <td class="pts">${t.pts || 0}</td>
-            <td style="font-size:16px; font-weight:bold; color:${arrowColor};">
-                ${arrow}
-            </td>
-        </tr>`;
-    });
-
-    html += `</tbody></table></div>`;
-
-    const container = document.getElementById('standingsContent');
-    if (container) container.innerHTML = html;
-
-    // 2. IMMEDIATELY UPDATE THE TOP 3 WIDGET
-    updateTop3Widget(sortedTeams);
-
-    // UPDATE PREVIOUS RANKS & MOVEMENT STATE
-    updateMovement(db);
+if(view==='short'){
+html+=`<td>${t.p||0}</td><td>${t.w||0}</td><td>${(t.gd||0)>0?'+'+t.gd:(t.gd||0)}</td><td class="pts">${t.pts||0}</td><td>${arrow}</td>`;
+}else if(view==='form'){
+let matches=(db.fixtures||[]).filter(f=>f.status==='completed'&&(f.homeId===t.id||f.awayId===t.id)).slice(-5);
+let form=matches.map(f=>{
+let home=f.homeId===t.id;
+let gf=home?f.homeScore:f.awayScore;
+let ga=home?f.awayScore:f.homeScore;
+if(gf>ga)return '<span class="form-badge w">W</span>';
+if(gf<ga)return '<span class="form-badge l">L</span>';
+return '<span class="form-badge d">D</span>';
+}).join('');
+html+=`<td>${form||'-'}</td><td>${arrow}</td>`;
+}else{
+html+=`<td>${t.p||0}</td><td>${t.w||0}</td><td>${t.d||0}</td><td>${t.l||0}</td><td>${t.gf||0}</td><td>${t.ga||0}</td><td>${(t.gd||0)>0?'+'+t.gd:(t.gd||0)}</td><td class="pts">${t.pts||0}</td><td>${arrow}</td>`;
+}
+html+='</tr>';
+});
+html+='</tbody></table></div>';
+document.getElementById('standingsContent').innerHTML=html;
+updateTop3Widget(sortedTeams);updateMovement(db);
 }
 
 function updateMovement(db) {
