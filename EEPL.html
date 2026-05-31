@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EEPL | League Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/png" sizes="32x32" href="logo.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -22,7 +23,7 @@
     
     --text-dark: #f0f4ff;
     --text-light: #c8d0e0;
-    --text-muted: #6b7a99;
+    --text-muted: #bed0f3;
     --text-panel-muted: #4a5568;
     
     --border-light: rgba(255, 255, 255, 0.07);
@@ -51,6 +52,10 @@
     padding: 0; 
     font-family: var(--font-body);
 }  
+
+body.light-theme img[src="invert.png"] {
+    filter: invert(1);
+}
 
 body { 
     background: var(--bg-main);
@@ -107,7 +112,6 @@ body {
     width: 40px;
     height: 40px;
     border-radius: 10px;
-    background-color: #ffffff;
     box-shadow: 0 4px 14px rgba(0,0,0,0.4);
 }
 
@@ -1775,8 +1779,8 @@ letter-spacing:.5px;
 }
 
 #pane-standings table{
-    min-width:900px !important;
-    width:max-content !important;
+    min-width:auto !important;
+    max-width:auto !important;
 }
 
 </style>
@@ -1908,7 +1912,7 @@ body:not(.light-theme) #bg-overlay { display: block; }
 
     <aside class="sidebar">
         <div class="sidebar-header">
-            <img src="logoo.png" alt="EEPL" onerror="this.src='https://via.placeholder.com/40x40/000000/00d4e8?text=E'">
+            <img style="height: auto; width: 80px; cursor: pointer; transition: transform 0.2s;" src="invert.png" alt="EEPL" onerror="this.src='https://via.placeholder.com/40x40/000000/00d4e8?text=E'" onclick="switchPane('pane-overview', document.querySelectorAll('.nav-item')[0])" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
             <h2>EEPL</h2>
         </div>
        <ul class="nav-links" id="navLinks">
@@ -2155,10 +2159,22 @@ body:not(.light-theme) #bg-overlay { display: block; }
         </section>
 
         <section id="pane-standings" class="pane">
-            <div class="pane-header">
-                <h1><img src="logoo.png" style="height: 72px; width: auto; vertical-align: middle; margin-right: 12px; opacity:0.95;">Elite Pro League Standings</h1>
-                <p style="color: var(--text-muted); font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; margin-top: 6px;">The New Era of Football</p>
-            </div>
+            <div class="pane-header" style="display: flex; align-items: center; gap: 20px; margin-bottom: 30px;">
+    
+    <div style="flex-shrink: 0;">
+        <img src="invert.png" style="height: 120px; width: auto; opacity: 0.95; object-fit: contain;">
+    </div>
+
+    <div style="display: flex; flex-direction: column; justify-content: center;">
+        <h1 style="margin: 0; font-size: 2rem; color: var(--text-dark); font-weight: 800; letter-spacing: -0.5px;">
+            Elite Pro League Standings
+        </h1><br>
+        <p style="margin: 5px 0 0 0; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; font-weight: 600;">
+            The New Era of Football...
+        </p>
+    </div>
+    
+</div>
             
             <div id="standingsContent">
                 </div>
@@ -2894,7 +2910,12 @@ if(pos>sortedTeams.length-3 && sortedTeams.length>5) rowStyle='background:rgba(2
 if(t.name.toLowerCase()===userName.toLowerCase()) rowStyle+='font-weight:bold;color:var(--accent);';
 let logo=t.logo||`https://ui-avatars.com/api/?name=${t.name}`;
 
-html+=`<tr style="${rowStyle}"><td>${pos}</td><td style="display:flex;align-items:center;gap:12px"><img src="${logo}" style="width:40px;height:40px;border-radius:50%"><span>${t.name}</span></td>`;
+html += `<tr style="${rowStyle}">
+    <td>${pos}</td>
+    <td style="display:flex;align-items:center;gap:12px">
+        <img src="${logo}" style="width:40px;height:40px;border-radius:50%; cursor:pointer; transition: transform 0.2s;" onclick="goToTeamProfile('${t.id}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+        <span>${t.name}</span>
+    </td>`;
 
 if(view==='short'){
 html+=`<td>${t.p||0}</td><td>${t.w||0}</td><td>${(t.gd||0)>0?'+'+t.gd:(t.gd||0)}</td><td class="pts">${t.pts||0}</td><td>${arrow}</td>`;
@@ -2977,11 +2998,11 @@ function updateMovement(db) {
                 html += `
                 <div class="fixture-card">
                     <div class="matchup" style="display: flex; align-items: center; gap: 10px;">
-                        <img src="${homeTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;"> 
+                        <img src="${homeTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain; cursor:pointer;" onclick="goToTeamProfile('${homeTeam.id}')"> 
                         <span>${homeTeam.name}</span> 
                         <span class="vs">VS</span> 
                         <span>${awayTeam.name}</span>
-                        <img src="${awayTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain;">
+                        <img src="${awayTeam.logo || defaultLogo}" style="margin-top: 4px; width:34px; height:34px; border-radius:50%; object-fit: contain; cursor:pointer;" onclick="goToTeamProfile('${awayTeam.id}')">
                     </div>
                     <div class="match-time">Matchday ${f.matchday}</div>
                 </div>`;
@@ -3330,12 +3351,12 @@ function displayMOTW(data) {
 
     if (homeLogoContainer) {
         homeLogoContainer.innerHTML =
-            `<img src="${data.homeLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+            `<img src="${data.homeLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%; cursor:pointer; transition: transform 0.2s;" onclick="goToTeamProfile('${data.homeId}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="View ${data.homeName}'s Profile">`;
     }
 
     if (awayLogoContainer) {
         awayLogoContainer.innerHTML =
-            `<img src="${data.awayLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%;">`;
+            `<img src="${data.awayLogo || placeholder}" style="width:100%;height:100%;object-fit:contain;border-radius:50%; cursor:pointer; transition: transform 0.2s;" onclick="goToTeamProfile('${data.awayId}')" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'" title="View ${data.awayName}'s Profile">`;
     }
 }
 
@@ -3360,7 +3381,7 @@ function renderTeamTabs(db) {
 
     sortedTeams.forEach((t, index) => {
         const btn = document.createElement('button');
-        
+        btn.setAttribute('data-team-id', t.id);
         // Setup initial classes and styles
         btn.className = `tab-btn ${index === 0 ? 'active' : ''}`;
         btn.innerText = t.name;
@@ -3848,19 +3869,22 @@ window.onpopstate = function () {
     </script>
 
 <script>
-document.addEventListener('DOMContentLoaded',()=>{
- const btn=document.getElementById('themeToggleBottom');
- if(btn){
-   btn.addEventListener('click',()=>{
-      document.body.classList.toggle('light-theme');
-      localStorage.setItem('eepl-theme',
-        document.body.classList.contains('light-theme') ? 'light':'dark');
-   });
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('themeToggleBottom');
+    
+    if (btn) {
+        btn.addEventListener('click', () => {
+            // Toggle the theme class
+            const isLight = document.body.classList.toggle('light-theme');
+            // Save preference to localStorage
+            localStorage.setItem('eepl-theme', isLight ? 'light' : 'dark');
+        });
 
-   if(localStorage.getItem('eepl-theme')==='light'){
-      document.body.classList.add('light-theme');
-   }
- }
+        // Check saved theme on page load
+        if (localStorage.getItem('eepl-theme') === 'light') {
+            document.body.classList.add('light-theme');
+        }
+    }
 });
 </script>
 
@@ -3908,6 +3932,23 @@ window.calculateH2H=function(){
  if(summary) summary.textContent='Head-to-head data unavailable until fixtures are loaded.';
  };
 }
+// Global routing function for Team Logos
+window.goToTeamProfile = function(teamId) {
+    // 1. Switch to the Teams pane (Index 4 is 'My Team' in your nav items)
+    const teamsNavItem = document.querySelectorAll('.nav-item')[4];
+    switchPane('pane-teams', teamsNavItem);
+
+    // 2. Find the team's tab button and click it to load their profile
+    const tabsContainer = document.getElementById('teamTabs');
+    if (tabsContainer) {
+        const targetTab = tabsContainer.querySelector(`button[data-team-id="${teamId}"]`);
+        if (targetTab) {
+            targetTab.click();
+            // Optional: Smoothly scroll the tabs menu so the selected team is visible on mobile
+            targetTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+};
 </script>
 
 </body>
