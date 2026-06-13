@@ -1880,8 +1880,63 @@ body:not(.light-theme) #bg-overlay { display: block; }
     }
 }
 </style>
+
+<style id="eepl-offline-system">
+#offlineBanner{
+position:fixed;
+bottom:-80px;
+left:50%;
+transform:translateX(-50%);
+background:#e63946;
+color:white;
+padding:12px 20px;
+border-radius:12px;
+font-weight:700;
+z-index:999999;
+transition:all .3s ease;
+box-shadow:0 5px 20px rgba(0,0,0,.3);
+}
+#offlineBanner.show{bottom:20px;}
+#lastSeenIndicator{
+position:fixed;
+top:10px;
+right:10px;
+background:rgba(0,0,0,.8);
+color:#fff;
+padding:6px 10px;
+border-radius:8px;
+font-size:12px;
+z-index:999999;
+}
+</style>
+
+
+<style id="eepl-loader-patch">
+#eeplLoader{
+position:fixed;inset:0;background:rgba(0,0,0,.85);
+display:flex;flex-direction:column;align-items:center;justify-content:center;
+z-index:1000001;color:white;
+}
+#eeplLoader.hidden{display:none;}
+.eepl-spinner{
+width:50px;height:50px;border:4px solid rgba(255,255,255,.2);
+border-top:4px solid #00d4e8;border-radius:50%;
+animation:spin 1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
+
+<div id="eeplLoader">
+<div class="eepl-spinner"></div>
+<div style="margin-top:15px">Loading league data...</div>
+</div>
+
+
+<div id="offlineBanner">⚠️ Offline Mode • Showing last saved data</div>
+<div id="lastSeenIndicator"></div>
+
 <div id='bg-overlay'></div>
 
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -1935,6 +1990,10 @@ body:not(.light-theme) #bg-overlay { display: block; }
             </li>
             <li class="nav-item" onclick="switchPane('pane-rules', this)">
                 <i class="fa-solid fa-book"></i> League Hub
+            </li>
+            <li class="nav-item" onclick="switchPane('pane-chat', this)" id="chatNavItem">
+                <i class="fa-solid fa-comments"></i> Chat
+                <span id="chatUnreadBadge" style="display:none; margin-left:auto; background:var(--accent); color:#000; font-size:0.6rem; font-weight:800; padding:2px 6px; border-radius:10px; min-width:18px; text-align:center;"></span>
             </li>
         </ul>
 
@@ -2668,6 +2727,97 @@ These highlights capture the skill and strategy of a competition where every gam
                 <p style="text-align: left; color: #000000; font-size: 0.75rem; line-height: 1.6; margin: 0;">
                     The Elite Pro League (EEPL) operates as an independent competitive entity. We are <strong>not affiliated with, associated with, authorized by, or endorsed by</strong> Konami Digital Entertainment (eFootball™) or Electronic Arts Inc. (EA SPORTS FC™). All official names, logos, and trademarks remain the sole property of their respective owners. Use of these names is for identification purposes only.
                 </p>
+            </div>
+        </section>
+
+        <!-- ===== CHAT PANE ===== -->
+        <section id="pane-chat" class="pane">
+            <div class="pane-header" style="margin-bottom: 24px;">
+                <h1 style="font-family: var(--font-display); font-size: 2.4rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;">
+                    <i class="fa-solid fa-comments" style="color: var(--accent); margin-right: 10px;"></i>League Chat
+                </h1>
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 6px;">Real-time messaging for all EEPL managers</p>
+            </div>
+
+            <div id="chatBox" style="
+                background: linear-gradient(160deg, rgba(14,18,28,0.97), rgba(10,13,20,0.99));
+                border: 1px solid var(--border-light);
+                border-radius: var(--radius-lg);
+                display: flex;
+                flex-direction: column;
+                height: calc(100vh - 240px);
+                min-height: 400px;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            ">
+                <!-- Chat Header Bar -->
+                <div style="
+                    padding: 14px 22px;
+                    border-bottom: 1px solid var(--border-light);
+                    background: rgba(0,212,232,0.04);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                ">
+                    <span style="width: 9px; height: 9px; background: #00e096; border-radius: 50%; box-shadow: 0 0 6px #00e096; flex-shrink: 0;"></span>
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px;">Global Locker Room</span>
+                    <span id="chatOnlineCount" style="margin-left: auto; font-size: 0.7rem; color: var(--text-panel-muted); background: rgba(255,255,255,0.04); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-dark);">Loading...</span>
+                </div>
+
+                <!-- Messages Area -->
+                <div id="chatMessages" style="
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 20px 22px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 14px;
+                    scroll-behavior: smooth;
+                ">
+                    <div id="chatLoadingState" style="text-align: center; color: var(--text-panel-muted); font-size: 0.85rem; margin: auto;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="color: var(--accent); margin-bottom: 10px; font-size: 1.5rem; display: block;"></i>
+                        Connecting to chat...
+                    </div>
+                </div>
+
+                <!-- Input Bar -->
+                <div style="
+                    padding: 14px 18px;
+                    border-top: 1px solid var(--border-light);
+                    background: rgba(0,0,0,0.3);
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                ">
+                    <img id="chatInputPfp" src="" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 1.5px solid var(--border-light); flex-shrink: 0;" onerror="this.src='https://ui-avatars.com/api/?name=U&background=00d4e8&color=000'">
+                    <input id="chatInput" type="text" maxlength="500" placeholder="Message the locker room..." style="
+                        flex: 1;
+                        background: rgba(255,255,255,0.05);
+                        border: 1px solid var(--border-light);
+                        border-radius: 24px;
+                        padding: 10px 18px;
+                        color: var(--text-dark);
+                        font-size: 0.875rem;
+                        outline: none;
+                        transition: border-color 0.2s;
+                        font-family: var(--font-body);
+                    " onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-light)'" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault(); sendChatMessage();}">
+                    <button onclick="sendChatMessage()" title="Send" style="
+                        width: 40px; height: 40px;
+                        border-radius: 50%;
+                        border: none;
+                        background: var(--accent);
+                        color: #000;
+                        font-size: 1rem;
+                        cursor: pointer;
+                        display: flex; align-items: center; justify-content: center;
+                        flex-shrink: 0;
+                        transition: transform 0.15s, box-shadow 0.15s;
+                        box-shadow: 0 0 12px var(--accent-glow);
+                    " onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
         </section>
 
@@ -3895,6 +4045,7 @@ document.addEventListener('DOMContentLoaded', () => {
 <a href="#pane-fixtures"><i class="fa-solid fa-futbol"></i></a>
 <a href="#pane-teams"><i class="fa-solid fa-users"></i></a>
 <a href="#pane-rules"><i class="fa-solid fa-book"></i></a>
+<a href="#pane-chat"><i class="fa-solid fa-comments"></i></a>
 </div>
 
 
@@ -3911,6 +4062,8 @@ document.addEventListener('click',function(e){
  if(pane) pane.classList.add('active');
 
  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+ if(targetId === 'pane-chat') setTimeout(()=>window.initChat(), 50);
 });
 </script>
 
@@ -3951,5 +4104,354 @@ window.goToTeamProfile = function(teamId) {
 };
 </script>
 
+
+<script id="eepl-offline-cache-script">
+(function(){
+
+function updateLastSeen(){
+ const el=document.getElementById('lastSeenIndicator');
+ const t=localStorage.getItem('eepl_last_seen');
+ if(el && t) el.textContent='Last Updated: '+t;
+}
+
+window.addEventListener('offline',()=>{
+ document.getElementById('offlineBanner')?.classList.add('show');
+});
+
+window.addEventListener('online',()=>{
+ document.getElementById('offlineBanner')?.classList.remove('show');
+ setTimeout(()=>location.reload(),1000);
+});
+
+document.addEventListener('DOMContentLoaded',()=>{
+ updateLastSeen();
+ if(!navigator.onLine){
+   document.getElementById('offlineBanner')?.classList.add('show');
+ }
+});
+
+if(window.firebase){
+ setTimeout(()=>{
+   try{
+     firebase.database().ref('league_data').on('value',snap=>{
+       const data=snap.val();
+       if(data){
+         localStorage.setItem('eepl_cache',JSON.stringify(data));
+         localStorage.setItem('eepl_last_seen',new Date().toLocaleString());
+         updateLastSeen();
+       }
+     });
+   }catch(e){console.log(e);}
+ },2000);
+}
+
+})();
+</script>
+
+
+<script id="eepl-loader-script">
+window.showEEPLLoader=function(){
+ const el=document.getElementById('eeplLoader');
+ if(el) el.classList.remove('hidden');
+}
+window.hideEEPLLoader=function(){
+ const el=document.getElementById('eeplLoader');
+ if(el) el.classList.add('hidden');
+}
+
+showEEPLLoader();
+
+window.addEventListener('load',function(){
+ setTimeout(function(){
+   if(navigator.onLine){
+      // wait for firebase listener
+   }else{
+      hideEEPLLoader();
+   }
+ },500);
+});
+
+if(window.firebase){
+ setTimeout(function(){
+   try{
+      firebase.database().ref('league_data').once('value')
+      .then(function(){
+          hideEEPLLoader();
+      })
+      .catch(function(){
+          hideEEPLLoader();
+      });
+   }catch(e){
+      hideEEPLLoader();
+   }
+ },1000);
+}
+</script>
+<!-- ===== CHAT STYLES ===== -->
+<style id="eepl-chat-styles">
+.chat-msg {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: chatMsgIn 0.22s ease-out;
+}
+.chat-msg.own {
+    flex-direction: row-reverse;
+}
+@keyframes chatMsgIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.chat-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1.5px solid var(--border-light);
+}
+.chat-bubble-wrap {
+    display: flex;
+    flex-direction: column;
+    max-width: 68%;
+    gap: 3px;
+}
+.chat-msg.own .chat-bubble-wrap {
+    align-items: flex-end;
+}
+.chat-meta {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.7rem;
+    color: var(--text-panel-muted);
+    padding: 0 4px;
+}
+.chat-msg.own .chat-meta {
+    flex-direction: row-reverse;
+}
+.chat-sender {
+    font-weight: 700;
+    color: var(--accent);
+    font-size: 0.75rem;
+}
+.chat-bubble {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-light);
+    border-radius: 18px 18px 18px 4px;
+    padding: 9px 14px;
+    font-size: 0.875rem;
+    color: var(--text-dark);
+    line-height: 1.5;
+    word-break: break-word;
+}
+.chat-msg.own .chat-bubble {
+    background: rgba(0,212,232,0.14);
+    border-color: rgba(0,212,232,0.25);
+    border-radius: 18px 18px 4px 18px;
+    color: #fff;
+}
+.chat-date-divider {
+    text-align: center;
+    font-size: 0.65rem;
+    color: var(--text-panel-muted);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 6px 0;
+    position: relative;
+}
+.chat-date-divider::before, .chat-date-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 30%;
+    height: 1px;
+    background: var(--border-dark);
+}
+.chat-date-divider::before { left: 0; }
+.chat-date-divider::after { right: 0; }
+.chat-msg-deleted {
+    font-style: italic;
+    color: var(--text-panel-muted) !important;
+    background: transparent !important;
+    border-color: var(--border-dark) !important;
+}
+@media (max-width: 768px) {
+    #chatBox { height: calc(100vh - 200px); min-height: 300px; }
+    .chat-bubble-wrap { max-width: 82%; }
+}
+</style>
+
+<!-- ===== CHAT JAVASCRIPT ===== -->
+<script id="eepl-chat-script">
+(function() {
+    const CHAT_REF_PATH = 'eepl_chat/messages';
+    const MAX_VISIBLE_MSGS = 100;
+    let chatRef = null;
+    let chatListener = null;
+    let chatInitialized = false;
+    let lastDateLabel = null;
+
+    // Format a Firebase timestamp for display
+    function fmtTime(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const h = d.getHours().toString().padStart(2,'0');
+        const m = d.getMinutes().toString().padStart(2,'0');
+        return `${h}:${m}`;
+    }
+
+    function fmtDate(ts) {
+        if (!ts) return '';
+        const d = new Date(ts);
+        const today = new Date();
+        const yesterday = new Date(); yesterday.setDate(today.getDate()-1);
+        if (d.toDateString() === today.toDateString()) return 'Today';
+        if (d.toDateString() === yesterday.toDateString()) return 'Yesterday';
+        return d.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildMsgEl(data, key) {
+        const currentUser = localStorage.getItem('userName') || 'Manager';
+        const isOwn = data.sender === currentUser;
+        const pfpUrl = data.pfp || `https://ui-avatars.com/api/?name=${encodeURIComponent(data.sender||'?')}&background=00d4e8&color=000&size=64`;
+        const timeStr = fmtTime(data.ts);
+        const text = data.deleted ? '<span class="chat-msg-deleted">Message deleted</span>' : escapeHtml(data.text || '');
+
+        const el = document.createElement('div');
+        el.className = 'chat-msg' + (isOwn ? ' own' : '');
+        el.dataset.msgKey = key;
+        el.innerHTML = `
+            <img class="chat-avatar" src="${pfpUrl}" onerror="this.src='https://ui-avatars.com/api/?name=?&background=00d4e8&color=000'" alt="">
+            <div class="chat-bubble-wrap">
+                <div class="chat-meta">
+                    <span class="chat-sender">${escapeHtml(data.sender||'Manager')}</span>
+                    <span>${timeStr}</span>
+                </div>
+                <div class="chat-bubble">${text}</div>
+            </div>
+        `;
+        return el;
+    }
+
+    function scrollToBottom(force) {
+        const msgs = document.getElementById('chatMessages');
+        if (!msgs) return;
+        const distFromBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight;
+        if (force || distFromBottom < 200) {
+            msgs.scrollTop = msgs.scrollHeight;
+        }
+    }
+
+    function updateOnlineCount(count) {
+        const el = document.getElementById('chatOnlineCount');
+        if (el) el.textContent = `${count} manager${count !== 1 ? 's' : ''} online`;
+    }
+
+    // Initialize chat — called when pane becomes active
+    window.initChat = function() {
+        if (chatInitialized) return;
+        chatInitialized = true;
+
+        const db = firebase.database();
+        chatRef = db.ref(CHAT_REF_PATH);
+        const presenceRef = db.ref('eepl_chat/presence');
+        const userName = localStorage.getItem('userName') || 'Manager';
+        const pfp = localStorage.getItem('userPfp') || '';
+
+        // Update input pfp
+        const inputPfp = document.getElementById('chatInputPfp');
+        if (inputPfp) inputPfp.src = pfp || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=00d4e8&color=000`;
+
+        // Presence tracking
+        const myPresenceRef = presenceRef.child(userName.replace(/[.#$[\]]/g,'_'));
+        myPresenceRef.set({ name: userName, online: true, ts: firebase.database.ServerValue.TIMESTAMP });
+        myPresenceRef.onDisconnect().remove();
+
+        presenceRef.on('value', snap => {
+            const count = snap.numChildren();
+            updateOnlineCount(count);
+        });
+
+        // Listen to last MAX_VISIBLE_MSGS messages
+        const msgsEl = document.getElementById('chatMessages');
+        const loadingEl = document.getElementById('chatLoadingState');
+
+        chatListener = chatRef.limitToLast(MAX_VISIBLE_MSGS).on('value', snap => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            msgsEl.innerHTML = '';
+            lastDateLabel = null;
+
+            snap.forEach(child => {
+                const data = child.val();
+                const dateLabel = fmtDate(data.ts);
+                if (dateLabel && dateLabel !== lastDateLabel) {
+                    const div = document.createElement('div');
+                    div.className = 'chat-date-divider';
+                    div.textContent = dateLabel;
+                    msgsEl.appendChild(div);
+                    lastDateLabel = dateLabel;
+                }
+                msgsEl.appendChild(buildMsgEl(data, child.key));
+            });
+
+            scrollToBottom(true);
+        });
+    };
+
+    window.sendChatMessage = function() {
+        const input = document.getElementById('chatInput');
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text || text.length === 0) return;
+
+        const userName = localStorage.getItem('userName') || 'Manager';
+        const pfp = localStorage.getItem('userPfp') || '';
+
+        // Always resolve ref fresh from firebase.database()
+        const ref = firebase.database().ref(CHAT_REF_PATH);
+
+        const btn = document.querySelector('#chatBox button[onclick="sendChatMessage()"]');
+        if (btn) btn.disabled = true;
+
+        ref.push({
+            sender: userName,
+            pfp: pfp,
+            text: text,
+            ts: firebase.database.ServerValue.TIMESTAMP
+        }).then(() => {
+            input.value = '';
+            input.focus();
+        }).catch(err => {
+            console.error('Chat send error:', err);
+            alert('Failed to send message. Check your connection.');
+        }).finally(() => {
+            if (btn) btn.disabled = false;
+        });
+    };
+
+    // Hook into switchPane to init chat when navigated to
+    const _origSwitchPane = window.switchPane;
+    document.addEventListener('DOMContentLoaded', () => {
+        // Intercept nav click on chat
+        const chatNav = document.getElementById('chatNavItem');
+        if (chatNav) {
+            chatNav.addEventListener('click', () => {
+                setTimeout(() => window.initChat(), 50);
+            });
+        }
+
+        // Also handle mobile nav (bottom bar has no chat entry yet, but be future-proof)
+        document.querySelectorAll('.mobile-bottom-nav a').forEach(a => {
+            if (a.getAttribute('href') === '#pane-chat') {
+                a.addEventListener('click', () => setTimeout(() => window.initChat(), 50));
+            }
+        });
+    });
+})();
+</script>
 </body>
 </html>
