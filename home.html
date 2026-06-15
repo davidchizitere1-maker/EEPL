@@ -459,10 +459,6 @@
             <div class="social-divider"><span>OR CONTINUE WITH</span></div>
 
 <button class="social-btn" onclick="signInWithGoogle()"><i class="fab fa-google"></i> Continue with Google</button>
-<button class="social-btn" onclick="signInWithMicrosoft()"><i class="fab fa-microsoft"></i> Continue with Microsoft</button>
-<button class="social-btn" onclick="signInWithFacebook()"><i class="fab fa-facebook"></i> Continue with Facebook</button>
-<button class="social-btn" onclick="signInWithApple()"><i class="fab fa-apple"></i> Continue with Apple</button>
-<button class="social-btn" onclick="guestLogin()"><i class="fas fa-user-secret"></i> Continue as Guest</button>
 <button class="action-btn" onclick="registerUser()">Register</button>
             <p class="toggle-text">Have an account? <span onclick="showAuth('login')">Login</span></p>
         </div>
@@ -555,33 +551,23 @@ async function registerUser() {
 
 async function loginUser() {
     clearErrors();
+
     const email = document.getElementById('login-email');
     const pass = document.getElementById('login-password');
-    const username = document.getElementById('signup-username');
 
-    if (!email.value) return showError(email, "Enter your email");
-    if (!pass.value) return showError(pass, "Enter your password");
-    if (!username.value) return showError(username, "Enter your Team Name");
+    if (!email.value.trim()) return showError(email, "Enter your email");
+    if (!pass.value.trim()) return showError(pass, "Enter your password");
 
     try {
-        // Firebase Auth: Sign In
-        const userCredential = await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
-        const user = userCredential.user;
-        
-    
-        const displayName = username.value;
-        
-        showWelcomeScreen(displayName);
-
+        await firebase.auth().signInWithEmailAndPassword(email.value, pass.value);
         window.location.replace('EEPL.html');
     } catch (error) {
-        // Handle Firebase specific errors
-        if (error.code === 'auth/wrong-password') {
-            showError(pass, "Incorrect Password");
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            showError(pass, "Incorrect password");
         } else if (error.code === 'auth/user-not-found') {
-            showError(email, "No account found with this email.");
+            showError(email, "No account found with this email");
         } else {
-            showError(email, "Login failed: " + error.message);
+            showError(email, error.message);
         }
     }
 }
@@ -623,29 +609,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-async function signInWithGoogle(){
- const provider=new firebase.auth.GoogleAuthProvider();
- const r=await firebase.auth().signInWithPopup(provider);
- window.location.href='EEPL.html';
-}
-async function signInWithMicrosoft(){
- const provider=new firebase.auth.OAuthProvider('microsoft.com');
- const r=await firebase.auth().signInWithPopup(provider);
- window.location.href='EEPL.html';
-}
-async function signInWithFacebook(){
- const provider=new firebase.auth.FacebookAuthProvider();
- const r=await firebase.auth().signInWithPopup(provider);
- window.location.href='EEPL.html';
-}
-async function signInWithApple(){
- const provider=new firebase.auth.OAuthProvider('apple.com');
- const r=await firebase.auth().signInWithPopup(provider);
- window.location.href='EEPL.html';
-}
-async function guestLogin(){
- const r=await firebase.auth().signInAnonymously();
- window.location.href='EEPL.html';
+async function signInWithGoogle() {
+ try {
+   const provider = new firebase.auth.GoogleAuthProvider();
+   await firebase.auth().signInWithPopup(provider);
+   window.location.replace('EEPL.html');
+ } catch(error) {
+   alert(error.message);
+ }
 }
 
 </script>
