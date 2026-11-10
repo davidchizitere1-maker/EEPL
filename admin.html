@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EEPL | Admin Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Body */
-        :root {--accent: #ff0055; --bg: #0f0f0f; --card-bg: #1a1a1a; --text-main: #fff; --text-muted: #888; --border-color: #333;}  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; } body { background-color: var(--bg); color: var(--text-main); display: flex; height: 100vh; }
+        :root {--accent: #00e5ff; --bg: #050505; --card-bg: #111111; --text-main: #fff; --text-muted: #888; --border-color: #222;}  * { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-body); } body { background-color: var(--bg); color: var(--text-main); display: flex; height: 100vh; }
 
         /* Sidebar */
-        .sidebar { width: 250px; background-color: var(--card-bg); border-right: 1px solid var(--border-color); padding: 20px; } .sidebar-header { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; } .sidebar-header h2 { color: var(--accent); } .nav-links { list-style: none; } .nav-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.3s; } .nav-item:hover, .nav-item.active { background-color: rgba(255,0,85,0.1); color: var(--accent); font-weight: bold; }
+        .sidebar { width: 250px; background-color: var(--card-bg); border-right: 1px solid var(--border-color); padding: 20px; } .sidebar-header { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; } .sidebar-header h2 { color: var(--accent); } .nav-links { list-style: none; } .nav-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 6px; cursor: pointer; color: var(--text-muted); transition: 0.3s; } .nav-item:hover, .nav-item.active { background-color: rgba(0,229,255,0.1); color: var(--accent); font-weight: bold; }
 
         /* Main Content */
         .main-content { flex: 1; padding: 30px 40px; overflow-y: auto; }.pane { display: none; animation: fadeIn 0.3s ease; } .pane.active { display: block; } @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -21,12 +22,51 @@
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); }th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }.flex-row { display: flex; gap: 15px; align-items: flex-end; }.flex-row > div { flex: 1; }
     </style>
+    <style id="eepl-shared">
+/* EEPL shared interface polish */
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+img, video, iframe { max-width: 100%; }
+button, input, select, textarea { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+:focus-visible { outline: 2px solid #00d4e8 !important; outline-offset: 3px; }
+@media (max-width: 900px) {
+  nav { padding-left: 18px !important; padding-right: 18px !important; }
+  .sidebar { max-width: 82vw; }
+  .main-content { padding: 22px 18px !important; }
+  .container { width: min(100% - 28px, 1200px) !important; }
+  table { display: block; max-width: 100%; overflow-x: auto; }
+}
+@media (max-width: 600px) {
+  nav { min-height: 58px; }
+  .logo-text { font-size: 16px !important; }
+  .logo-image { max-height: 36px; }
+  main, .main-content, .container { padding-left: 14px !important; padding-right: 14px !important; }
+  .card, .donation-card { padding: 20px !important; }
+  input, select, textarea { max-width: 100%; }
+  button, .btn, a.button { min-height: 42px; }
+}
+
+/* ---- v2 polish ---- */
+::selection{background:#c8ff00;color:#000}
+*{scrollbar-width:thin;scrollbar-color:#2a2a2a #0a0a0a}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:8px}::-webkit-scrollbar-track{background:#0a0a0a}
+button,.btn,.action-btn,.social-btn,a{transition:transform .15s ease,box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease}
+button:not(:disabled):active,.action-btn:active{transform:scale(.98)}
+button:disabled{opacity:.6;cursor:not-allowed}
+input:focus,select:focus,textarea:focus{border-color:#00e5ff !important;box-shadow:0 0 0 3px rgba(0,229,255,.15) !important;outline:none}
+.error-msg{color:#ff5470}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+:root{--eepl-accent:#00e5ff;--eepl-accent-2:#c8ff00;--eepl-bg:#050505;--eepl-surface:#111;--eepl-border:#222;--eepl-text:#fff;--eepl-muted:#888;--eepl-danger:#ff4d4d;--eepl-ok:#00ff41;--eepl-gold:#f1c40f;
+--font-display:'Barlow Condensed','Segoe UI',sans-serif;--font-body:'DM Sans','Segoe UI',system-ui,sans-serif}
+body{background-color:#050505}
+</style>
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
 <script>
   // 2. Your Config (Keep your keys exactly as they are)
@@ -42,7 +82,7 @@
 
   // 3. Initialize Firebase (Compat Way)
   const app = firebase.initializeApp(firebaseConfig);
-  const analytics = firebase.analytics();
+  try{ firebase.analytics(); }catch(e){ console.info("Analytics unavailable"); }
 </script>
 
     <aside class="sidebar">
@@ -93,12 +133,11 @@
 
     <div id="unifiedPreviewArea" style="margin-top: 15px; display: flex; align-items: center; gap: 15px;">
         <div style="width: 60px; height: 60px; border-radius: 8px; background: #000; border: 1px dashed #555; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-            <img id="unifiedLogoPreview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none; background: #fff;">
+            <img loading="lazy" decoding="async" id="unifiedLogoPreview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none; background: #fff;">
             <i id="previewPlaceholder" class="fa-solid fa-shield-halved" style="color: #444; font-size: 1.5rem;"></i>
         </div>
         <span id="previewStatus" style="font-size: 0.85rem; color: var(--text-muted);">Awaiting input...</span>
     </div>
-       <input type="hidden" id="previewPlaceholder" value="">
 <div><p style="color: #333;">.</p></div>
         <button onclick="addTeam()" style="width: 100%;">Add Team to League</button>
     </div>
@@ -335,7 +374,7 @@
             <p id="admin-greeting" style="color: #ccc; margin-bottom: 20px;"></p>
             
             <div class="admin-controls">
-                <button class="action-btn" style="background: #ff4b2b; margin-top: 10px;" onclick="logoutUser()">
+                <button class="action-btn" style="background: #ff4d4d; margin-top: 10px;" onclick="logoutUser()">
                     Logout
                 </button><br>
             </div>
@@ -345,7 +384,7 @@
     <div>
     <h2>System Reset</h2>
     <p style="color: var(--text-muted); margin-bottom: 20px;"></p>
-    <button onclick="clearAllData()" style="background:#ff1a1a; width:100%;">
+    <button onclick="clearAllData()" style="background:#ff4d4d; width:100%;">
     🗑️ Reset Entire League
 </button></div>
 </section></main>
@@ -454,7 +493,7 @@
 
         if (!inputVal) {
             statusText.innerText = "Objection! Input field is empty.";
-            statusText.style.color = "#dc3545"; 
+            statusText.style.color = "#ff4d4d"; 
             return;
         }
 
@@ -478,7 +517,7 @@
                 })
                 .catch(() => {
                     statusText.innerText = "Search failed. Try a direct link instead.";
-                    statusText.style.color = "#dc3545";
+                    statusText.style.color = "#ff4d4d";
                 });
         }
     }
@@ -502,7 +541,7 @@
             previewImg.style.display = "none";
             placeholder.style.display = "block";
             statusText.innerText = "Invalid image source. Please verify the link.";
-            statusText.style.color = "#dc3545";
+            statusText.style.color = "#ff4d4d";
             selectedLogoData = ""; 
         };
     }
@@ -534,6 +573,21 @@
             db.teams = db.teams.filter(t => t.id !== id);
             saveAndRefresh();
         }
+    }
+
+    function deleteStat() {
+        const name = document.getElementById('statPlayerName').value.trim().toLowerCase();
+        if (!name) return alert("Enter the player name to delete");
+        const i = db.stats.findIndex(s => s.name.toLowerCase() === name);
+        if (i === -1) return alert("No player with that name");
+        if (confirm(`Remove ${db.stats[i].name} from the database?`)) { db.stats.splice(i, 1); saveAndRefresh(); }
+    }
+
+    function loadCurrentDetails() {
+        const t = db.teams.find(t => t.id === document.getElementById('detailsTeamSelect').value) || {};
+        document.getElementById('inStadium').value = t.stadium || '';
+        document.getElementById('inFounded').value = t.founded || '';
+        document.getElementById('inCountry').value = t.country || '';
     }
 
     function saveTeamDetails() {
