@@ -117,6 +117,7 @@ function syncProfile(u){
     let first=true; const done=()=>{if(first){first=false;res();}};
     profRef.on('value',s=>{
       const p=s.val()||{}, name=p.username||u.displayName||(u.email?u.email.split('@')[0]:'Manager');
+      if(!p.username&&!isGoogle(u)&&u.displayName){var _un=u.displayName.trim().slice(0,30);profRef.update({username:_un,usernameLower:_un.toLowerCase(),email:u.email||''}).catch(function(e){console.warn('Profile backfill:',e.message);});} // older email accounts: fill the missing username so follow/friend features work
       if(!p.pfp&&!legacyTried){legacyTried=true;db.ref('users/'+u.uid).once('value').then(function(ls){var l=ls.val()||{},lp=l.profilePicture||l.photoURL;if(lp&&String(lp).indexOf('ui-avatars')<0&&profRef)profRef.update({pfp:lp}).catch(function(){});}).catch(function(){});}
       if(p.username||!isGoogle(u)){var wasOnb=needsOnb;needsOnb=false;done();if(ready&&wasOnb)route();}
       else{
