@@ -88,6 +88,7 @@ function show(page,anchor){
     document.title=(CFG.titles[page]?CFG.titles[page]+' | ':'')+CFG.site;
     back.style.display=(CFG.mode==='child'&&CFG.backOn.includes(page))?'block':'none';
     try{f.contentWindow.postMessage({eepl:'show',page:page,anchor:anchor||''},'*');}catch(e){}
+    if(pendingHome&&page==='home'){try{f.contentWindow.postMessage(pendingHome,'*');}catch(e){}pendingHome=null;}
     scrollTo_(f,anchor); scheduleWarm();
   };
   if(f.dataset.ready){reveal();return;}
@@ -138,7 +139,8 @@ async function isRegistered(u){
     return (await db.ref('users/'+u.uid).once('value')).exists();
   }catch(e){return false;}
 }
-function tellHome(code){try{if(active&&active.contentWindow)active.contentWindow.postMessage({eepl:'googleResult',code:code},'*');}catch(e){}}
+var pendingHome=null;
+function tellHome(code){pendingHome={eepl:'googleResult',code:code};}   // delivered once the fresh sign-in page is showing
 // mode 'signup': new accounts continue to the team-name step. mode 'login': only accounts that already registered may sign in.
 async function afterGoogle(res,mode){
   try{
