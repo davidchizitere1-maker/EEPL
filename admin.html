@@ -77,7 +77,6 @@ body{background-color:#050505}
     storageBucket: "dayyviid-entities.firebasestorage.app",
     messagingSenderId: "355380060771",
     appId: "1:355380060771:web:a9f2107a47cef5fa8f4e56",
-    databaseURL: "https://dayyviid-entities-default-rtdb.firebaseio.com",
     measurementId: "G-1W3TV23MQG"
   };
 
@@ -123,10 +122,10 @@ body{background-color:#050505}
     </label>
     
     <div style="display: flex; gap: 10px; margin-top: 10px;">
-        <input type="text" id="unifiedLogoInput" placeholder="Paste image link, or type a club name (e.g. Arsenal)" 
+        <input type="text" id="unifiedLogoInput" placeholder="e.g., 'https://.../logo.png'" 
                style="flex: 1; padding: 12px; background: #000; border: 1px solid #444; color: #fff; border-radius: 6px; outline: none;">
         
-        <button id="fetchLogoBtn" onclick="processLogoInput()" 
+        <button onclick="processLogoInput()" 
                 style="background: var(--accent); color: #000; border: none; padding: 0 20px; border-radius: 6px; font-weight: bold; cursor: pointer;">
             Fetch
         </button>
@@ -134,7 +133,7 @@ body{background-color:#050505}
 
     <div id="unifiedPreviewArea" style="margin-top: 15px; display: flex; align-items: center; gap: 15px;">
         <div style="width: 60px; height: 60px; border-radius: 8px; background: #000; border: 1px dashed #555; display: flex; justify-content: center; align-items: center; overflow: hidden;">
-            <img id="unifiedLogoPreview" alt="Logo preview" referrerpolicy="no-referrer" style="width: 100%; height: 100%; object-fit: contain; display: none; background: #fff;">
+            <img loading="lazy" decoding="async" id="unifiedLogoPreview" src="" style="width: 100%; height: 100%; object-fit: contain; display: none; background: #fff;">
             <i id="previewPlaceholder" class="fa-solid fa-shield-halved" style="color: #444; font-size: 1.5rem;"></i>
         </div>
         <span id="previewStatus" style="font-size: 0.85rem; color: var(--text-muted);">Awaiting input...</span>
@@ -182,8 +181,7 @@ body{background-color:#050505}
 
         <button class="secondary" style="margin-top: 15px; width: 100%;" onclick="generateRandomFixtures()">
             <i class="fa-solid fa-dice"></i> Generate Random Matchday Pairs
-        </button>
-    </div>
+        </button> <br><br>
 
     <!-- PENDING MATCHES -->
     <div class="card">
@@ -322,10 +320,8 @@ body{background-color:#050505}
 </section>
 
 <section id="pane-lineup" class="pane">
-<h3>Upload Tactical Lineup</h3>
-<div class="form-group"><label>Select Team:</label><select id="lineupTeamSelect"><option value="">-- Choose Team --</option></select></div>
-<div class="form-group"><label>Lineup Image</label><input type="file" id="lineupInput" accept="image/*"></div>
-<button onclick="uploadLineup()" class="save-btn">Save Lineup Image</button>
+<h3>Upload Tactical Lineup</h3><div class="form-group"></div><label>Select Team:</label><select id="lineupTeamSelect"><option value="">--Choose Team</option></select>
+<div class="form-group"><label> Lineup Image</label></div><input type="file" id="lineupInput" accept="image/*"></div><br><br><button onclick="uploadLineup()" class="save-btn">Save Lineup Image</button>
 <br><br><div class="admin-widget">
     <h3>Update Team Details</h3>
     <div class="form-group">
@@ -408,14 +404,16 @@ body{background-color:#050505}
     // Initialize App & Listen for Live Cloud Updates
     document.addEventListener('DOMContentLoaded', () => {
         dbRef.on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            const toArr = v => Array.isArray(v) ? v.filter(Boolean) : Object.values(v || {});
-            db = {
-                teams: toArr(data.teams),
-                fixtures: toArr(data.fixtures),
-                stats: toArr(data.stats),
-                news: toArr(data.news)
-            };
+            const data = snapshot.val();
+            if (data) {
+                // Merge cloud data with default architecture to prevent undefined errors
+                db = {
+                    teams: data.teams || [],
+                    fixtures: data.fixtures || [],
+                    stats: data.stats || [],
+                    news: data.news || []
+                };
+            }
             
             // Re-render the UI whenever cloud data changes
             renderAll();
@@ -487,180 +485,86 @@ body{background-color:#050505}
     }
 
     // --- LOGO PROCESSING ---
-    const PLACEHOLDER_LOGO = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-        '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="10" fill="#1a1a1a"/><path d="M32 12l16 6v12c0 11-7 18-16 22-9-4-16-11-16-22V18z" fill="none" stroke="#666" stroke-width="3"/></svg>');
     let selectedLogoData = "";
-    let fetchToken = 0;
 
-    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    function processLogoInput() {
+        const inputVal = document.getElementById('unifiedLogoInput').value.trim();
+        const statusText = document.getElementById('previewStatus');
 
-    function setLogoStatus(msg, color) {
-        const el = document.getElementById('previewStatus');
-        el.innerText = msg;
-        el.style.color = color || 'var(--text-muted)';
+        if (!inputVal) {
+            statusText.innerText = "Objection! Input field is empty.";
+            statusText.style.color = "#ff4d4d"; 
+            return;
+        }
+
+        statusText.innerText = "Processing...";
+        statusText.style.color = "var(--text-muted)";
+
+        const isUrl = /^https?:\/\//i.test(inputVal);
+
+        if (isUrl) {
+            renderPreview(inputVal, "Direct link applied successfully.");
+        } else {
+            statusText.innerText = "Searching database...";
+            const searchQuery = `${inputVal} FC logo png`;
+            
+            // Standard placeholder search mechanism 
+            fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(searchQuery)}&format=json`)
+                .then(response => response.json())
+                .then(data => {
+                    const fetchedUrl = data.Image || 'https://via.placeholder.com/150?text=Logo+Not+Found'; 
+                    renderPreview(fetchedUrl, `Search executed for "${inputVal}"`);
+                })
+                .catch(() => {
+                    statusText.innerText = "Search failed. Try a direct link instead.";
+                    statusText.style.color = "#ff4d4d";
+                });
+        }
     }
 
-    function showPreview(url) {
-        const img = document.getElementById('unifiedLogoPreview');
-        img.referrerPolicy = 'no-referrer';
-        img.src = url;
-        img.style.display = 'block';
-        document.getElementById('previewPlaceholder').style.display = 'none';
-    }
+    function renderPreview(imgUrl, successMessage) {
+        const previewImg = document.getElementById('unifiedLogoPreview');
+        const placeholder = document.getElementById('previewPlaceholder');
+        const statusText = document.getElementById('previewStatus');
 
-    function resetPreview() {
-        const img = document.getElementById('unifiedLogoPreview');
-        img.removeAttribute('src');
-        img.style.display = 'none';
-        document.getElementById('previewPlaceholder').style.display = 'block';
-        selectedLogoData = "";
-    }
+        previewImg.src = imgUrl;
 
-    // Turns share/page links into direct image links
-    function normalizeImageUrl(raw) {
-        let u = raw.trim().replace(/^["'<]+|[>"']+$/g, '');
-        if (/^data:image\//i.test(u)) return u;
-        if (/^\/\//.test(u)) u = 'https:' + u;
-        if (!/^https?:\/\//i.test(u) && /^[\w-]+(\.[\w-]+)+\/\S+/.test(u)) u = 'https://' + u;
-        u = u.replace(/^http:\/\//i, 'https://'); // http images are blocked on https pages
-
-        let url;
-        try { url = new URL(u); } catch (e) { return u; }
-        const host = url.hostname.replace(/^www\./, '');
-        let m;
-
-        // Link copied from Google Images (…/imgres?imgurl=…)
-        if (/^google\./.test(host) && url.pathname === '/imgres' && url.searchParams.get('imgurl')) {
-            return normalizeImageUrl(url.searchParams.get('imgurl'));
-        }
-        // Google Drive share links
-        if (host === 'drive.google.com') {
-            m = url.pathname.match(/\/file\/d\/([\w-]+)/) || (url.searchParams.get('id') ? [null, url.searchParams.get('id')] : null);
-            if (m) return `https://drive.google.com/thumbnail?id=${m[1]}&sz=w600`;
-        }
-        // Dropbox share links
-        if (/(^|\.)dropbox\.com$/.test(host)) {
-            url.hostname = 'dl.dropboxusercontent.com';
-            url.searchParams.delete('dl');
-            return url.toString();
-        }
-        // GitHub "blob" page -> raw file
-        if (host === 'github.com' && (m = url.pathname.match(/^\/([^/]+)\/([^/]+)\/blob\/(.+)$/))) {
-            return `https://raw.githubusercontent.com/${m[1]}/${m[2]}/${m[3]}`;
-        }
-        // Imgur page -> direct image
-        if (host === 'imgur.com' && (m = url.pathname.match(/^\/([A-Za-z0-9]{5,8})$/))) {
-            return `https://i.imgur.com/${m[1]}.png`;
-        }
-        // Wikipedia / Wikimedia file page -> direct file
-        if (/(^|\.)(wikipedia|wikimedia)\.org$/.test(host) && (m = url.pathname.match(/\/wiki\/File:(.+)$/))) {
-            return `https://commons.wikimedia.org/wiki/Special:FilePath/${m[1]}?width=400`;
-        }
-        return u;
-    }
-
-    function tryLoadImage(url, timeoutMs = 9000) {
-        return new Promise(resolve => {
-            const img = new Image();
-            img.referrerPolicy = 'no-referrer';
-            const timer = setTimeout(() => { img.src = ''; resolve(false); }, timeoutMs);
-            img.onload = () => { clearTimeout(timer); resolve(img.naturalWidth > 0); };
-            img.onerror = () => { clearTimeout(timer); resolve(false); };
-            img.src = url;
-        });
-    }
-
-    async function findLogoByName(name) {
-        const q = encodeURIComponent(name + ' football club');
-        const api = `https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${q}&gsrlimit=6&prop=pageimages&piprop=thumbnail&pithumbsize=400`;
-        const res = await fetch(api);
-        if (!res.ok) throw new Error('search failed');
-        const json = await res.json();
-        const pages = Object.values((json.query && json.query.pages) || {}).sort((a, b) => a.index - b.index);
-        const hit = pages.find(p => p.thumbnail && p.thumbnail.source);
-        return hit ? hit.thumbnail.source : null;
-    }
-
-    async function processLogoInput() {
-        const raw = document.getElementById('unifiedLogoInput').value.trim();
-        const btn = document.getElementById('fetchLogoBtn');
-        const myToken = ++fetchToken;
-
-        if (!raw) {
-            setLogoStatus("Paste an image link or type a club name first.", "#ff4d4d");
-            return false;
-        }
-
-        btn.disabled = true;
-        setLogoStatus("Checking image...");
-        const done = (ok, msg, url) => {
-            if (myToken !== fetchToken) return ok;           // a newer click replaced this one
-            btn.disabled = false;
-            if (ok) { selectedLogoData = url; showPreview(url); setLogoStatus(msg, "#28a745"); }
-            else { resetPreview(); setLogoStatus(msg, "#ff4d4d"); }
-            return ok;
+        previewImg.onload = function() {
+            previewImg.style.display = "block";
+            placeholder.style.display = "none";
+            statusText.innerText = successMessage;
+            statusText.style.color = "#28a745"; 
+            selectedLogoData = imgUrl; 
         };
 
-        const looksLikeLink = /^(data:image\/|https?:\/\/|\/\/)/i.test(raw) || /^[\w-]+(\.[\w-]+)+\/\S+/.test(raw);
-
-        try {
-            if (looksLikeLink) {
-                const url = normalizeImageUrl(raw);
-                if (await tryLoadImage(url)) return done(true, url === raw ? "Image loaded." : "Link converted and loaded.", url);
-
-                // Some sites block hotlinking - retry through an image proxy
-                if (!/^data:/i.test(url)) {
-                    const proxied = 'https://images.weserv.nl/?w=400&output=png&url=' + encodeURIComponent(url);
-                    if (await tryLoadImage(proxied)) return done(true, "Loaded through image proxy (the original site blocks direct use).", proxied);
-                }
-                return done(false, "Couldn't load that link. Open the image on its own and copy the image address (usually ends in .png / .jpg).");
-            }
-
-            // Not a link -> look the club up on Wikipedia
-            setLogoStatus(`Searching for "${raw}"...`);
-            const found = await findLogoByName(raw);
-            if (found && await tryLoadImage(found)) return done(true, `Found a logo for "${raw}". Check it looks right.`, found);
-            return done(false, `No logo found for "${raw}". Paste a direct image link instead.`);
-        } catch (err) {
-            return done(false, "Lookup failed. Check your connection or paste a direct image link.");
-        }
+        previewImg.onerror = function() {
+            previewImg.style.display = "none";
+            placeholder.style.display = "block";
+            statusText.innerText = "Invalid image source. Please verify the link.";
+            statusText.style.color = "#ff4d4d";
+            selectedLogoData = ""; 
+        };
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('unifiedLogoInput');
-        if (!input) return;
-        // Editing the box invalidates the previously fetched logo
-        input.addEventListener('input', () => {
-            if (selectedLogoData) { resetPreview(); setLogoStatus("Click Fetch to load this image."); }
-        });
-        input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); processLogoInput(); } });
-    });
-
     // --- TEAM MANAGEMENT ---
-    async function addTeam() {
+    function addTeam() {
         const name = document.getElementById('teamNameInput').value.trim();
+        const logo = selectedLogoData || 'https://via.placeholder.com/30?text=⚽';
+        
         if (!name) return alert("Enter a team name");
-
-        // If a link was typed but Fetch wasn't pressed, fetch it now
-        const typed = document.getElementById('unifiedLogoInput').value.trim();
-        if (typed && !selectedLogoData) {
-            const ok = await processLogoInput();
-            if (!ok && !confirm("The logo couldn't be loaded. Add the team with a placeholder logo?")) return;
-        }
-        const logo = selectedLogoData || PLACEHOLDER_LOGO;
-
+        
         db.teams.push({
             id: 'team_' + Date.now().toString(),
             name: name,
             logo: logo,
             p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
         });
-
+        
         document.getElementById('teamNameInput').value = '';
         document.getElementById('unifiedLogoInput').value = '';
-        resetPreview();
-        setLogoStatus("Awaiting input...");
-
+        document.getElementById('previewPlaceholder').style.display = "block";
+        document.getElementById('unifiedLogoPreview').style.display = "none";
+        
         saveAndRefresh();
     }
 
@@ -809,32 +713,67 @@ body{background-color:#050505}
         alert("Score synced globally!");
     }
 
-    function undoFixtureStats(fixtureId) {
-        const f = db.fixtures.find(x => x.id === fixtureId);
-        if (!f || f.status !== 'completed') return alert("This match isn't completed.");
-        if (!confirm("Undo this result and move the match back to Pending?")) return;
+    async function undoFixtureStats(fixtureId) {
+    try {
+        // 1. Get the current state of the fixture
+        const fixtureRef = firebase.database().ref(`league_data/fixtures/${fixtureId}`);
+        const snapshot = await fixtureRef.once('value');
+        const match = snapshot.val();
 
-        const hs = Number(f.homeScore) || 0;
-        const as = Number(f.awayScore) || 0;
-        const dec = (n, by) => Math.max(0, (n || 0) - by);
-        const reverse = (t, gf, ga) => {
-            if (!t) return;
-            t.p = dec(t.p, 1);
-            t.gf = dec(t.gf, gf);
-            t.ga = dec(t.ga, ga);
-            t.gd = t.gf - t.ga;
-            if (gf > ga) { t.w = dec(t.w, 1); t.pts = dec(t.pts, 3); }
-            else if (gf < ga) { t.l = dec(t.l, 1); }
-            else { t.d = dec(t.d, 1); t.pts = dec(t.pts, 1); }
-        };
-        reverse(db.teams.find(t => t.id === f.homeId), hs, as);
-        reverse(db.teams.find(t => t.id === f.awayId), as, hs);
+        if (!match || !match.completed) {
+            console.log("Match is already empty or not completed.");
+            return;
+        }
 
-        f.status = 'pending';
-        f.homeScore = null;
-        f.awayScore = null;
-        saveAndRefresh();
+        const { homeTeam, awayTeam, homeScore, awayScore } = match;
+
+        // 2. Define references for both teams
+        const homeRef = firebase.database().ref(`league_data/teams/${homeTeam}`);
+        const awayRef = firebase.database().ref(`league_data/teams/${awayTeam}`);
+
+        // 3. Perform the "Reverse Math"
+        await homeRef.transaction((stats) => {
+            if (stats) {
+                stats.played -= 1;
+                stats.goalsFor -= homeScore;
+                stats.goalsAgainst -= awayScore;
+                stats.gd = stats.goalsFor - stats.goalsAgainst;
+                
+                if (homeScore > awayScore) stats.points -= 3; // Undo Win
+                else if (homeScore === awayScore) stats.points -= 1; // Undo Draw
+            }
+            return stats;
+        });
+
+        await awayRef.transaction((stats) => {
+            if (stats) {
+                stats.played -= 1;
+                stats.goalsFor -= awayScore;
+                stats.goalsAgainst -= homeScore;
+                stats.gd = stats.goalsFor - stats.goalsAgainst;
+
+                if (awayScore > homeScore) stats.points -= 3; // Undo Win
+                else if (homeScore === awayScore) stats.points -= 1; // Undo Draw
+            }
+            return stats;
+        });
+
+        // 4. Reset the Fixture itself
+        await fixtureRef.update({
+            homeScore: null,
+            awayScore: null,
+            completed: false,
+            status: 'Upcoming'
+        });
+
+        alert("Stats successfully reversed!");
+        if (typeof loadLeagueData === "function") loadLeagueData(); // Refresh UI
+
+    } catch (error) {
+        console.error("Undo failed:", error);
+        alert("Error undoing stats: " + error.message);
     }
+}
 
     function updateTableStandings(homeId, awayId, homeScore, awayScore) {
         let home = db.teams.find(t => t.id === homeId);
@@ -946,7 +885,7 @@ body{background-color:#050505}
 
         const getTeamLogo = (name) => {
             const team = db.teams.find(t => t.name.toLowerCase() === name.toLowerCase());
-            return team ? team.logo : PLACEHOLDER_LOGO;
+            return team ? team.logo : 'https://via.placeholder.com/50?text=⚽';
         };
 
         const motwData = {
@@ -996,7 +935,7 @@ body{background-color:#050505}
         sortedTeams.forEach(t => {
             tbody.innerHTML += `
                 <tr>
-                    <td><img src="${esc(t.logo || PLACEHOLDER_LOGO)}" referrerpolicy="no-referrer" onerror="this.style.visibility='hidden'" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:8px;background:#fff;border-radius:4px;"><strong>${esc(t.name)}</strong></td>
+                    <td><strong>${t.name}</strong></td>
                     <td>${t.p}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td>
                     <td>${t.gf}</td><td>${t.ga}</td><td style="color: var(--accent); font-weight: bold;">${t.pts}</td>
                     <td><button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="deleteTeam('${t.id}')">Del</button></td>
@@ -1014,8 +953,8 @@ body{background-color:#050505}
         completedBody.innerHTML = '';
 
         db.fixtures.forEach(f => {
-            const home = esc(db.teams.find(t => t.id === f.homeId)?.name || 'Unknown');
-            const away = esc(db.teams.find(t => t.id === f.awayId)?.name || 'Unknown');
+            const home = db.teams.find(t => t.id === f.homeId)?.name || 'Unknown';
+            const away = db.teams.find(t => t.id === f.awayId)?.name || 'Unknown';
 
             if (f.status === 'pending') {
                 pendingBody.innerHTML += `
@@ -1055,9 +994,9 @@ body{background-color:#050505}
 
         tbody.innerHTML = db.stats.map((player, index) => `
             <tr>
-                <td>${esc(player.name)}</td>
-                <td>${player.goals ?? 0}</td>
-                <td>${player.assists ?? 0}</td>
+                <td>${player.name}</td>
+                <td>${player.goals}</td>
+                <td>${player.assists}</td>
                 <td>
                     <button onclick="deleteByIndex(${index})" style="background: #ff4d4d; padding: 4px 8px; font-size: 12px;">Del</button>
                 </td>
@@ -1073,8 +1012,8 @@ body{background-color:#050505}
         db.news.forEach(item => {
             tbody.innerHTML += `
                 <tr>
-                    <td><span style="color: var(--accent); font-weight: bold; font-size: 0.8rem;">${esc(item.tag)}</span></td>
-                    <td>${esc(item.text)}</td>
+                    <td><span style="color: var(--accent); font-weight: bold; font-size: 0.8rem;">${item.tag}</span></td>
+                    <td>${item.text}</td>
                     <td>
                         <button class="secondary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="editNews('${item.id}')">Edit</button>
                         <button class="secondary" style="padding: 5px 10px; font-size: 0.8rem; color: #ff4d4d;" onclick="deleteNews('${item.id}')">Del</button>
@@ -1093,8 +1032,8 @@ body{background-color:#050505}
         awaySelect.innerHTML = '<option value="">Select Team...</option>';
 
         db.teams.forEach(t => {
-            homeSelect.innerHTML += `<option value="${esc(t.id)}">${esc(t.name)}</option>`;
-            awaySelect.innerHTML += `<option value="${esc(t.id)}">${esc(t.name)}</option>`;
+            homeSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
+            awaySelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
         });
     }
 
@@ -1209,6 +1148,53 @@ function logoutUser() {
     });
 }
 
+</script>
+<script>
+(function(){
+  var ADMIN='davidchizitere1@gmail.com';
+  function btn(){
+    if(document.getElementById('bfBtn'))return;
+    var b=document.createElement('button');b.id='bfBtn';b.type='button';b.textContent='Backfill user profiles';
+    b.style.cssText='position:fixed;left:14px;bottom:14px;z-index:9999;background:#111;color:#00e5ff;border:1px solid #00e5ff;border-radius:18px;padding:11px 18px;font:700 .72rem sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer';
+    b.onclick=run;document.body.appendChild(b);
+  }
+  async function run(){
+    if(!confirm('Create missing profile records, add lowercase names for search, turn old friendships into mutual follows, and remove emails from public profiles?'))return;
+    var b=document.getElementById('bfBtn');b.disabled=true;b.textContent='Working…';
+    try{
+      var db=firebase.database(),get=async function(p){return (await db.ref(p).once('value')).val()||{};};
+      var users=await get('users'),profs=await get('user_profiles'),lg=await get('league_data/teams');
+      var teams=Array.isArray(lg)?lg:Object.keys(lg).map(function(k){return lg[k];});
+      var up={},made=0,fields=0,uids={};Object.keys(users).concat(Object.keys(profs)).forEach(function(u){uids[u]=1;});
+      var byName={};
+      Object.keys(uids).forEach(function(uid){
+        var p=profs[uid]||{},u=users[uid]||{};
+        var name=String(p.username||[u.firstname,u.lastname].filter(Boolean).join(' ')||u.name||String(u.email||'').split('@')[0]).trim().slice(0,24);
+        if(!name)return;
+        if(!p.username){up['user_profiles/'+uid+'/username']=name;fields++;if(!profs[uid])made++;}
+        if(p.usernameLower!==name.toLowerCase()){up['user_profiles/'+uid+'/usernameLower']=name.toLowerCase();fields++;}
+        var pic=u.profilePicture||u.photoURL;if(!p.pfp&&pic&&String(pic).indexOf('ui-avatars')<0){up['user_profiles/'+uid+'/pfp']=pic;fields++;}
+        if(p.email){up['user_profiles/'+uid+'/email']=null;fields++;}
+        if(p.prefs){up['user_prefs/'+uid]=p.prefs;up['user_profiles/'+uid+'/prefs']=null;fields++;}
+        if(!byName[name.toLowerCase()])byName[name.toLowerCase()]=uid;
+      });
+      var links=0,byId={};teams.forEach(function(t){if(t&&t.id!==undefined)byId[t.id]=t;});
+      teams.forEach(function(t){
+        if(!t||!Array.isArray(t.friends))return;var tu=byName[String(t.name||'').toLowerCase()];
+        t.friends.forEach(function(fid){
+          var ft=byId[fid],fu=ft&&byName[String(ft.name||'').toLowerCase()];
+          if(tu&&fu&&tu!==fu){up['followers/'+tu+'/'+fu]=true;up['following/'+fu+'/'+tu]=true;up['followers/'+fu+'/'+tu]=true;up['following/'+tu+'/'+fu]=true;links++;}
+        });
+      });
+      var isProf=function(k){return /^(user_profiles|user_prefs)\//.test(k);},problems=[];
+      var flush=async function(keys,label){for(var i=0;i<keys.length;i+=400){var chunk={};keys.slice(i,i+400).forEach(function(k){chunk[k]=up[k];});try{await db.ref().update(chunk);}catch(e){problems.push(label+': '+e.message);return;}}};
+      var all=Object.keys(up);await flush(all.filter(isProf),'profiles');await flush(all.filter(function(k){return !isProf(k);}),'follow links');
+      alert('Done.\n'+Object.keys(uids).length+' users checked\n'+made+' profiles created\n'+fields+' fields updated\n'+links+' old friendships converted to mutual follows'+(problems.length?'\n\nProblems (check your rules):\n'+problems.join('\n'):''));
+    }catch(e){console.error(e);alert('Backfill failed: '+e.message+'\n\nCheck that your database rules let the admin account write to user_profiles, user_prefs, followers and following.');}
+    b.disabled=false;b.textContent='Backfill user profiles';
+  }
+  firebase.auth().onAuthStateChanged(function(u){var x=document.getElementById('bfBtn');if(u&&u.email===ADMIN)btn();else if(x)x.remove();});
+})();
 </script>
 </body>
 </html>
