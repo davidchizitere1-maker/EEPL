@@ -2,6 +2,47 @@
 <html lang="en">
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+(function(){
+  if(window.EEPLRooms)return;
+  var GAMES={
+    football:{label:'Football (EA FC, eFootball, FIFA)',icon:'\u26BD',format:'league',terms:{}},
+    shooter:{label:'Shooter (Call of Duty, Valorant, CS)',icon:'\uD83C\uDFAF',format:'league',terms:{goals:'Kills',goal:'Kill',cleanSheets:'Shutouts',cleanSheet:'Shutout',gd:'Round Diff',topScorer:'Top Fragger'}},
+    battleroyale:{label:'Battle royale (Warzone, Free Fire, PUBG)',icon:'\uD83E\uDE82',format:'leaderboard',entry:'Squad',round:'Match',score:'Points'},
+    runner:{label:'Endless runner (Subway Surfers, Temple Run)',icon:'\uD83C\uDFC3',format:'leaderboard',entry:'Runner',round:'Run',score:'Score'},
+    fantasy:{label:'Fantasy league',icon:'\uD83E\uDDD9',format:'leaderboard',entry:'Manager',round:'Gameweek',score:'Points'},
+    mission:{label:'Missions & challenges',icon:'\uD83C\uDF96\uFE0F',format:'leaderboard',entry:'Player',round:'Mission',score:'Points'},
+    racing:{label:'Racing',icon:'\uD83C\uDFCE\uFE0F',format:'leaderboard',entry:'Driver',round:'Race',score:'Points'},
+    custom:{label:'Other game',icon:'\uD83C\uDFAE',format:'league',terms:{}}
+  };
+  var DEF={goals:'Goals',goal:'Goal',cleanSheets:'Clean Sheets',cleanSheet:'Clean Sheet',gd:'Goal Difference',topScorer:'Top Scorer'};
+  var esc=function(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';';});};
+  function logo(name){var ch=String(name||'?').trim().charAt(0).toUpperCase()||'?';return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#111111"/><text x="32" y="42" font-family="Arial,sans-serif" font-size="28" font-weight="700" text-anchor="middle" fill="#00e5ff">'+esc(ch)+'</text></svg>');}
+  function paths(id){id=id||'main';if(id==='main')return {id:'main',data:'league_data',motw:'leagueMOTW',chat:'eepl_chat'};return {id:id,data:'room_data/'+id+'/data',motw:'room_data/'+id+'/motw',chat:'room_data/'+id+'/chat'};}
+  function curId(){try{return localStorage.getItem('eepl_room')||'main';}catch(e){return 'main';}}
+  function defaultMeta(id){return id==='main'?{id:'main',name:'EEPL Football League',game:'football',format:'league',status:'live',scoring:'sum',description:'The original EEPL football league.'}:{id:id,name:'Room',game:'custom',format:'league',status:'live',scoring:'sum',description:''};}
+  function normalize(id,m){var d=defaultMeta(id),o=Object.assign({},d,m||{}),g=GAMES[o.game]||GAMES.custom;o.id=id;o.format=(m&&m.format)||g.format;o.scoring=(m&&m.scoring)||(o.game==='runner'?'best':'sum');o.gameInfo=g;return o;}
+  function loadMeta(id){id=id||curId();return firebase.database().ref('room_meta/'+id).once('value').then(function(s){return normalize(id,s.val());}).catch(function(){return normalize(id,null);});}
+  var ORD={live:0,upcoming:1,finished:2};
+  function list(){return firebase.database().ref('room_meta').once('value').then(function(s){var v=s.val()||{},out=[];Object.keys(v).forEach(function(k){out.push(normalize(k,v[k]));});if(!v.main)out.unshift(normalize('main',null));out.sort(function(a,b){return (ORD[a.status]||0)-(ORD[b.status]||0)||String(a.name).localeCompare(b.name);});return out;}).catch(function(){return [normalize('main',null)];});}
+  function terms(meta){var g=(meta&&meta.gameInfo)||GAMES.custom;return Object.assign({entry:g.entry||'Player',round:g.round||'Round',score:g.score||'Points'},DEF,g.terms||{});}
+  function applyTerms(meta,selectors){
+    if(!meta||meta.format==='leaderboard')return;
+    var T=terms(meta),pairs=[];
+    if(T.goals!==DEF.goals)pairs.push([/\bGoals\/Game\b/g,T.goals+'/Game'],[/\bTotal Goals\b/g,'Total '+T.goals],[/\bGoals\b/g,T.goals],[/\bGoal\b/g,T.goal]);
+    if(T.cleanSheets!==DEF.cleanSheets)pairs.push([/\bClean Sheets\b/g,T.cleanSheets],[/\bClean Sheet\b/g,T.cleanSheet]);
+    if(T.gd!==DEF.gd)pairs.push([/\bGoal Difference\b/g,T.gd]);
+    if(T.topScorer!==DEF.topScorer)pairs.push([/\bTop Scorer\b/g,T.topScorer]);
+    if(!pairs.length)return;
+    var roots=function(){var r=[];selectors.forEach(function(s){[].forEach.call(document.querySelectorAll(s),function(e){r.push(e);});});return r;},busy=false,timer=null;
+    function run(){busy=true;roots().forEach(function(root){var w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,null),n;while((n=w.nextNode())){var p=n.parentNode&&n.parentNode.nodeName;if(p==='SCRIPT'||p==='STYLE'||p==='TEXTAREA')continue;var t=n.nodeValue,o=t;pairs.forEach(function(x){t=t.replace(x[0],x[1]);});if(t!==o)n.nodeValue=t;}});busy=false;}
+    function sched(){if(timer)return;timer=setTimeout(function(){timer=null;run();},120);}
+    run();roots().forEach(function(root){try{new MutationObserver(function(){if(!busy)sched();}).observe(root,{childList:true,subtree:true,characterData:true});}catch(e){}});
+  }
+  window.__RP=paths(curId());
+  window.EEPLRooms={GAMES:GAMES,paths:paths,id:curId,set:function(id){try{localStorage.setItem('eepl_room',id);}catch(e){}},loadMeta:loadMeta,list:list,normalize:normalize,terms:terms,applyTerms:applyTerms,logo:logo,esc:esc};
+})();
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EEPL | Admin Dashboard</title>
@@ -22,7 +63,8 @@
         /* Tables */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border-color); }th { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; }.flex-row { display: flex; gap: 15px; align-items: flex-end; }.flex-row > div { flex: 1; }
     </style>
-    <style id="eepl-shared">
+    <style>body.room-lb .lg-only{display:none !important}body:not(.room-lb) .lb-only{display:none !important}.rm-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-color);flex-wrap:wrap}.rm-row b{flex:1;min-width:140px}.rm-chip{font-size:.68rem;font-weight:800;letter-spacing:.08em;padding:3px 9px;border-radius:12px;background:#1d1d1d;color:#9aa0a6;text-transform:uppercase}.rm-chip.live{background:rgba(0,255,65,.14);color:#00ff41}.rm-chip.upcoming{background:rgba(255,215,0,.14);color:#ffd700}.rm-actions{display:flex;gap:8px;flex-wrap:wrap}.rm-actions button{padding:7px 12px;font-size:.75rem}.sc-grid{display:grid;grid-template-columns:1fr 130px;gap:8px 14px;align-items:center;margin:12px 0}</style>
+<style id="eepl-shared">
 /* EEPL shared interface polish */
 :root { color-scheme: dark; }
 html { scroll-behavior: smooth; }
@@ -90,12 +132,15 @@ body{background-color:#050505}
             <h2><i class="fa-solid fa-lock"></i> EEPL Admin</h2>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 5px;">Control Panel</p>
         </div>
+        <div style="padding:0 16px 12px"><label style="font-size:.68rem;letter-spacing:.12em;color:var(--text-muted)">MANAGING ROOM</label><select id="roomSelect"></select></div>
         <ul class="nav-links">
-            <li class="nav-item active" onclick="switchPane('pane-teams', this)"><i class="fa-solid fa-shield-halved"></i> Manage Teams</li>
-            <li class="nav-item" onclick="switchPane('pane-fixtures', this)"><i class="fa-solid fa-calendar-plus"></i> Fixtures & Results</li>
-            <li class="nav-item" onclick="switchPane('pane-stats', this)"><i class="fa-solid fa-chart-line"></i> Player Stats</li>
+            <li class="nav-item" id="navRooms" onclick="switchPane('pane-rooms', this)"><i class="fa-solid fa-layer-group"></i> Rooms</li>
+            <li class="nav-item lb-only" id="navLb" onclick="switchPane('pane-lb', this)"><i class="fa-solid fa-ranking-star"></i> Leaderboard</li>
+            <li class="nav-item active lg-only" onclick="switchPane('pane-teams', this)"><i class="fa-solid fa-shield-halved"></i> Manage Teams</li>
+            <li class="nav-item lg-only" onclick="switchPane('pane-fixtures', this)"><i class="fa-solid fa-calendar-plus"></i> Fixtures & Results</li>
+            <li class="nav-item lg-only" onclick="switchPane('pane-stats', this)"><i class="fa-solid fa-chart-line"></i> Player Stats</li>
             <li class="nav-item" onclick="switchPane('pane-news', this)"><i class="fa-solid fa-newspaper"></i> News Manager</li>
-            <li class="nav-item" onclick="switchPane('pane-lineup', this)"><i class="fa-solid fa-upload"></i> Upload Lineup</li>
+            <li class="nav-item lg-only" onclick="switchPane('pane-lineup', this)"><i class="fa-solid fa-upload"></i> Upload Lineup</li>
             <li class="nav-item" onclick="switchPane('pane-system', this)"><i class="fa-solid fa-gear"></i> System</li>
         </ul>
 
@@ -387,7 +432,33 @@ body{background-color:#050505}
     <button onclick="clearAllData()" style="background:#ff4d4d; width:100%;">
     🗑️ Reset Entire League
 </button></div>
-</section></main>
+</section>
+        <section id="pane-rooms" class="pane">
+            <h2>Rooms</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">Run several leagues and tournaments at the same time, for different games. Every room has its own teams or players, fixtures or rounds, news, chat and dashboard. Pick the room you are managing in the selector on the left.</p>
+            <div class="card">
+                <h3>Create a room</h3>
+                <div class="form-group"><label>Room name</label><input id="rmName" maxlength="60" placeholder="e.g. EA FC Pro League: Season 2"></div>
+                <div class="form-group"><label>Game</label><select id="rmGame"></select></div>
+                <div class="form-group"><label>Format</label><select id="rmFormat"><option value="league">League: teams play matches and a standings table is built</option><option value="leaderboard">Leaderboard: players or squads score points each round</option></select></div>
+                <div class="form-group" id="rmScoringWrap"><label>Ranking (leaderboard format)</label><select id="rmScoring"><option value="sum">Total of all rounds</option><option value="best">Best single round</option></select></div>
+                <div class="form-group"><label>Status</label><select id="rmStatus"><option value="live">Live</option><option value="upcoming">Upcoming</option><option value="finished">Finished</option></select></div>
+                <div class="form-group"><label>Short description</label><input id="rmDesc" maxlength="140" placeholder="Who can join, prizes, schedule..."></div>
+                <button id="rmCreate" type="button">Create room</button>
+            </div>
+            <div class="card"><h3>All rooms</h3><div id="rmList">Loading…</div></div>
+            <div class="card"><h3>Join requests for the selected room</h3><div id="rmReqs">None.</div></div>
+        </section>
+
+        <section id="pane-lb" class="pane">
+            <h2 id="lbTitle">Leaderboard</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;" id="lbHelp">Add the players or squads, create rounds, then enter each round's scores. The leaderboard on the dashboard updates instantly.</p>
+            <div class="card"><h3 id="lbAddTitle">Add entry</h3><div class="form-group"><label>Name (must match the member's gamer name to link their account)</label><input id="lbEntryName" maxlength="30"></div><button id="lbAddEntry" type="button">Add</button></div>
+            <div class="card"><h3>Standings</h3><table><thead><tr><th>#</th><th>Name</th><th>Total</th><th>Best</th><th>Rounds</th><th>Actions</th></tr></thead><tbody id="lbEntries"></tbody></table></div>
+            <div class="card"><h3 id="lbRoundTitle">Create a round</h3><div class="form-group"><label>Name</label><input id="lbRoundName" maxlength="40" placeholder="e.g. Round 1"></div><div class="form-group"><label>Date (optional)</label><input id="lbRoundDate" type="date"></div><button id="lbAddRound" type="button">Create round</button></div>
+            <div class="card"><h3 id="lbScoreTitle">Enter scores</h3><div class="form-group"><label>Round</label><select id="lbRound"></select></div><div id="lbScores" class="sc-grid"></div><div class="rm-actions"><button id="lbSaveScores" type="button">Save scores</button><button id="lbDelRound" type="button" class="secondary">Delete round</button></div></div>
+        </section>
+</main>
 
     <script>
     // --- CLOUD DATA ARCHITECTURE ---
@@ -395,11 +466,12 @@ body{background-color:#050505}
         teams: [],
         fixtures: [],
         stats: [],
-        news: [] 
+        news: [], entries: [], rounds: [], scores: {} 
     };
 
     // Reference to your central league database in Firebase
-    const dbRef = firebase.database().ref('league_data');
+    const ROOM = EEPLRooms.paths(EEPLRooms.id());
+    const dbRef = firebase.database().ref(ROOM.data);
 
     // Initialize App & Listen for Live Cloud Updates
     document.addEventListener('DOMContentLoaded', () => {
@@ -411,7 +483,10 @@ body{background-color:#050505}
                     teams: data.teams || [],
                     fixtures: data.fixtures || [],
                     stats: data.stats || [],
-                    news: data.news || []
+                    news: data.news || [],
+                    entries: data.entries || [],
+                    rounds: data.rounds || [],
+                    scores: data.scores || {}
                 };
             }
             
@@ -422,7 +497,7 @@ body{background-color:#050505}
         });
 
         // Load MOTW separately
-        firebase.database().ref('leagueMOTW').on('value', (snapshot) => {
+        firebase.database().ref(ROOM.motw).on('value', (snapshot) => {
             if (snapshot.exists() && typeof displayMOTW === "function") {
                 displayMOTW(snapshot.val());
             }
@@ -458,11 +533,11 @@ body{background-color:#050505}
         if (!confirm("⚠️ WARNING: This permanently deletes EVERYTHING from the cloud. Continue?")) return;
 
         // Reset database COMPLETELY
-        db = { teams: [], fixtures: [], stats: [], news: [] };
+        db = { teams: [], fixtures: [], stats: [], news: [], entries: [], rounds: [], scores: {} };
         
         // Wipe Firebase Nodes
         dbRef.remove();
-        firebase.database().ref('leagueMOTW').remove();
+        firebase.database().ref(ROOM.motw).remove();
 
         // Clear local UI
         document.getElementById('teamsTableBody').innerHTML = "";
@@ -549,7 +624,7 @@ body{background-color:#050505}
     // --- TEAM MANAGEMENT ---
     function addTeam() {
         const name = document.getElementById('teamNameInput').value.trim();
-        const logo = selectedLogoData || 'https://via.placeholder.com/30?text=⚽';
+        const logo = selectedLogoData || EEPLRooms.logo(name);
         
         if (!name) return alert("Enter a team name");
         
@@ -716,7 +791,7 @@ body{background-color:#050505}
     async function undoFixtureStats(fixtureId) {
     try {
         // 1. Get the current state of the fixture
-        const fixtureRef = firebase.database().ref(`league_data/fixtures/${fixtureId}`);
+        const fixtureRef = firebase.database().ref(`${ROOM.data}/fixtures/${fixtureId}`);
         const snapshot = await fixtureRef.once('value');
         const match = snapshot.val();
 
@@ -728,8 +803,8 @@ body{background-color:#050505}
         const { homeTeam, awayTeam, homeScore, awayScore } = match;
 
         // 2. Define references for both teams
-        const homeRef = firebase.database().ref(`league_data/teams/${homeTeam}`);
-        const awayRef = firebase.database().ref(`league_data/teams/${awayTeam}`);
+        const homeRef = firebase.database().ref(`${ROOM.data}/teams/${homeTeam}`);
+        const awayRef = firebase.database().ref(`${ROOM.data}/teams/${awayTeam}`);
 
         // 3. Perform the "Reverse Math"
         await homeRef.transaction((stats) => {
@@ -898,13 +973,14 @@ body{background-color:#050505}
             reason: document.getElementById('editMotwReason').value
         };
 
-        firebase.database().ref('leagueMOTW').set(motwData)
+        firebase.database().ref(ROOM.motw).set(motwData)
             .then(() => alert("Match of the Week Synchronized!"))
             .catch(error => alert("Failed to sync MOTW: " + error.message));
     }
 
     // --- RENDER FUNCTIONS ---
     function renderAll() {
+        if (window.__lbRender) window.__lbRender();
         renderTeams();
         renderFixtures();
         renderStats();
@@ -1117,7 +1193,7 @@ async function loginUser() {
 
 // 4. Actual Database Write
 function executeFirebaseWrite(data) {
-    firebase.database().ref('league_data').update(data)
+    firebase.database().ref(ROOM.data).update(data)
         .then(() => {
             alert("League data updated successfully!");
         })
@@ -1194,6 +1270,138 @@ function logoutUser() {
     b.disabled=false;b.textContent='Backfill user profiles';
   }
   firebase.auth().onAuthStateChanged(function(u){var x=document.getElementById('bfBtn');if(u&&u.email===ADMIN)btn();else if(x)x.remove();});
+})();
+</script>
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i);},esc=EEPLRooms.esc,G=EEPLRooms.GAMES,META=null,T=null;
+  var DB=function(){return firebase.database();};
+  var ROOMS=[];
+  /* ---- mode: league rooms show the football-style tools, leaderboard rooms show the score tools ---- */
+  EEPLRooms.loadMeta().then(function(m){
+    META=m;T=EEPLRooms.terms(m);window.ROOM_META=m;
+    document.body.classList.toggle('room-lb',m.format==='leaderboard');
+    var p=document.querySelector('.sidebar-header p');if(p)p.textContent=(m.gameInfo.icon||'')+' '+m.name;
+    if(m.format==='leaderboard'){
+      var li=$('navLb');if(li)switchPane('pane-lb',li);
+      $('lbTitle').textContent=m.name+': leaderboard';$('lbAddTitle').textContent='Add '+T.entry.toLowerCase();
+      $('lbRoundTitle').textContent='Create a '+T.round.toLowerCase();$('lbScoreTitle').textContent='Enter '+T.score.toLowerCase();
+    } else EEPLRooms.applyTerms(m,['.main-content']);
+    lb();
+  });
+  /* ---- room selector ---- */
+  function fillSelect(){
+    EEPLRooms.list().then(function(r){
+      ROOMS=r;var s=$('roomSelect');s.innerHTML='';
+      r.forEach(function(x){var o=document.createElement('option');o.value=x.id;o.textContent=(x.gameInfo.icon||'')+' '+x.name+(x.status!=='live'?' ('+x.status+')':'');s.appendChild(o);});
+      s.value=EEPLRooms.id();drawList();
+    });
+  }
+  $('roomSelect').addEventListener('change',function(){EEPLRooms.set(this.value);location.reload();});
+  /* ---- create / edit / delete rooms ---- */
+  Object.keys(G).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=G[k].icon+' '+G[k].label;$('rmGame').appendChild(o);});
+  function syncFormat(){var g=G[$('rmGame').value]||G.custom;$('rmFormat').value=g.format;$('rmScoring').value=$('rmGame').value==='runner'?'best':'sum';}
+  $('rmGame').addEventListener('change',syncFormat);syncFormat();
+  $('rmCreate').addEventListener('click',function(){
+    var name=$('rmName').value.trim();if(!name)return alert('Give the room a name');
+    var id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24)+'-'+Date.now().toString(36).slice(-4);
+    var meta={name:name,game:$('rmGame').value,format:$('rmFormat').value,scoring:$('rmScoring').value,status:$('rmStatus').value,description:$('rmDesc').value.trim(),createdAt:firebase.database.ServerValue.TIMESTAMP};
+    DB().ref('room_meta/'+id).set(meta).then(function(){
+      $('rmName').value='';$('rmDesc').value='';fillSelect();
+      if(confirm('Room created. Switch to it now to add its '+(meta.format==='leaderboard'?'players and rounds':'teams and fixtures')+'?')){EEPLRooms.set(id);location.reload();}
+    }).catch(function(e){alert('Could not create the room: '+e.message+'\n\nCheck that your database rules allow the admin to write room_meta.');});
+  });
+  function drawList(){
+    var box=$('rmList');box.innerHTML='';
+    ROOMS.forEach(function(r){
+      var row=document.createElement('div');row.className='rm-row';
+      row.innerHTML='<span style="font-size:1.4rem">'+esc(r.gameInfo.icon)+'</span><b>'+esc(r.name)+'<br><small style="color:var(--text-muted);font-weight:400">'+esc(r.gameInfo.label)+' · '+(r.format==='leaderboard'?'leaderboard':'league')+'</small></b><span class="rm-chip '+esc(r.status)+'">'+esc(r.status)+'</span>';
+      var act=document.createElement('div');act.className='rm-actions';
+      var mk=function(t,fn,cls){var b=document.createElement('button');b.type='button';b.textContent=t;if(cls)b.className=cls;b.onclick=fn;act.appendChild(b);};
+      mk('Manage',function(){EEPLRooms.set(r.id);location.reload();},r.id===EEPLRooms.id()?'secondary':'');
+      mk('Edit',function(){
+        var n=prompt('Room name',r.name);if(n===null)return;var d=prompt('Description',r.description||'');if(d===null)return;
+        var s=prompt('Status (live, upcoming or finished)',r.status);if(s===null)return;s=String(s).trim().toLowerCase();if(['live','upcoming','finished'].indexOf(s)<0)return alert('Status must be live, upcoming or finished');
+        var m={name:n.trim()||r.name,description:d.trim(),status:s,game:r.game,format:r.format,scoring:r.scoring};
+        DB().ref('room_meta/'+r.id).update(m).then(fillSelect).catch(function(e){alert(e.message);});
+      },'secondary');
+      if(r.id!=='main')mk('Delete',function(){
+        if(!confirm('Delete "'+r.name+'" and ALL its teams, fixtures, scores, news and chat? This cannot be undone.'))return;
+        var up={};up['room_meta/'+r.id]=null;up['room_data/'+r.id]=null;up['room_requests/'+r.id]=null;
+        DB().ref().update(up).then(function(){if(EEPLRooms.id()===r.id){EEPLRooms.set('main');location.reload();}else fillSelect();}).catch(function(e){alert(e.message);});
+      },'secondary');
+      row.appendChild(act);box.appendChild(row);
+    });
+  }
+  /* ---- join requests ---- */
+  var reqRef=null;
+  function watchReqs(){
+    if(reqRef)reqRef.off();reqRef=DB().ref('room_requests/'+ROOM.id);
+    reqRef.on('value',function(s){
+      var v=s.val()||{},ids=Object.keys(v),box=$('rmReqs');box.innerHTML=ids.length?'':'No pending requests for this room.';
+      ids.forEach(function(uid){
+        var q=v[uid]||{},row=document.createElement('div');row.className='rm-row';
+        row.innerHTML='<b>'+esc(q.name||'Player')+'<br><small style="color:var(--text-muted);font-weight:400">wants to join</small></b>';
+        var act=document.createElement('div');act.className='rm-actions';
+        var ok=document.createElement('button');ok.type='button';ok.textContent='Approve';ok.onclick=function(){approve(uid,q);};
+        var no=document.createElement('button');no.type='button';no.className='secondary';no.textContent='Reject';no.onclick=function(){DB().ref('room_requests/'+ROOM.id+'/'+uid).remove();};
+        act.appendChild(ok);act.appendChild(no);row.appendChild(act);box.appendChild(row);
+      });
+    },function(e){$('rmReqs').textContent='Could not read requests: '+e.message;});
+  }
+  function approve(uid,q){
+    var name=String(q.name||'').trim();if(!name)return;
+    var lower=name.toLowerCase();
+    if(META&&META.format==='leaderboard'){
+      if(db.entries.some(function(e){return e.name.toLowerCase()===lower;}))return alert('That name is already in this room.');
+      db.entries.push({id:'entry_'+Date.now(),name:name,logo:EEPLRooms.logo(name)});
+    } else {
+      if(db.teams.some(function(t){return t.name.toLowerCase()===lower;}))return alert('That name is already in this room.');
+      db.teams.push({id:'team_'+Date.now(),name:name,logo:EEPLRooms.logo(name),p:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0});
+    }
+    saveAndRefresh();DB().ref('room_requests/'+ROOM.id+'/'+uid).remove();
+  }
+  /* ---- leaderboard tools ---- */
+  function score(entry){var vals=[];(db.rounds||[]).forEach(function(r){var v=db.scores&&db.scores[r.id]&&db.scores[r.id][entry.id];if(typeof v==='number')vals.push(v);});
+    return {total:vals.reduce(function(a,b){return a+b;},0),best:vals.length?Math.max.apply(null,vals):0,played:vals.length};}
+  function lb(){
+    if(!$('lbEntries'))return;
+    var rows=(db.entries||[]).map(function(e){var s=score(e);s.e=e;s.key=META&&META.scoring==='best'?s.best:s.total;return s;}).sort(function(a,b){return b.key-a.key||b.best-a.best||b.total-a.total;});
+    var tb=$('lbEntries');tb.innerHTML='';
+    rows.forEach(function(r,i){var tr=document.createElement('tr');tr.innerHTML='<td>'+(i+1)+'</td><td><img loading="lazy" decoding="async" src="'+esc(r.e.logo||EEPLRooms.logo(r.e.name))+'" style="width:24px;height:24px;border-radius:50%;vertical-align:middle;margin-right:8px">'+esc(r.e.name)+'</td><td>'+r.total+'</td><td>'+r.best+'</td><td>'+r.played+'</td><td></td>';
+      var b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='Remove';b.onclick=function(){if(!confirm('Remove '+r.e.name+' and their scores?'))return;db.entries=db.entries.filter(function(x){return x.id!==r.e.id;});Object.keys(db.scores||{}).forEach(function(k){if(db.scores[k])delete db.scores[k][r.e.id];});saveAndRefresh();};
+      tr.lastChild.appendChild(b);tb.appendChild(tr);});
+    if(!rows.length)tb.innerHTML='<tr><td colspan="6" style="color:var(--text-muted)">No entries yet.</td></tr>';
+    var sel=$('lbRound'),keep=sel.value;sel.innerHTML='';(db.rounds||[]).slice().reverse().forEach(function(r){var o=document.createElement('option');o.value=r.id;o.textContent=r.name+(r.date?' ('+r.date+')':'');sel.appendChild(o);});
+    if(keep&&(db.rounds||[]).some(function(r){return r.id===keep;}))sel.value=keep;
+    drawScores();
+  }
+  function drawScores(){
+    var box=$('lbScores');box.innerHTML='';var rid=$('lbRound').value;if(!rid){box.innerHTML='<div style="grid-column:1/-1;color:var(--text-muted)">Create a round first.</div>';return;}
+    var cur=(db.scores&&db.scores[rid])||{};
+    (db.entries||[]).forEach(function(e){var l=document.createElement('label');l.style.margin='0';l.textContent=e.name;var i=document.createElement('input');i.type='number';i.step='any';i.dataset.id=e.id;i.placeholder='0';if(typeof cur[e.id]==='number')i.value=cur[e.id];box.appendChild(l);box.appendChild(i);});
+  }
+  window.__lbRender=lb;
+  $('lbRound').addEventListener('change',drawScores);
+  $('lbAddEntry').addEventListener('click',function(){
+    var n=$('lbEntryName').value.trim();if(!n)return alert('Enter a name');
+    if(db.entries.some(function(e){return e.name.toLowerCase()===n.toLowerCase();}))return alert('That name is already in this room.');
+    db.entries.push({id:'entry_'+Date.now(),name:n,logo:EEPLRooms.logo(n)});$('lbEntryName').value='';saveAndRefresh();
+  });
+  $('lbAddRound').addEventListener('click',function(){
+    var n=$('lbRoundName').value.trim();if(!n)return alert('Give the round a name');
+    db.rounds.push({id:'round_'+Date.now(),name:n,date:$('lbRoundDate').value||''});$('lbRoundName').value='';saveAndRefresh();
+  });
+  $('lbSaveScores').addEventListener('click',function(){
+    var rid=$('lbRound').value;if(!rid)return;var o={};
+    [].forEach.call($('lbScores').querySelectorAll('input'),function(i){if(i.value!==''&&!isNaN(Number(i.value)))o[i.dataset.id]=Number(i.value);});
+    db.scores=db.scores||{};db.scores[rid]=o;saveAndRefresh();alert('Scores saved.');
+  });
+  $('lbDelRound').addEventListener('click',function(){
+    var rid=$('lbRound').value;if(!rid||!confirm('Delete this round and its scores?'))return;
+    db.rounds=db.rounds.filter(function(r){return r.id!==rid;});if(db.scores)delete db.scores[rid];saveAndRefresh();
+  });
+  firebase.auth().onAuthStateChanged(function(u){if(u){fillSelect();watchReqs();}});
 })();
 </script>
 </body>
