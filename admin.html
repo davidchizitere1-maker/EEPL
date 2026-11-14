@@ -13,6 +13,8 @@
     fantasy:{label:'Fantasy league',icon:'\uD83E\uDDD9',format:'leaderboard',entry:'Manager',round:'Gameweek',score:'Points'},
     mission:{label:'Missions & challenges',icon:'\uD83C\uDF96\uFE0F',format:'leaderboard',entry:'Player',round:'Mission',score:'Points'},
     racing:{label:'Racing',icon:'\uD83C\uDFCE\uFE0F',format:'leaderboard',entry:'Driver',round:'Race',score:'Points'},
+    knockout:{label:'Knockout cup (single elimination)',icon:'\uD83C\uDFC6',format:'cup',cupType:'knockout',terms:{}},
+    groupcup:{label:'Groups + knockout (World Cup style)',icon:'\uD83C\uDF0D',format:'cup',cupType:'groups',terms:{}},
     custom:{label:'Other game',icon:'\uD83C\uDFAE',format:'league',terms:{}}
   };
   var DEF={goals:'Goals',goal:'Goal',cleanSheets:'Clean Sheets',cleanSheet:'Clean Sheet',gd:'Goal Difference',topScorer:'Top Scorer'};
@@ -21,7 +23,7 @@
   function paths(id){id=id||'main';if(id==='main')return {id:'main',data:'league_data',motw:'leagueMOTW',chat:'eepl_chat'};return {id:id,data:'room_data/'+id+'/data',motw:'room_data/'+id+'/motw',chat:'room_data/'+id+'/chat'};}
   function curId(){try{return localStorage.getItem('eepl_room')||'main';}catch(e){return 'main';}}
   function defaultMeta(id){return id==='main'?{id:'main',name:'EEPL Football League',game:'football',format:'league',status:'live',scoring:'sum',description:'The original EEPL football league.'}:{id:id,name:'Room',game:'custom',format:'league',status:'live',scoring:'sum',description:''};}
-  function normalize(id,m){var d=defaultMeta(id),o=Object.assign({},d,m||{}),g=GAMES[o.game]||GAMES.custom;o.id=id;o.format=(m&&m.format)||g.format;o.scoring=(m&&m.scoring)||(o.game==='runner'?'best':'sum');o.gameInfo=g;return o;}
+  function normalize(id,m){var d=defaultMeta(id),o=Object.assign({},d,m||{}),g=GAMES[o.game]||GAMES.custom;o.id=id;o.format=(m&&m.format)||g.format;o.cupType=(m&&m.cupType)||g.cupType||'';o.scoring=(m&&m.scoring)||(o.game==='runner'?'best':'sum');o.gameInfo=g;return o;}
   function loadMeta(id){id=id||curId();return firebase.database().ref('room_meta/'+id).once('value').then(function(s){return normalize(id,s.val());}).catch(function(){return normalize(id,null);});}
   var ORD={live:0,upcoming:1,finished:2};
   function list(){return firebase.database().ref('room_meta').once('value').then(function(s){var v=s.val()||{},out=[];Object.keys(v).forEach(function(k){out.push(normalize(k,v[k]));});if(!v.main)out.unshift(normalize('main',null));out.sort(function(a,b){return (ORD[a.status]||0)-(ORD[b.status]||0)||String(a.name).localeCompare(b.name);});return out;}).catch(function(){return [normalize('main',null)];});}
@@ -104,6 +106,7 @@ input:focus,select:focus,textarea:focus{border-color:#00e5ff !important;box-shad
 --font-display:'Barlow Condensed','Segoe UI',sans-serif;--font-body:'DM Sans','Segoe UI',system-ui,sans-serif}
 body{background-color:#050505}
 </style>
+<style id="cupX">body:not(.room-cup) .cup-only{display:none !important}body.room-ko .grp-only{display:none !important}#pane-cup table{width:100%;border-collapse:collapse}#pane-cup th,#pane-cup td{text-align:left;padding:8px;border-bottom:1px solid var(--border-color)}</style>
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
@@ -138,6 +141,7 @@ body{background-color:#050505}
             <li class="nav-item lb-only" id="navLb" onclick="switchPane('pane-lb', this)"><i class="fa-solid fa-ranking-star"></i> Leaderboard</li>
             <li class="nav-item active lg-only" onclick="switchPane('pane-teams', this)"><i class="fa-solid fa-shield-halved"></i> Manage Teams</li>
             <li class="nav-item lg-only" onclick="switchPane('pane-fixtures', this)"><i class="fa-solid fa-calendar-plus"></i> Fixtures & Results</li>
+            <li class="nav-item cup-only" onclick="switchPane('pane-cup', this)"><i class="fa-solid fa-trophy"></i> Cup Setup</li>
             <li class="nav-item lg-only" onclick="switchPane('pane-stats', this)"><i class="fa-solid fa-chart-line"></i> Player Stats</li>
             <li class="nav-item" onclick="switchPane('pane-news', this)"><i class="fa-solid fa-newspaper"></i> News Manager</li>
             <li class="nav-item lg-only" onclick="switchPane('pane-lineup', this)"><i class="fa-solid fa-upload"></i> Upload Lineup</li>
@@ -433,6 +437,27 @@ body{background-color:#050505}
     🗑️ Reset Entire League
 </button></div>
 </section>
+        <section id="pane-cup" class="pane">
+            <h2>Cup setup</h2>
+            <p id="cupIntro" style="color: var(--text-muted); margin-bottom: 20px;"></p>
+            <div class="card grp-only" id="cupGroupsCard">
+                <h3>1 · Groups</h3>
+                <div class="form-group"><label>Number of groups</label><select id="cupGroupCount"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
+                <div class="form-group"><label>Teams that qualify from each group</label><select id="cupAdvance"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+                <div class="form-group"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cupDouble" style="width:auto"> Home and away (every pair plays twice)</label></div>
+                <div class="rm-actions"><button id="cupDraw" type="button">Random draw</button><button id="cupMakeFx" type="button">Create group fixtures</button></div>
+                <p style="color: var(--text-muted); margin:12px 0 6px; font-size:.85rem">After the draw you can move any team to a different group below. Do this before creating the fixtures.</p>
+                <div id="cupGroupList"></div>
+            </div>
+            <div class="card" id="cupKoCard">
+                <h3 id="cupKoTitle">Knockout stage</h3>
+                <p id="cupKoInfo" style="color: var(--text-muted); margin-bottom:12px"></p>
+                <div class="form-group" id="cupSeedWrap"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cupRandomSeed" checked style="width:auto"> Random draw (untick to seed by the order teams were added)</label></div>
+                <div class="rm-actions"><button id="cupMakeKo" type="button">Generate knockout bracket</button><button id="cupResetKo" type="button" class="secondary">Reset knockout</button></div>
+                <div id="cupBracketPreview" style="margin-top:14px"></div>
+            </div>
+        </section>
+
         <section id="pane-rooms" class="pane">
             <h2>Rooms</h2>
             <p style="color: var(--text-muted); margin-bottom: 20px;">Run several leagues and tournaments at the same time, for different games. Every room has its own teams or players, fixtures or rounds, news, chat and dashboard. Pick the room you are managing in the selector on the left.</p>
@@ -440,7 +465,7 @@ body{background-color:#050505}
                 <h3>Create a room</h3>
                 <div class="form-group"><label>Room name</label><input id="rmName" maxlength="60" placeholder="e.g. EA FC Pro League: Season 2"></div>
                 <div class="form-group"><label>Game</label><select id="rmGame"></select></div>
-                <div class="form-group"><label>Format</label><select id="rmFormat"><option value="league">League: teams play matches and a standings table is built</option><option value="leaderboard">Leaderboard: players or squads score points each round</option></select></div>
+                <div class="form-group"><label>Format</label><select id="rmFormat"><option value="league">League: teams play matches and a standings table is built</option><option value="leaderboard">Leaderboard: players or squads score points each round</option><option value="cup">Cup: knockout bracket, or groups then knockout</option></select></div>
                 <div class="form-group" id="rmScoringWrap"><label>Ranking (leaderboard format)</label><select id="rmScoring"><option value="sum">Total of all rounds</option><option value="best">Best single round</option></select></div>
                 <div class="form-group"><label>Status</label><select id="rmStatus"><option value="live">Live</option><option value="upcoming">Upcoming</option><option value="finished">Finished</option></select></div>
                 <div class="form-group"><label>Short description</label><input id="rmDesc" maxlength="140" placeholder="Who can join, prizes, schedule..."></div>
@@ -455,7 +480,7 @@ body{background-color:#050505}
             <p style="color: var(--text-muted); margin-bottom: 20px;" id="lbHelp">Add the players or squads, create rounds, then enter each round's scores. The leaderboard on the dashboard updates instantly.</p>
             <div class="card"><h3 id="lbAddTitle">Add entry</h3><div class="form-group"><label>Name (must match the member's gamer name to link their account)</label><input id="lbEntryName" maxlength="30"></div><button id="lbAddEntry" type="button">Add</button></div>
             <div class="card"><h3>Standings</h3><table><thead><tr><th>#</th><th>Name</th><th>Total</th><th>Best</th><th>Rounds</th><th>Actions</th></tr></thead><tbody id="lbEntries"></tbody></table></div>
-            <div class="card"><h3 id="lbRoundTitle">Create a round</h3><div class="form-group"><label>Name</label><input id="lbRoundName" maxlength="40" placeholder="e.g. Round 1"></div><div class="form-group"><label>Date (optional)</label><input id="lbRoundDate" type="date"></div><button id="lbAddRound" type="button">Create round</button></div>
+            <div class="card"><h3 id="lbRoundTitle">Create a round</h3><div class="form-group"><label>Name</label><input id="lbRoundName" maxlength="40" placeholder="e.g. Round 1"></div><div class="form-group"><label>Date (optional)</label><input id="lbRoundDate" type="date"></div><div class="form-group"><label>Start time (optional)</label><input id="lbRoundTime" type="time"></div><button id="lbAddRound" type="button">Create round</button></div>
             <div class="card"><h3 id="lbScoreTitle">Enter scores</h3><div class="form-group"><label>Round</label><select id="lbRound"></select></div><div id="lbScores" class="sc-grid"></div><div class="rm-actions"><button id="lbSaveScores" type="button">Save scores</button><button id="lbDelRound" type="button" class="secondary">Delete round</button></div></div>
         </section>
 </main>
@@ -466,7 +491,7 @@ body{background-color:#050505}
         teams: [],
         fixtures: [],
         stats: [],
-        news: [], entries: [], rounds: [], scores: {} 
+        news: [], entries: [], rounds: [], scores: {}, cup: null 
     };
 
     // Reference to your central league database in Firebase
@@ -486,7 +511,8 @@ body{background-color:#050505}
                     news: data.news || [],
                     entries: data.entries || [],
                     rounds: data.rounds || [],
-                    scores: data.scores || {}
+                    scores: data.scores || {},
+                    cup: data.cup || null
                 };
             }
             
@@ -533,7 +559,7 @@ body{background-color:#050505}
         if (!confirm("⚠️ WARNING: This permanently deletes EVERYTHING from the cloud. Continue?")) return;
 
         // Reset database COMPLETELY
-        db = { teams: [], fixtures: [], stats: [], news: [], entries: [], rounds: [], scores: {} };
+        db = { teams: [], fixtures: [], stats: [], news: [], entries: [], rounds: [], scores: {}, cup: null };
         
         // Wipe Firebase Nodes
         dbRef.remove();
@@ -778,6 +804,7 @@ body{background-color:#050505}
         const fixture = db.fixtures.find(f => f.id === fixtureId);
         if (!fixture) return alert("Fixture not found in database.");
         if (fixture.status === 'completed') return alert("This match has already been saved.");
+        if (window.cupKoResult && window.cupKoResult(fixture, homeScore, awayScore)) return;
 
         fixture.homeScore = homeScore;
         fixture.awayScore = awayScore;
@@ -1035,7 +1062,7 @@ body{background-color:#050505}
             if (f.status === 'pending') {
                 pendingBody.innerHTML += `
                     <tr>
-                        <td>MD ${f.matchday}</td>
+                        <td>${f.round || ('MD ' + f.matchday)}</td>
                         <td>${home} vs ${away}</td>
                         <td>
                             <input type="number" id="home_score_${f.id}" style="width:50px;">
@@ -1044,19 +1071,19 @@ body{background-color:#050505}
                         </td>
                         <td>
                             <button onclick="submitScore('${f.id}')">Save</button>
-                            <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>
+                            ${f.stage === 'ko' ? '' : `<button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>`}
                         </td>
                     </tr>
                 `;
             } else {
                 completedBody.innerHTML += `
                     <tr>
-                        <td>MD ${f.matchday}</td>
+                        <td>${f.round || ('MD ' + f.matchday)}</td>
                         <td>${home} vs ${away}</td>
                         <td><strong>${f.homeScore} - ${f.awayScore}</strong></td>
                         <td>
                             <button onclick="undoFixtureStats('${f.id}')" style="background:#ff9800;">Undo</button>
-                            <button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>
+                            ${f.stage === 'ko' ? '' : `<button onclick="deleteFixture('${f.id}')" style="background:#ff4d4d;">Del</button>`}
                         </td>
                     </tr>
                 `;
@@ -1305,7 +1332,7 @@ function logoutUser() {
   $('rmCreate').addEventListener('click',function(){
     var name=$('rmName').value.trim();if(!name)return alert('Give the room a name');
     var id=name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,24)+'-'+Date.now().toString(36).slice(-4);
-    var meta={name:name,game:$('rmGame').value,format:$('rmFormat').value,scoring:$('rmScoring').value,status:$('rmStatus').value,description:$('rmDesc').value.trim(),createdAt:firebase.database.ServerValue.TIMESTAMP};
+    var meta={name:name,game:$('rmGame').value,format:$('rmFormat').value,cupType:(G[$('rmGame').value]||{}).cupType||'',scoring:$('rmScoring').value,status:$('rmStatus').value,description:$('rmDesc').value.trim(),createdAt:firebase.database.ServerValue.TIMESTAMP};
     DB().ref('room_meta/'+id).set(meta).then(function(){
       $('rmName').value='';$('rmDesc').value='';fillSelect();
       if(confirm('Room created. Switch to it now to add its '+(meta.format==='leaderboard'?'players and rounds':'teams and fixtures')+'?')){EEPLRooms.set(id);location.reload();}
@@ -1315,7 +1342,7 @@ function logoutUser() {
     var box=$('rmList');box.innerHTML='';
     ROOMS.forEach(function(r){
       var row=document.createElement('div');row.className='rm-row';
-      row.innerHTML='<span style="font-size:1.4rem">'+esc(r.gameInfo.icon)+'</span><b>'+esc(r.name)+'<br><small style="color:var(--text-muted);font-weight:400">'+esc(r.gameInfo.label)+' · '+(r.format==='leaderboard'?'leaderboard':'league')+'</small></b><span class="rm-chip '+esc(r.status)+'">'+esc(r.status)+'</span>';
+      row.innerHTML='<span style="font-size:1.4rem">'+esc(r.gameInfo.icon)+'</span><b>'+esc(r.name)+'<br><small style="color:var(--text-muted);font-weight:400">'+esc(r.gameInfo.label)+' · '+(r.format==='leaderboard'?'leaderboard':r.format==='cup'?'cup':'league')+'</small></b><span class="rm-chip '+esc(r.status)+'">'+esc(r.status)+'</span>';
       var act=document.createElement('div');act.className='rm-actions';
       var mk=function(t,fn,cls){var b=document.createElement('button');b.type='button';b.textContent=t;if(cls)b.className=cls;b.onclick=fn;act.appendChild(b);};
       mk('Manage',function(){EEPLRooms.set(r.id);location.reload();},r.id===EEPLRooms.id()?'secondary':'');
@@ -1372,7 +1399,7 @@ function logoutUser() {
       var b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='Remove';b.onclick=function(){if(!confirm('Remove '+r.e.name+' and their scores?'))return;db.entries=db.entries.filter(function(x){return x.id!==r.e.id;});Object.keys(db.scores||{}).forEach(function(k){if(db.scores[k])delete db.scores[k][r.e.id];});saveAndRefresh();};
       tr.lastChild.appendChild(b);tb.appendChild(tr);});
     if(!rows.length)tb.innerHTML='<tr><td colspan="6" style="color:var(--text-muted)">No entries yet.</td></tr>';
-    var sel=$('lbRound'),keep=sel.value;sel.innerHTML='';(db.rounds||[]).slice().reverse().forEach(function(r){var o=document.createElement('option');o.value=r.id;o.textContent=r.name+(r.date?' ('+r.date+')':'');sel.appendChild(o);});
+    var sel=$('lbRound'),keep=sel.value;sel.innerHTML='';(db.rounds||[]).slice().reverse().forEach(function(r){var o=document.createElement('option');o.value=r.id;o.textContent=r.name+(r.date?' ('+r.date+(r.time?' '+r.time:'')+')':'');sel.appendChild(o);});
     if(keep&&(db.rounds||[]).some(function(r){return r.id===keep;}))sel.value=keep;
     drawScores();
   }
@@ -1390,7 +1417,7 @@ function logoutUser() {
   });
   $('lbAddRound').addEventListener('click',function(){
     var n=$('lbRoundName').value.trim();if(!n)return alert('Give the round a name');
-    db.rounds.push({id:'round_'+Date.now(),name:n,date:$('lbRoundDate').value||''});$('lbRoundName').value='';saveAndRefresh();
+    db.rounds.push({id:'round_'+Date.now(),name:n,date:$('lbRoundDate').value||'',time:($('lbRoundTime')&&$('lbRoundTime').value)||''});$('lbRoundName').value='';saveAndRefresh();
   });
   $('lbSaveScores').addEventListener('click',function(){
     var rid=$('lbRound').value;if(!rid)return;var o={};
@@ -1404,5 +1431,331 @@ function logoutUser() {
   firebase.auth().onAuthStateChanged(function(u){if(u){fillSelect();watchReqs();}});
 })();
 </script>
+<script>
+/* EEPLCup: groups, round-robin and knockout-bracket engine (shared by admin + dashboard) */
+(function(root){
+  'use strict';
+  if(root.EEPLCup)return;
+  function shuffle(a){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  function letter(i){return String.fromCharCode(65+i);}
+  function roundRobin(ids){
+    var t=ids.slice();if(t.length%2)t.push(null);
+    var n=t.length,rounds=[];
+    for(var r=0;r<n-1;r++){
+      var pairs=[];
+      for(var i=0;i<n/2;i++){var a=t[i],b=t[n-1-i];if(a!==null&&b!==null)pairs.push(r%2?[b,a]:[a,b]);}
+      rounds.push(pairs);
+      t.splice(1,0,t.pop());
+    }
+    return rounds;
+  }
+  function drawGroups(ids,count){
+    var s=shuffle(ids),g={},i;
+    for(i=0;i<count;i++)g[letter(i)]=[];
+    s.forEach(function(id,k){g[letter(k%count)].push(id);});
+    return g;
+  }
+  function groupLetters(teams){var s={};(teams||[]).forEach(function(t){if(t.group)s[t.group]=1;});return Object.keys(s).sort();}
+  function groupFixtures(teams,double,startMd,newId){
+    var out=[];
+    groupLetters(teams).forEach(function(L){
+      var ids=teams.filter(function(t){return t.group===L;}).map(function(t){return t.id;});
+      var rr=roundRobin(ids);
+      if(double)rr=rr.concat(rr.map(function(r){return r.map(function(p){return [p[1],p[0]];});}));
+      rr.forEach(function(pairs,ri){
+        pairs.forEach(function(p){
+          out.push({id:newId(),homeId:p[0],awayId:p[1],matchday:startMd+ri,status:'pending',homeScore:null,awayScore:null,stage:'group',round:'Group '+L,group:L});
+        });
+      });
+    });
+    out.sort(function(a,b){return a.matchday-b.matchday||String(a.group).localeCompare(String(b.group));});
+    return out;
+  }
+  function groupTable(teams,fixtures,L){
+    var rows={};
+    (teams||[]).filter(function(t){return t.group===L;}).forEach(function(t){rows[t.id]={team:t,p:0,w:0,d:0,l:0,gf:0,ga:0,gd:0,pts:0};});
+    (fixtures||[]).forEach(function(f){
+      if(f.stage!=='group'||f.group!==L||f.status!=='completed')return;
+      var h=rows[f.homeId],a=rows[f.awayId];if(!h||!a)return;
+      var hs=+f.homeScore||0,as=+f.awayScore||0;
+      h.p++;a.p++;h.gf+=hs;h.ga+=as;a.gf+=as;a.ga+=hs;
+      if(hs>as){h.w++;h.pts+=3;a.l++;}else if(hs<as){a.w++;a.pts+=3;h.l++;}else{h.d++;a.d++;h.pts++;a.pts++;}
+    });
+    var out=Object.keys(rows).map(function(k){var r=rows[k];r.gd=r.gf-r.ga;return r;});
+    out.sort(function(x,y){return y.pts-x.pts||y.gd-x.gd||y.gf-x.gf||String(x.team.name).localeCompare(String(y.team.name));});
+    return out;
+  }
+  function qualifiers(teams,fixtures,advance){
+    var tables={},letters=groupLetters(teams),seeds=[];
+    letters.forEach(function(L){tables[L]=groupTable(teams,fixtures,L);});
+    for(var pos=0;pos<advance;pos++){
+      var tier=[];
+      letters.forEach(function(L){var r=tables[L][pos];if(r)tier.push({id:r.team.id,group:L,pos:pos+1,row:r});});
+      tier.sort(function(x,y){return y.row.pts-x.row.pts||y.row.gd-x.row.gd||y.row.gf-x.row.gf;});
+      tier.forEach(function(q){seeds.push({id:q.id,group:q.group,pos:q.pos});});
+    }
+    return seeds;
+  }
+  function seedOrder(n){if(n===1)return [1];var prev=seedOrder(n/2),out=[];prev.forEach(function(s){out.push(s,n+1-s);});return out;}
+  function roundLabel(total,r){var rem=total-r;if(rem===1)return 'Final';if(rem===2)return 'Semi-finals';if(rem===3)return 'Quarter-finals';return 'Round of '+Math.pow(2,rem);}
+  function matchLabel(total,r){var rem=total-r;if(rem===1)return 'Final';if(rem===2)return 'Semi-final';if(rem===3)return 'Quarter-final';return 'Round of '+Math.pow(2,rem);}
+  function same(x,y){return !!(x&&y&&x.group&&x.group===y.group);}
+  function buildBracket(seeds){
+    var n=seeds.length,size=1;while(size<n)size*=2;
+    var total=Math.log(size)/Math.LN2,order=seedOrder(size),r0=[],k;
+    for(k=0;k<size/2;k++)r0.push({a:seeds[order[2*k]-1]||null,b:seeds[order[2*k+1]-1]||null});
+    // best effort: avoid first-round rematches of group-mates
+    for(k=0;k<r0.length;k++){
+      if(!same(r0[k].a,r0[k].b))continue;
+      for(var j=0;j<r0.length;j++){
+        if(j===k||!r0[j].b)continue;
+        if(!same(r0[k].a,r0[j].b)&&!same(r0[j].a,r0[k].b)){var t=r0[k].b;r0[k].b=r0[j].b;r0[j].b=t;break;}
+      }
+    }
+    var rounds=[];
+    rounds.push(r0.map(function(p,i){
+      var m={id:'ko_0_'+i,a:p.a?p.a.id:null,b:p.b?p.b.id:null,fx:null,w:null,bye:false};
+      if(!m.a!==!m.b){m.bye=true;m.w=m.a||m.b;}
+      return m;
+    }));
+    for(var r=1;r<total;r++){
+      var arr=[];for(var i=0;i<size/Math.pow(2,r+1);i++)arr.push({id:'ko_'+r+'_'+i,a:null,b:null,fx:null,w:null,bye:false});
+      rounds.push(arr);
+    }
+    return rounds;
+  }
+  function winnerOf(f){
+    if(!f||f.status!=='completed')return null;
+    if(f.winnerId)return f.winnerId;
+    var h=+f.homeScore,a=+f.awayScore;
+    return h>a?f.homeId:a>h?f.awayId:null;
+  }
+  /* Syncs a bracket with the fixtures. Returns the fixtures to add, the ids to drop and the champion. Mutates the bracket. */
+  function advance(rounds,fixtures,startMd,newId){
+    var byId={},created=[],dropped=[],total=rounds.length;
+    (fixtures||[]).forEach(function(f){byId[f.id]=f;});
+    for(var r=0;r<total;r++){
+      for(var mi=0;mi<rounds[r].length;mi++){
+        var m=rounds[r][mi];
+        if(r>0){
+          var p1=rounds[r-1][2*mi],p2=rounds[r-1][2*mi+1];
+          m.a=(p1&&p1.w)||null;m.b=(p2&&p2.w)||null;
+        }
+        if(m.bye){m.w=m.a||m.b||null;continue;}
+        var f=m.fx?byId[m.fx]:null;
+        if(m.fx&&!f)m.fx=null;
+        if(f&&(f.homeId!==m.a||f.awayId!==m.b)){dropped.push(f.id);delete byId[f.id];m.fx=null;f=null;}
+        if(f){m.w=winnerOf(f);}
+        else if(m.a&&m.b){
+          var nf={id:newId(),homeId:m.a,awayId:m.b,matchday:startMd+r,status:'pending',homeScore:null,awayScore:null,stage:'ko',round:matchLabel(total,r),koMatch:m.id};
+          created.push(nf);m.fx=nf.id;m.w=null;
+        } else {m.w=null;}
+      }
+    }
+    var fin=rounds[total-1]&&rounds[total-1][0];
+    return {created:created,dropped:dropped,championId:(fin&&fin.w)||null};
+  }
+  root.EEPLCup={shuffle:shuffle,roundRobin:roundRobin,drawGroups:drawGroups,groupLetters:groupLetters,groupFixtures:groupFixtures,groupTable:groupTable,qualifiers:qualifiers,seedOrder:seedOrder,roundLabel:roundLabel,matchLabel:matchLabel,buildBracket:buildBracket,winnerOf:winnerOf,advance:advance};
+})(window);
+</script>
+
+<script>
+(function(){
+  var C=window.EEPLCup,R=window.EEPLRooms,esc=R.esc,META=null,seq=0;
+  function $(i){return document.getElementById(i);}
+  function newId(){return 'fix_'+Date.now().toString(36)+'_'+(seq++);}
+  function cup(){if(!db.cup)db.cup={};return db.cup;}
+  function isCup(){return !!(META&&META.format==='cup');}
+  function ctype(){return (META&&META.cupType)||'knockout';}
+  function name(id){var t=(db.teams||[]).find(function(x){return x.id===id;});return t?t.name:'TBD';}
+  function maxMd(){var m=0;(db.fixtures||[]).forEach(function(f){if(f.stage!=='ko'){var v=+f.matchday||0;if(v>m)m=v;}});return m;}
+  function resetStats(){(db.teams||[]).forEach(function(t){t.p=0;t.w=0;t.d=0;t.l=0;t.gf=0;t.ga=0;t.gd=0;t.pts=0;});}
+  function koFixtures(){return (db.fixtures||[]).filter(function(f){return f.stage==='ko';});}
+  function grpFixtures(){return (db.fixtures||[]).filter(function(f){return f.stage==='group';});}
+
+  /* keep the bracket in step with the fixtures; call before every save */
+  function after(){
+    var c=db.cup;if(!c||!c.bracket||!c.bracket.length)return;
+    var res=C.advance(c.bracket,db.fixtures,c.koStart||(maxMd()+1),newId);
+    db.fixtures=db.fixtures.filter(function(f){return res.dropped.indexOf(f.id)<0;}).concat(res.created);
+    if(res.championId){c.championId=res.championId;c.stage='finished';}
+    else{delete c.championId;c.stage='knockout';}
+  }
+  window.cupAfterResult=after;
+
+  /* knockout result entry: a level score needs a winner (penalties / extra time) */
+  window.cupKoResult=function(f,hs,as){
+    if(f.stage!=='ko')return false;
+    var w=hs>as?f.homeId:as>hs?f.awayId:null;
+    if(!w){
+      var hn=name(f.homeId),an=name(f.awayId);
+      w=confirm('Level after normal time.\n\nDid '+hn+' win on penalties / extra time?\n\nOK = '+hn+'     Cancel = '+an)?f.homeId:f.awayId;
+    }
+    f.homeScore=hs;f.awayScore=as;f.status='completed';f.winnerId=w;
+    after();saveAndRefresh();
+    alert('Result saved. '+name(w)+' go through.');
+    return true;
+  };
+
+  /* working undo for every fixture (the old one used paths that do not exist) */
+  window.undoFixtureStats=function(id){
+    var f=(db.fixtures||[]).find(function(x){return x.id===id;});
+    if(!f||f.status!=='completed')return alert('This match is not completed.');
+    var c=db.cup;
+    if(f.stage==='ko'){
+      var next=null;
+      if(c&&c.bracket){c.bracket.forEach(function(rd,ri){rd.forEach(function(m,mi){if(m.fx===f.id&&c.bracket[ri+1])next=c.bracket[ri+1][Math.floor(mi/2)];});});}
+      var nf=next&&next.fx&&db.fixtures.find(function(x){return x.id===next.fx;});
+      if(nf&&nf.status==='completed')return alert('Undo the later round first: a match that depends on this result has already been played.');
+      if(!confirm('Undo this result and move the match back to Pending?'))return;
+      f.status='pending';f.homeScore=null;f.awayScore=null;delete f.winnerId;
+      after();saveAndRefresh();return;
+    }
+    if(f.stage==='group'&&c&&c.bracket&&c.bracket.length)return alert('The knockout bracket has already been generated from these group results. Use "Reset knockout" first.');
+    if(!confirm('Undo this result and move the match back to Pending?'))return;
+    var hs=+f.homeScore||0,as=+f.awayScore||0;
+    function dec(n,by){return Math.max(0,(n||0)-by);}
+    function rev(t,gf,ga){
+      if(!t)return;
+      t.p=dec(t.p,1);t.gf=dec(t.gf,gf);t.ga=dec(t.ga,ga);t.gd=t.gf-t.ga;
+      if(gf>ga){t.w=dec(t.w,1);t.pts=dec(t.pts,3);}else if(gf<ga){t.l=dec(t.l,1);}else{t.d=dec(t.d,1);t.pts=dec(t.pts,1);}
+    }
+    rev(db.teams.find(function(t){return t.id===f.homeId;}),hs,as);
+    rev(db.teams.find(function(t){return t.id===f.awayId;}),as,hs);
+    f.status='pending';f.homeScore=null;f.awayScore=null;
+    saveAndRefresh();
+  };
+
+  /* ---------- groups ---------- */
+  function cfgGroups(){var n=+$('cupGroupCount').value||2;return {n:n,adv:+$('cupAdvance').value||2,dbl:$('cupDouble').checked};}
+  function saveCfg(){var g=cfgGroups(),c=cup();c.type=ctype();c.groupCount=g.n;c.advance=g.adv;c.double=g.dbl;saveAndRefresh();}
+  function draw(){
+    var g=cfgGroups(),teams=db.teams||[];
+    if(teams.length<g.n*2)return alert('You need at least '+(g.n*2)+' teams for '+g.n+' groups (2 per group). You have '+teams.length+'.');
+    var gf=grpFixtures();
+    if(gf.some(function(f){return f.status==='completed';}))return alert('Group matches have already been played. Redrawing is not possible.');
+    if(gf.length&&!confirm('Redrawing will delete the existing group fixtures. Continue?'))return;
+    var res=C.drawGroups(teams.map(function(t){return t.id;}),g.n);
+    teams.forEach(function(t){t.group=Object.keys(res).filter(function(L){return res[L].indexOf(t.id)>-1;})[0]||'';});
+    db.fixtures=db.fixtures.filter(function(f){return f.stage!=='group';});
+    resetStats();saveCfg();
+  }
+  function makeFx(){
+    var g=cfgGroups(),teams=db.teams||[];
+    if(!teams.length)return alert('Add teams first.');
+    if(teams.some(function(t){return !t.group;}))return alert('Every team needs a group. Use "Random draw" or pick a group for each team below.');
+    var letters=C.groupLetters(teams);
+    for(var i=0;i<letters.length;i++){if(teams.filter(function(t){return t.group===letters[i];}).length<2)return alert('Group '+letters[i]+' has fewer than 2 teams.');}
+    if(grpFixtures().length)return alert('Group fixtures already exist. Use "Random draw" to start again.');
+    var list=C.groupFixtures(teams,g.dbl,maxMd()+1,newId);
+    db.fixtures=db.fixtures.concat(list);
+    var c=cup();c.stage='groups';saveCfg();
+    alert(list.length+' group fixtures created.');
+  }
+  function setGroup(id,L){
+    var t=db.teams.find(function(x){return x.id===id;});if(!t)return;
+    if(grpFixtures().length)return alert('Group fixtures already exist. Redraw first if you want to change groups.');
+    t.group=L;saveAndRefresh();
+  }
+
+  /* ---------- knockout ---------- */
+  function makeKo(){
+    var c=cup(),teams=db.teams||[],seeds;
+    if(c.bracket&&c.bracket.length)return alert('A bracket already exists. Use "Reset knockout" first.');
+    if(ctype()==='groups'){
+      var gf=grpFixtures();
+      if(!gf.length)return alert('Create the group fixtures and play the group stage first.');
+      var open=gf.filter(function(f){return f.status!=='completed';}).length;
+      if(open&&!confirm(open+' group match(es) have not been played. Build the bracket from the current tables anyway?'))return;
+      seeds=C.qualifiers(teams,db.fixtures,+c.advance||2);
+    } else {
+      var ids=teams.map(function(t){return t.id;});
+      if($('cupRandomSeed').checked)ids=C.shuffle(ids);
+      seeds=ids.map(function(id){return {id:id};});
+    }
+    if(seeds.length<2)return alert('At least 2 teams are needed for a knockout.');
+    c.type=ctype();c.koStart=maxMd()+1;
+    c.bracket=C.buildBracket(seeds);
+    after();saveAndRefresh();
+    alert('Bracket generated. The first-round fixtures are now in Fixtures & Results.');
+  }
+  function resetKo(){
+    var c=db.cup;
+    if(!c||!c.bracket||!c.bracket.length)return alert('There is no knockout bracket to reset.');
+    if(!confirm('Delete the bracket and ALL knockout fixtures and results? Group results are kept.'))return;
+    db.fixtures=db.fixtures.filter(function(f){return f.stage!=='ko';});
+    delete c.bracket;delete c.championId;delete c.koStart;c.stage=grpFixtures().length?'groups':'setup';
+    saveAndRefresh();
+  }
+
+  /* ---------- screen ---------- */
+  function render(){
+    if(!isCup()||!$('pane-cup'))return;
+    var c=cup(),t=ctype();
+    $('cupIntro').textContent=t==='groups'
+      ?'Groups + knockout: draw the groups, create the group fixtures, record the results in Fixtures & Results, then generate the knockout bracket from the group tables.'
+      :'Single-elimination knockout: generate the bracket, then record each result in Fixtures & Results. Winners move on automatically and the next round is created for you.';
+    if(t==='groups'){
+      if(c.groupCount)$('cupGroupCount').value=String(c.groupCount);
+      if(c.advance)$('cupAdvance').value=String(c.advance);
+      $('cupDouble').checked=!!c.double;
+      var n=+$('cupGroupCount').value||2,opts='<option value="">—</option>',i;
+      for(i=0;i<n;i++)opts+='<option>'+String.fromCharCode(65+i)+'</option>';
+      var rows=(db.teams||[]).map(function(tm){
+        return '<tr><td>'+esc(tm.name)+'</td><td><select data-tid="'+esc(tm.id)+'" class="cupGrpSel">'+opts+'</select></td></tr>';}).join('');
+      $('cupGroupList').innerHTML=rows?'<table><thead><tr><th>Team</th><th>Group</th></tr></thead><tbody>'+rows+'</tbody></table>':'<p style="color:var(--text-muted)">Add teams in Manage Teams first.</p>';
+      [].forEach.call($('cupGroupList').querySelectorAll('.cupGrpSel'),function(s){
+        var tm=db.teams.find(function(x){return x.id===s.dataset.tid;});if(tm)s.value=tm.group||'';
+        s.addEventListener('change',function(){setGroup(s.dataset.tid,s.value);});
+      });
+      $('cupSeedWrap').style.display='none';
+      var gfx=grpFixtures(),done=gfx.filter(function(f){return f.status==='completed';}).length;
+      $('cupKoTitle').textContent='2 · Knockout stage';
+      $('cupKoInfo').textContent=gfx.length?('Group stage: '+done+' of '+gfx.length+' matches played. The top '+(c.advance||2)+' of each group go through.'):'Create the group fixtures first.';
+    } else {
+      $('cupSeedWrap').style.display='';
+      $('cupKoTitle').textContent='Knockout bracket';
+      $('cupKoInfo').textContent=(db.teams||[]).length+' teams entered. '+((db.teams||[]).length<2?'Add at least 2 teams.':'Teams that do not fit a full bracket receive a first-round bye.');
+    }
+    var pv=$('cupBracketPreview');
+    if(!c.bracket||!c.bracket.length){pv.innerHTML='';return;}
+    var h='';
+    if(c.championId)h+='<p style="color:var(--accent);font-weight:700;margin-bottom:10px">🏆 Champions: '+esc(name(c.championId))+'</p>';
+    c.bracket.forEach(function(rd,ri){
+      h+='<div style="margin-bottom:10px"><b>'+esc(C.roundLabel(c.bracket.length,ri))+'</b><br>';
+      h+=rd.map(function(m){
+        var f=m.fx&&db.fixtures.find(function(x){return x.id===m.fx;}),sc='';
+        if(f&&f.status==='completed')sc=' <span style="color:var(--accent)">'+f.homeScore+' - '+f.awayScore+'</span>';
+        var label=m.bye?(esc(name(m.a||m.b))+' <span style="color:var(--text-muted)">(bye)</span>'):(esc(m.a?name(m.a):'TBD')+' vs '+esc(m.b?name(m.b):'TBD')+sc);
+        return '<span style="display:block;color:var(--text-muted);font-size:.9rem">'+label+'</span>';
+      }).join('');
+      h+='</div>';
+    });
+    pv.innerHTML=h;
+  }
+
+  /* ---------- wiring ---------- */
+  function wire(){
+    $('cupDraw').addEventListener('click',draw);
+    $('cupMakeFx').addEventListener('click',makeFx);
+    $('cupMakeKo').addEventListener('click',makeKo);
+    $('cupResetKo').addEventListener('click',resetKo);
+    ['cupGroupCount','cupAdvance','cupDouble'].forEach(function(id){$(id).addEventListener('change',function(){if(isCup())saveCfg();});});
+  }
+  document.addEventListener('DOMContentLoaded',function(){
+    wire();
+    R.loadMeta().then(function(m){
+      META=m;
+      document.body.classList.toggle('room-cup',m.format==='cup');
+      document.body.classList.toggle('room-ko',m.cupType==='knockout');
+      if(m.format==='cup'){var p=document.querySelector('.sidebar-header p');if(p)p.textContent=(m.gameInfo.icon||'')+' '+m.name;}
+      render();
+    });
+    var ra=window.renderAll;
+    window.renderAll=function(){ra.apply(this,arguments);try{render();}catch(e){console.warn('cup render',e);}};
+  });
+})();
+</script>
+
 </body>
 </html>
