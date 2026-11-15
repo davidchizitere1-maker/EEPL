@@ -442,10 +442,11 @@ body{background-color:#050505}
             <p id="cupIntro" style="color: var(--text-muted); margin-bottom: 20px;"></p>
             <div class="card grp-only" id="cupGroupsCard">
                 <h3>1 · Groups</h3>
-                <div class="form-group"><label>Number of groups</label><select id="cupGroupCount"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
-                <div class="form-group"><label>Teams that qualify from each group</label><select id="cupAdvance"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+                <div class="form-group"><label>Number of groups</label><select id="cupGroupCount"><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>13</option><option>14</option><option>15</option><option>16</option></select></div>
+                <div class="form-group"><label>Teams that qualify from each group</label><select id="cupAdvance"><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></div>
                 <div class="form-group"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="cupDouble" style="width:auto"> Home and away (every pair plays twice)</label></div>
-                <div class="rm-actions"><button id="cupDraw" type="button">Random draw</button><button id="cupMakeFx" type="button">Create group fixtures</button></div>
+                <div id="cupAdvice" style="margin:4px 0 14px;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--border-color);font-size:.9rem;line-height:1.5"></div>
+                <div class="rm-actions"><button id="cupUseRec" type="button" class="secondary">Use recommended setup</button><button id="cupDraw" type="button">Random draw</button><button id="cupMakeFx" type="button">Create group fixtures</button></div>
                 <p style="color: var(--text-muted); margin:12px 0 6px; font-size:.85rem">After the draw you can move any team to a different group below. Do this before creating the fixtures.</p>
                 <div id="cupGroupList"></div>
             </div>
@@ -1477,33 +1478,121 @@ function logoutUser() {
     }
     return seeds;
   }
+  /* ---------- valid knockout sizes ---------- */
+  function isPow2(n){return n>=1&&(n&(n-1))===0;}
+  function pow2Floor(n){var p=1;while(p*2<=n)p*=2;return p;}
+  function log2(n){return Math.round(Math.log(n)/Math.LN2);}
+  function plural(rem){return rem===1?'Final':rem===2?'Semi-finals':rem===3?'Quarter-finals':'Round of '+Math.pow(2,rem);}
+  function single(rem){return rem===1?'Final':rem===2?'Semi-final':rem===3?'Quarter-final':'Round of '+Math.pow(2,rem);}
+  /* rounds played by a bracket of q teams, e.g. 8 -> Quarter-finals, Semi-finals, Final */
+  function roundNamesForQ(q){var out=[],r=log2(q);for(var rem=r;rem>=1;rem--)out.push(plural(rem));return out;}
+  var MAX_Q=64,MIN_Q=4;
+  /* is G groups x A qualifying places a legal setup for N teams? */
+  function validGroup(N,G,A){
+    var Q=G*A;
+    if(!(G>=2))return {ok:false,Q:Q,msg:'Use at least 2 groups.'};
+    if(!(A>=1))return {ok:false,Q:Q,msg:'At least 1 team must qualify from each group.'};
+    if(Q<MIN_Q||Q>MAX_Q||!isPow2(Q))return {ok:false,Q:Q,msg:G+' groups \u00D7 '+A+' = '+Q+' qualifiers, which does not make a valid knockout. The number of qualifiers must be 4, 8, 16, 32 or 64.'};
+    var minS=Math.floor(N/G),maxS=Math.ceil(N/G);
+    if(minS<3||minS<A+1)return {ok:false,Q:Q,minS:minS,maxS:maxS,msg:'With '+N+' teams, '+G+' groups leave '+minS+' team'+(minS===1?'':'s')+' in the smallest group, too few to send '+A+' through.'};
+    return {ok:true,Q:Q,minS:minS,maxS:maxS,msg:''};
+  }
+  function allValid(N){
+    var out=[];
+    for(var G=2;G<=32;G++)for(var A=1;A<=8;A++){var v=validGroup(N,G,A);if(v.ok)out.push({G:G,A:A,Q:v.Q,minS:v.minS,maxS:v.maxS});}
+    return out;
+  }
+  /* best setup for N teams: groups of about 4, two through from each group */
+  function suggestGroups(N){
+    var best=null;
+    allValid(N).forEach(function(c){
+      var score=Math.abs(N/c.G-4)*2+(c.A===2?0:1.5)+Math.abs(c.Q-N/2)/N;
+      if(!best||score<best.score)best={G:c.G,A:c.A,Q:c.Q,score:score};
+    });
+    return best?{G:best.G,A:best.A,Q:best.Q}:null;
+  }
+  /* nearest legal setup to what the admin asked for (keeps the same qualifiers per group where it can) */
+  function fixGroupConfig(N,G,A){
+    var v=validGroup(N,G,A);
+    if(v.ok)return {G:G,A:A,Q:v.Q,changed:false,reason:''};
+    var best=null;
+    allValid(N).forEach(function(c){
+      var cost=Math.abs(c.A-A)*3+Math.abs(c.G-G)+(c.G<G?0.5:0);
+      if(!best||cost<best.cost)best={G:c.G,A:c.A,Q:c.Q,cost:cost};
+    });
+    if(!best)return null;
+    return {G:best.G,A:best.A,Q:best.Q,changed:true,reason:v.msg};
+  }
+  /* is the actual group assignment (after manual moves) still a legal setup? */
+  function validAssignment(teams,A){
+    var letters=groupLetters(teams),G=letters.length,sizes=letters.map(function(L){return teams.filter(function(t){return t.group===L;}).length;}),minS=Math.min.apply(null,sizes),Q=G*A;
+    if(G<2)return {ok:false,Q:Q,msg:'Use at least 2 groups.'};
+    if(Q<MIN_Q||Q>MAX_Q||!isPow2(Q))return {ok:false,Q:Q,msg:G+' groups \u00D7 '+A+' = '+Q+' qualifiers is not a valid knockout size (4, 8, 16, 32 or 64).'};
+    if(minS<3||minS<A+1)return {ok:false,Q:Q,msg:'The smallest group has only '+minS+' team'+(minS===1?'':'s')+', too few to send '+A+' through.'};
+    return {ok:true,Q:Q,msg:''};
+  }
+  /* what a plain knockout cup will look like for N teams */
+  function planKnockout(N){
+    if(N<4)return {ok:false,text:'A knockout cup needs at least 4 teams.'};
+    var P=pow2Floor(N),m=N-P,names=roundNamesForQ(P);
+    var text=N+' teams: '+(m?'a Preliminary round ('+m+' match'+(m===1?'':'es')+', '+(2*m)+' teams) cuts the field to '+P+', then ':'')+names.join(' \u2192 ')+'.';
+    return {ok:true,P:P,prelim:m,names:names,text:text};
+  }
   function seedOrder(n){if(n===1)return [1];var prev=seedOrder(n/2),out=[];prev.forEach(function(s){out.push(s,n+1-s);});return out;}
-  function roundLabel(total,r){var rem=total-r;if(rem===1)return 'Final';if(rem===2)return 'Semi-finals';if(rem===3)return 'Quarter-finals';return 'Round of '+Math.pow(2,rem);}
-  function matchLabel(total,r){var rem=total-r;if(rem===1)return 'Final';if(rem===2)return 'Semi-final';if(rem===3)return 'Quarter-final';return 'Round of '+Math.pow(2,rem);}
+  function roundLabel(total,r){return plural(total-r);}
+  function matchLabel(total,r){return single(total-r);}
   function same(x,y){return !!(x&&y&&x.group&&x.group===y.group);}
+  function mk(id,a,b,rl,ml){return {id:id,a:a||null,b:b||null,fa:null,fb:null,fx:null,w:null,bye:false,rl:rl,ml:ml};}
+  /* Always produces a legal bracket: every main round has a power-of-two number of teams.
+     If the field is not a power of two (plain knockout cups) a Preliminary round brings it down to one. */
   function buildBracket(seeds){
-    var n=seeds.length,size=1;while(size<n)size*=2;
-    var total=Math.log(size)/Math.LN2,order=seedOrder(size),r0=[],k;
-    for(k=0;k<size/2;k++)r0.push({a:seeds[order[2*k]-1]||null,b:seeds[order[2*k+1]-1]||null});
+    var n=seeds.length;if(n<2)return [];
+    var P=pow2Floor(n),R=log2(P),rounds=[],k,i,r;
+    var direct=n,pre=[];
+    if(P!==n){
+      var m=n-P;direct=n-2*m;
+      var preSeeds=seeds.slice(direct);
+      for(k=0;k<m;k++)pre.push(mk('ko_p_'+k,preSeeds[k].id,preSeeds[2*m-1-k].id,'Preliminary round','Preliminary round'));
+      rounds.push(pre);
+    }
+    var order=seedOrder(P),r0=[];
+    function slot(sn){ // sn = seed number inside the main bracket
+      if(sn<=direct)return {id:seeds[sn-1].id,from:null,seed:seeds[sn-1]};
+      return {id:null,from:'ko_p_'+(sn-direct-1),seed:null};
+    }
+    for(k=0;k<P/2;k++){
+      var sa=slot(order[2*k]),sb=slot(order[2*k+1]);
+      r0.push({sa:sa,sb:sb});
+    }
     // best effort: avoid first-round rematches of group-mates
     for(k=0;k<r0.length;k++){
-      if(!same(r0[k].a,r0[k].b))continue;
+      if(!same(r0[k].sa.seed,r0[k].sb.seed))continue;
       for(var j=0;j<r0.length;j++){
-        if(j===k||!r0[j].b)continue;
-        if(!same(r0[k].a,r0[j].b)&&!same(r0[j].a,r0[k].b)){var t=r0[k].b;r0[k].b=r0[j].b;r0[j].b=t;break;}
+        if(j===k||!r0[j].sb.seed)continue;
+        if(!same(r0[k].sa.seed,r0[j].sb.seed)&&!same(r0[j].sa.seed,r0[k].sb.seed)){var t=r0[k].sb;r0[k].sb=r0[j].sb;r0[j].sb=t;break;}
       }
     }
-    var rounds=[];
-    rounds.push(r0.map(function(p,i){
-      var m={id:'ko_0_'+i,a:p.a?p.a.id:null,b:p.b?p.b.id:null,fx:null,w:null,bye:false};
-      if(!m.a!==!m.b){m.bye=true;m.w=m.a||m.b;}
-      return m;
+    var main=[];
+    main.push(r0.map(function(p,i2){
+      var m2=mk('ko_0_'+i2,p.sa.id,p.sb.id,plural(R),single(R));
+      m2.fa=p.sa.from;m2.fb=p.sb.from;return m2;
     }));
-    for(var r=1;r<total;r++){
-      var arr=[];for(var i=0;i<size/Math.pow(2,r+1);i++)arr.push({id:'ko_'+r+'_'+i,a:null,b:null,fx:null,w:null,bye:false});
-      rounds.push(arr);
+    for(r=1;r<R;r++){
+      var arr=[];
+      for(i=0;i<P/Math.pow(2,r+1);i++){var mm=mk('ko_'+r+'_'+i,null,null,plural(R-r),single(R-r));mm.fa='ko_'+(r-1)+'_'+(2*i);mm.fb='ko_'+(r-1)+'_'+(2*i+1);arr.push(mm);}
+      main.push(arr);
     }
-    return rounds;
+    return rounds.concat(main);
+  }
+  /* is this bracket legal? (main rounds halve exactly; only the first round may be a preliminary one) */
+  function validateBracket(rounds){
+    if(!rounds||!rounds.length)return false;
+    var start=rounds[0][0]&&rounds[0][0].ml==='Preliminary round'?1:0,prev=null;
+    for(var r=start;r<rounds.length;r++){
+      var cnt=rounds[r].length;if(!isPow2(cnt))return false;
+      if(prev!==null&&cnt!==prev/2)return false;prev=cnt;
+    }
+    return prev===1;
   }
   function winnerOf(f){
     if(!f||f.status!=='completed')return null;
@@ -1511,16 +1600,28 @@ function logoutUser() {
     var h=+f.homeScore,a=+f.awayScore;
     return h>a?f.homeId:a>h?f.awayId:null;
   }
+  function roundTitle(rounds,r){var m=rounds[r]&&rounds[r][0];return (m&&m.rl)||roundLabel(rounds.length,r);}
+  function matchTitle(rounds,r){var m=rounds[r]&&rounds[r][0];return (m&&m.ml)||matchLabel(rounds.length,r);}
+  function nextOf(rounds,id){
+    for(var r=0;r<rounds.length;r++)for(var i=0;i<rounds[r].length;i++){var m=rounds[r][i];if(m.fa===id||m.fb===id)return m;}
+    for(r=0;r<rounds.length-1;r++)for(i=0;i<rounds[r].length;i++){if(rounds[r][i].id===id&&!rounds[r+1][0].fa)return rounds[r+1][Math.floor(i/2)];}
+    return null;
+  }
   /* Syncs a bracket with the fixtures. Returns the fixtures to add, the ids to drop and the champion. Mutates the bracket. */
   function advance(rounds,fixtures,startMd,newId){
-    var byId={},created=[],dropped=[],total=rounds.length;
+    var byId={},created=[],dropped=[],total=rounds.length,mById={};
     (fixtures||[]).forEach(function(f){byId[f.id]=f;});
+    rounds.forEach(function(rd){rd.forEach(function(m){mById[m.id]=m;});});
     for(var r=0;r<total;r++){
       for(var mi=0;mi<rounds[r].length;mi++){
         var m=rounds[r][mi];
-        if(r>0){
+        if(m.fa||m.fb){ // fed by earlier matches
+          if(m.fa)m.a=(mById[m.fa]&&mById[m.fa].w)||null;
+          if(m.fb)m.b=(mById[m.fb]&&mById[m.fb].w)||null;
+        } else if(!m.ml&&r>0&&!m.bye){
+          // legacy brackets (no feed links): winners come from the two matches above
           var p1=rounds[r-1][2*mi],p2=rounds[r-1][2*mi+1];
-          m.a=(p1&&p1.w)||null;m.b=(p2&&p2.w)||null;
+          if(p1||p2){m.a=(p1&&p1.w)||null;m.b=(p2&&p2.w)||null;}
         }
         if(m.bye){m.w=m.a||m.b||null;continue;}
         var f=m.fx?byId[m.fx]:null;
@@ -1528,15 +1629,15 @@ function logoutUser() {
         if(f&&(f.homeId!==m.a||f.awayId!==m.b)){dropped.push(f.id);delete byId[f.id];m.fx=null;f=null;}
         if(f){m.w=winnerOf(f);}
         else if(m.a&&m.b){
-          var nf={id:newId(),homeId:m.a,awayId:m.b,matchday:startMd+r,status:'pending',homeScore:null,awayScore:null,stage:'ko',round:matchLabel(total,r),koMatch:m.id};
+          var nf={id:newId(),homeId:m.a,awayId:m.b,matchday:startMd+r,status:'pending',homeScore:null,awayScore:null,stage:'ko',round:m.ml||matchLabel(total,r),koMatch:m.id};
           created.push(nf);m.fx=nf.id;m.w=null;
         } else {m.w=null;}
       }
     }
-    var fin=rounds[total-1]&&rounds[total-1][0];
+    var last=rounds[total-1],fin=last&&last[0];
     return {created:created,dropped:dropped,championId:(fin&&fin.w)||null};
   }
-  root.EEPLCup={shuffle:shuffle,roundRobin:roundRobin,drawGroups:drawGroups,groupLetters:groupLetters,groupFixtures:groupFixtures,groupTable:groupTable,qualifiers:qualifiers,seedOrder:seedOrder,roundLabel:roundLabel,matchLabel:matchLabel,buildBracket:buildBracket,winnerOf:winnerOf,advance:advance};
+  root.EEPLCup={shuffle:shuffle,roundRobin:roundRobin,drawGroups:drawGroups,groupLetters:groupLetters,groupFixtures:groupFixtures,groupTable:groupTable,qualifiers:qualifiers,seedOrder:seedOrder,roundLabel:roundLabel,matchLabel:matchLabel,roundTitle:roundTitle,matchTitle:matchTitle,nextOf:nextOf,buildBracket:buildBracket,validateBracket:validateBracket,winnerOf:winnerOf,advance:advance,isPow2:isPow2,pow2Floor:pow2Floor,roundNamesForQ:roundNamesForQ,validGroup:validGroup,validAssignment:validAssignment,suggestGroups:suggestGroups,fixGroupConfig:fixGroupConfig,planKnockout:planKnockout,MAX_Q:MAX_Q,MIN_Q:MIN_Q};
 })(window);
 </script>
 
@@ -1659,7 +1760,7 @@ function logoutUser() {
     var c=db.cup;
     if(f.stage==='ko'){
       var next=null;
-      if(c&&c.bracket){c.bracket.forEach(function(rd,ri){rd.forEach(function(m,mi){if(m.fx===f.id&&c.bracket[ri+1])next=c.bracket[ri+1][Math.floor(mi/2)];});});}
+      if(c&&c.bracket){c.bracket.forEach(function(rd){rd.forEach(function(m){if(m.fx===f.id)next=C.nextOf(c.bracket,m.id);});});}
       var nf=next&&next.fx&&db.fixtures.find(function(x){return x.id===next.fx;});
       if(nf&&nf.status==='completed')return alert('Undo the later round first: a match that depends on this result has already been played.');
       if(!confirm('Undo this result and move the match back to Pending?'))return;
@@ -1684,9 +1785,16 @@ function logoutUser() {
   /* ---------- groups ---------- */
   function cfgGroups(){var n=+$('cupGroupCount').value||2;return {n:n,adv:+$('cupAdvance').value||2,dbl:$('cupDouble').checked};}
   function saveCfg(){var g=cfgGroups(),c=cup();c.type=ctype();c.groupCount=g.n;c.advance=g.adv;c.double=g.dbl;saveAndRefresh();}
+  function applyCfg(G,A){$('cupGroupCount').value=String(G);$('cupAdvance').value=String(A);}
   function draw(){
-    var g=cfgGroups(),teams=db.teams||[];
-    if(teams.length<g.n*2)return alert('You need at least '+(g.n*2)+' teams for '+g.n+' groups (2 per group). You have '+teams.length+'.');
+    var g=cfgGroups(),teams=db.teams||[],N=teams.length;
+    if(N<6)return alert('A groups + knockout cup needs at least 6 teams (2 groups of 3). You have '+N+'. Add teams, or create a knockout cup instead.');
+    var fix=C.fixGroupConfig(N,g.n,g.adv);
+    if(!fix)return alert('No valid group setup exists for '+N+' teams.');
+    if(fix.changed){
+      alert(fix.reason+'\n\nThe setup was adjusted to '+fix.G+' groups \u00D7 '+fix.A+' = '+fix.Q+' qualifiers so the knockout bracket is valid: '+C.roundNamesForQ(fix.Q).join(' \u2192 ')+'.');
+      applyCfg(fix.G,fix.A);g={n:fix.G,adv:fix.A,dbl:g.dbl};
+    }
     var gf=grpFixtures();
     if(gf.some(function(f){return f.status==='completed';}))return alert('Group matches have already been played. Redrawing is not possible.');
     if(gf.length&&!confirm('Redrawing will delete the existing group fixtures. Continue?'))return;
@@ -1699,13 +1807,13 @@ function logoutUser() {
     var g=cfgGroups(),teams=db.teams||[];
     if(!teams.length)return alert('Add teams first.');
     if(teams.some(function(t){return !t.group;}))return alert('Every team needs a group. Use "Random draw" or pick a group for each team below.');
-    var letters=C.groupLetters(teams);
-    for(var i=0;i<letters.length;i++){if(teams.filter(function(t){return t.group===letters[i];}).length<2)return alert('Group '+letters[i]+' has fewer than 2 teams.');}
+    var va=C.validAssignment(teams,g.adv);
+    if(!va.ok)return alert(va.msg+'\n\nUse "Use recommended setup" and draw again, or move teams between groups.');
     if(grpFixtures().length)return alert('Group fixtures already exist. Use "Random draw" to start again.');
     var list=C.groupFixtures(teams,g.dbl,maxMd()+1,newId);
     db.fixtures=db.fixtures.concat(list);
-    var c=cup();c.stage='groups';saveCfg();
-    alert(list.length+' group fixtures created.');
+    var c=cup();c.stage='groups';c.groupCount=C.groupLetters(teams).length;c.advance=g.adv;c.double=g.dbl;c.type=ctype();saveAndRefresh();
+    alert(list.length+' group fixtures created. '+va.Q+' teams will qualify: '+C.roundNamesForQ(va.Q).join(' \u2192 ')+'.');
   }
   function setGroup(id,L){
     var t=db.teams.find(function(x){return x.id===id;});if(!t)return;
@@ -1720,19 +1828,25 @@ function logoutUser() {
     if(ctype()==='groups'){
       var gf=grpFixtures();
       if(!gf.length)return alert('Create the group fixtures and play the group stage first.');
+      var va=C.validAssignment(teams,+c.advance||2);
+      if(!va.ok)return alert('The group setup is no longer valid: '+va.msg);
       var open=gf.filter(function(f){return f.status!=='completed';}).length;
       if(open&&!confirm(open+' group match(es) have not been played. Build the bracket from the current tables anyway?'))return;
       seeds=C.qualifiers(teams,db.fixtures,+c.advance||2);
     } else {
+      var plan=C.planKnockout(teams.length);
+      if(!plan.ok)return alert(plan.text+' You have '+teams.length+'.');
       var ids=teams.map(function(t){return t.id;});
       if($('cupRandomSeed').checked)ids=C.shuffle(ids);
       seeds=ids.map(function(id){return {id:id};});
     }
-    if(seeds.length<2)return alert('At least 2 teams are needed for a knockout.');
+    if(seeds.length<4||(ctype()==='groups'&&!C.isPow2(seeds.length)))return alert(seeds.length+' qualifying teams does not make a valid knockout (needs 4, 8, 16, 32 or 64).');
+    var rounds=C.buildBracket(seeds);
+    if(!C.validateBracket(rounds))return alert('The knockout bracket could not be built with a valid structure. Nothing was created.');
     c.type=ctype();c.koStart=maxMd()+1;
-    c.bracket=C.buildBracket(seeds);
+    c.bracket=rounds;
     after();saveAndRefresh();
-    alert('Bracket generated. The first-round fixtures are now in Fixtures & Results.');
+    alert('Bracket generated: '+rounds.map(function(r,i){return C.roundTitle(rounds,i);}).join(' \u2192 ')+'. The first fixtures are now in Fixtures & Results.');
   }
   function resetKo(){
     var c=db.cup;
@@ -1743,13 +1857,26 @@ function logoutUser() {
     saveAndRefresh();
   }
 
+  /* live check of the group setup, with the recommended alternative */
+  function advice(){
+    var box=$('cupAdvice');if(!box||ctype()!=='groups')return;
+    var N=(db.teams||[]).length,g=cfgGroups(),good='#28a745',bad='#ff6b6b',h;
+    if(N<6){box.innerHTML='<span style="color:'+bad+'">A groups + knockout cup needs at least 6 teams (2 groups of 3). You have '+N+'.</span>';$('cupUseRec').disabled=true;return;}
+    $('cupUseRec').disabled=false;
+    var v=C.validGroup(N,g.n,g.adv),rec=C.suggestGroups(N);
+    if(v.ok)h='<span style="color:'+good+'">\u2713 '+g.n+' groups \u00D7 '+g.adv+' = '+v.Q+' qualifiers.</span> '+C.roundNamesForQ(v.Q).join(' \u2192 ')+'. Groups of '+(v.minS===v.maxS?v.minS:v.minS+'\u2013'+v.maxS)+' teams.';
+    else{var fx=C.fixGroupConfig(N,g.n,g.adv);h='<span style="color:'+bad+'">\u2717 '+esc(v.msg)+'</span>'+(fx?'<br>It will be corrected to <b>'+fx.G+' groups \u00D7 '+fx.A+' = '+fx.Q+'</b> when you draw.':'');}
+    if(rec&&(rec.G!==g.n||rec.A!==g.adv))h+='<br><span style="color:var(--text-muted)">Recommended for '+N+' teams: '+rec.G+' groups \u00D7 '+rec.A+' = '+rec.Q+' qualifiers ('+C.roundNamesForQ(rec.Q).join(' \u2192 ')+').</span>';
+    box.innerHTML=h;
+  }
+
   /* ---------- screen ---------- */
   function render(){
     if(!isCup()||!$('pane-cup'))return;
     var c=cup(),t=ctype();
     $('cupIntro').textContent=t==='groups'
-      ?'Groups + knockout: draw the groups, create the group fixtures, record the results in Fixtures & Results, then generate the knockout bracket from the group tables.'
-      :'Single-elimination knockout: generate the bracket, then record each result in Fixtures & Results. Winners move on automatically and the next round is created for you.';
+      ?'Groups + knockout: the system keeps the setup valid (the number of qualifiers is always 4, 8, 16, 32 or 64). Draw the groups, create the group fixtures, record the results in Fixtures & Results, then generate the knockout bracket from the group tables.'
+      :'Single-elimination knockout: generate the bracket, then record each result in Fixtures & Results. If the number of teams is not 4, 8, 16, 32 or 64, a Preliminary round is added automatically so every later round is full. Winners move on and the next round is created for you.';
     if(t==='groups'){
       if(c.groupCount)$('cupGroupCount').value=String(c.groupCount);
       if(c.advance)$('cupAdvance').value=String(c.advance);
@@ -1764,24 +1891,25 @@ function logoutUser() {
         s.addEventListener('change',function(){setGroup(s.dataset.tid,s.value);});
       });
       $('cupSeedWrap').style.display='none';
+      advice();
       var gfx=grpFixtures(),done=gfx.filter(function(f){return f.status==='completed';}).length;
       $('cupKoTitle').textContent='2 · Knockout stage';
       $('cupKoInfo').textContent=gfx.length?('Group stage: '+done+' of '+gfx.length+' matches played. The top '+(c.advance||2)+' of each group go through.'):'Create the group fixtures first.';
     } else {
       $('cupSeedWrap').style.display='';
       $('cupKoTitle').textContent='Knockout bracket';
-      $('cupKoInfo').textContent=(db.teams||[]).length+' teams entered. '+((db.teams||[]).length<2?'Add at least 2 teams.':'Teams that do not fit a full bracket receive a first-round bye.');
+      $('cupKoInfo').textContent=C.planKnockout((db.teams||[]).length).text;
     }
     var pv=$('cupBracketPreview');
     if(!c.bracket||!c.bracket.length){pv.innerHTML='';return;}
     var h='';
     if(c.championId)h+='<p style="color:var(--accent);font-weight:700;margin-bottom:10px">🏆 Champions: '+esc(name(c.championId))+'</p>';
     c.bracket.forEach(function(rd,ri){
-      h+='<div style="margin-bottom:10px"><b>'+esc(C.roundLabel(c.bracket.length,ri))+'</b><br>';
+      h+='<div style="margin-bottom:10px"><b>'+esc(C.roundTitle(c.bracket,ri))+'</b><br>';
       h+=rd.map(function(m){
         var f=m.fx&&db.fixtures.find(function(x){return x.id===m.fx;}),sc='';
         if(f&&f.status==='completed')sc=' <span style="color:var(--accent)">'+f.homeScore+' - '+f.awayScore+'</span>';
-        var label=m.bye?(esc(name(m.a||m.b))+' <span style="color:var(--text-muted)">(bye)</span>'):(esc(m.a?name(m.a):'TBD')+' vs '+esc(m.b?name(m.b):'TBD')+sc);
+        var label=m.bye?(esc(name(m.a||m.b))+' <span style="color:var(--text-muted)">(bye)</span>'):(esc(m.a?name(m.a):(m.fa?'Winner of prelim':'TBD'))+' vs '+esc(m.b?name(m.b):(m.fb?'Winner of prelim':'TBD'))+sc);
         return '<span style="display:block;color:var(--text-muted);font-size:.9rem">'+label+'</span>';
       }).join('');
       h+='</div>';
@@ -1795,7 +1923,11 @@ function logoutUser() {
     $('cupMakeFx').addEventListener('click',makeFx);
     $('cupMakeKo').addEventListener('click',makeKo);
     $('cupResetKo').addEventListener('click',resetKo);
-    ['cupGroupCount','cupAdvance','cupDouble'].forEach(function(id){$(id).addEventListener('change',function(){if(isCup())saveCfg();});});
+    $('cupUseRec').addEventListener('click',function(){
+      var rec=C.suggestGroups((db.teams||[]).length);if(!rec)return alert('Add at least 6 teams first.');
+      applyCfg(rec.G,rec.A);saveCfg();
+    });
+    ['cupGroupCount','cupAdvance','cupDouble'].forEach(function(id){$(id).addEventListener('change',function(){advice();if(isCup())saveCfg();});});
   }
   document.addEventListener('DOMContentLoaded',function(){
     wire();
